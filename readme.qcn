@@ -1,0 +1,51 @@
+# directories:
+# - /compile/doc/stable-qc - the files in this dir
+# - /compile/source/linux-stable-qc - the kernel sources checked out from gitrepo
+# - /compile/result/stable-qc - the resulting kernel, modules etc. tar.gz files
+# - /compile/doc/kernel-config-options - https://github.com/hexdump0815/kernel-config-options
+# name: stb-qcn
+
+# INFO: this is not working yet and still very much work in progress
+
+cd /compile/source/linux-stable-qc
+
+# patches:
+# none yet
+
+export ARCH=arm64
+# lets start with a fixed kernel config instead of defconfig based
+cp /compile/doc/stable-qc/config.qcn .config
+# scripts/kconfig/merge_config.sh -m arch/arm64/configs/defconfig /compile/doc/kernel-config-options/docker-options.cfg /compile/doc/kernel-config-options/options-to-remove-generic.cfg /compile/doc/stable-qc/misc.qcn/options/options-to-remove-special.cfg /compile/doc/kernel-config-options/additional-options-generic.cfg /compile/doc/kernel-config-options/additional-options-aarch64.cfg /compile/doc/stable-qc/misc.qcn/options/additional-options-special.cfg
+# ( cd /compile/doc/kernel-config-options ; git rev-parse --verify HEAD ) > /compile/doc/stable-qc/misc.qcn/options/kernel-config-options.version
+make olddefconfig
+make -j 8 Image dtbs modules
+cd tools/perf
+make
+cd ../power/cpupower
+make
+cd ../../..
+export kver=`make kernelrelease`
+echo ${kver}
+# remove debug info if there and wanted
+# find . -type f -name '*.ko' | sudo xargs -n 1 objcopy --strip-unneeded
+make modules_install
+mkdir -p /lib/modules/${kver}/tools
+cp -v tools/perf/perf /lib/modules/${kver}/tools
+cp -v tools/power/cpupower/cpupower /lib/modules/${kver}/tools
+cp -v tools/power/cpupower/libcpupower.so.0.0.1 /lib/modules/${kver}/tools/libcpupower.so.0
+# make headers_install INSTALL_HDR_PATH=/usr
+cp -v .config /boot/config-${kver}
+cp -v arch/arm64/boot/Image /boot/Image-${kver}
+# just in case to have it around
+mkimage -A arm64 -O linux -T kernel -C none -a 0x1080000 -e 0x1080000 -n linux-${kver} -d arch/arm64/boot/Image /boot/uImage-${kver}
+mkdir -p /boot/dtb-${kver}
+cp -v arch/arm64/boot/dts/qcom/msm8998*.dtb /boot/dtb-${kver}
+cp -v System.map /boot/System.map-${kver}
+cd /boot
+update-initramfs -c -k ${kver}
+mkimage -A arm64 -O linux -T ramdisk -a 0x0 -e 0x0 -n initrd.img-${kver} -d initrd.img-${kver} uInitrd-${kver}
+tar cvzf /compile/source/linux-stable-qc/${kver}.tar.gz /boot/*-${kver} /lib/modules/${kver}
+cp -v /compile/doc/stable-qc/config.qcn /compile/doc/stable-qc/config.qcn.old
+cp -v /compile/source/linux-stable-qc/.config /compile/doc/stable-qc/config.qcn
+cp -v /compile/source/linux-stable-qc/.config /compile/doc/stable-qc/config.qcn-${kver}
+cp -v /compile/source/linux-stable-qc/*.tar.gz /compile/result/stable-qc

@@ -1,0 +1,6 @@
+origin	https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git (fetch)
+origin	https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git (push)
+
+oneplus 5/5t mainline tree:
+https://github.com/JamiKettunen/linux-mainline-oneplus5
+via: https://wiki.postmarketos.org/wiki/OnePlus_5_(oneplus-cheeseburger)
