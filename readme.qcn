@@ -10,7 +10,8 @@
 cd /compile/source/linux-stable-qc
 
 # patches:
-# none yet
+# some tries to enable the gpu and cpufreq scaling following the oneplus dts - not working yet
+patch -p1 < /compile/doc/stable-qc/misc.qcn/patches/add-gpu-and-cpufreq-to-novago-dts.patch
 
 export ARCH=arm64
 # lets start with a fixed kernel config instead of defconfig based
