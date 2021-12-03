@@ -4,3 +4,6 @@ origin	https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git (
 oneplus 5/5t mainline tree:
 https://github.com/JamiKettunen/linux-mainline-oneplus5
 via: https://wiki.postmarketos.org/wiki/OnePlus_5_(oneplus-cheeseburger)
+
+newer version of this tree (v5.15+):
+https://gitlab.com/msm8998-mainline/linux.git/ branch: op5/5.15
