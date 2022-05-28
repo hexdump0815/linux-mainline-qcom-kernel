@@ -3,7 +3,7 @@
 # - /compile/source/linux-stable-qc - the kernel sources checked out from gitrepo
 # - /compile/result/stable-qc - the resulting kernel, modules etc. tar.gz files
 # - /compile/doc/kernel-config-options - https://github.com/hexdump0815/kernel-config-options
-# name: stb-qcn
+# name: stb-qcn - qualcom asus novago
 
 # INFO: this is not working yet and still very much work in progress
 
