@@ -1,11 +1,11 @@
 diff --git a/arch/arm64/boot/dts/qcom/msm8998-asus-novago-tp370ql.dts b/arch/arm64/boot/dts/qcom/msm8998-asus-novago-tp370ql.dts
-index db5821be1e2f..5e43356abe20 100644
+index e204b7050441..4275c41228ef 100644
 --- a/arch/arm64/boot/dts/qcom/msm8998-asus-novago-tp370ql.dts
 +++ b/arch/arm64/boot/dts/qcom/msm8998-asus-novago-tp370ql.dts
-@@ -8,6 +8,15 @@
- / {
+@@ -9,6 +9,15 @@ / {
  	model = "Asus NovaGo TP370QL";
  	compatible = "asus,novago-tp370ql", "qcom,msm8998";
+ 	chassis-type = "convertible";
 +
 +// required for the gpu
 +	reserved-memory {
@@ -18,7 +18,7 @@ index db5821be1e2f..5e43356abe20 100644
  };
  
  &blsp1_i2c6 {
-@@ -45,3 +54,43 @@ config {
+@@ -46,3 +55,43 @@ config {
  		};
  	};
  };
