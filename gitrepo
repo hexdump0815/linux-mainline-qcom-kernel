@@ -17,3 +17,6 @@ https://github.com/msm8916-mainline/linux branch: master
 ./scripts/kconfig/merge_config.sh -m /some-path/config-postmarketos-qcom-msm8916.aarch64 /compile/doc/kernel-config-options/docker-options.cfg /compile/doc/kernel-config-options/additional-options-generic.cfg /compile/doc/kernel-config-options/additional-options-aarch64.cfg
 make olddefconfig
 # afterwards add CONFIG_LRU_GEN=y and CONFIG_LRU_GEN_ENABLED=y via kconfig edit
+
+acer aspire 1 tree
+https://github.com/TravMurav/linux/tree/aspire1-cleanup

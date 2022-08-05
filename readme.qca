@@ -1,0 +1,53 @@
+# directories:
+# - /compile/doc/stable-qc - the files in this dir
+# - /compile/source/linux-stable-qca - the kernel sources checked out from gitrepo
+# - /compile/result/stable-qc - the resulting kernel, modules etc. tar.gz files
+# - /compile/doc/kernel-config-options - https://github.com/hexdump0815/kernel-config-options
+# name: 718-qca - sc7180 qualcom acer aspire 1
+
+# INFO: this is not working yet and still very much work in progress
+#       based on commit: 2ed92359606b7e95b227e51919ddf1be045bcdcb
+#       of the aspire1-cleanup branch of https://github.com/TravMurav/linux/tree
+#       see also: https://oftc.irclog.whitequark.org/aarch64-laptops/2022-07-30#31145280;
+
+cd /compile/source/linux-stable-qca
+
+# patches:
+# none yet
+
+export ARCH=arm64
+# TODO: maybe try distro-defconfig instead of defconfig
+scripts/kconfig/merge_config.sh -m arch/arm64/configs/defconfig /compile/doc/kernel-config-options/docker-options.cfg /compile/doc/kernel-config-options/options-to-remove-generic.cfg /compile/doc/stable-qc/misc.qca/options/options-to-remove-special.cfg /compile/doc/kernel-config-options/additional-options-generic.cfg /compile/doc/kernel-config-options/additional-options-aarch64.cfg /compile/doc/stable-qc/misc.qca/options/additional-options-special.cfg
+( cd /compile/doc/kernel-config-options ; git rev-parse --verify HEAD ) > /compile/doc/stable-qc/misc.qca/options/kernel-config-options.version
+make olddefconfig
+make -j 8 Image dtbs modules
+cd tools/perf
+make
+cd ../power/cpupower
+make
+cd ../../..
+export kver=`make kernelrelease`
+echo ${kver}
+# remove debug info if there and wanted
+# find . -type f -name '*.ko' | sudo xargs -n 1 objcopy --strip-unneeded
+make modules_install
+mkdir -p /lib/modules/${kver}/tools
+cp -v tools/perf/perf /lib/modules/${kver}/tools
+cp -v tools/power/cpupower/cpupower /lib/modules/${kver}/tools
+cp -v tools/power/cpupower/libcpupower.so.0.0.1 /lib/modules/${kver}/tools/libcpupower.so.0
+# make headers_install INSTALL_HDR_PATH=/usr
+cp -v .config /boot/config-${kver}
+cp -v arch/arm64/boot/Image /boot/Image-${kver}
+# just in case to have it around
+mkimage -A arm64 -O linux -T kernel -C none -a 0x1080000 -e 0x1080000 -n linux-${kver} -d arch/arm64/boot/Image /boot/uImage-${kver}
+mkdir -p /boot/dtb-${kver}
+cp -v arch/arm64/boot/dts/qcom/sc7180*.dtb /boot/dtb-${kver}
+cp -v System.map /boot/System.map-${kver}
+cd /boot
+update-initramfs -c -k ${kver}
+mkimage -A arm64 -O linux -T ramdisk -a 0x0 -e 0x0 -n initrd.img-${kver} -d initrd.img-${kver} uInitrd-${kver}
+tar cvzf /compile/source/linux-stable-qca/${kver}.tar.gz /boot/*-${kver} /lib/modules/${kver}
+cp -v /compile/doc/stable-qc/config.qca /compile/doc/stable-qc/config.qca.old
+cp -v /compile/source/linux-stable-qca/.config /compile/doc/stable-qc/config.qca
+cp -v /compile/source/linux-stable-qca/.config /compile/doc/stable-qc/config.qca-${kver}
+cp -v /compile/source/linux-stable-qca/*.tar.gz /compile/result/stable-qc
