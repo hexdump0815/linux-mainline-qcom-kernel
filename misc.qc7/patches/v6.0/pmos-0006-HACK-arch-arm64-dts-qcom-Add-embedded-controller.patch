@@ -1,0 +1,105 @@
+From dc8bc8ac7342a54e479483703d21a26a6c8713d4 Mon Sep 17 00:00:00 2001
+From: Nikita Travkin <nikita@trvn.ru>
+Date: Sat, 9 Jul 2022 00:40:27 +0500
+Subject: [PATCH 6/6] HACK: arch: arm64: dts: qcom: Add embedded controller
+
+It provides the fuelgauge and the USB-C plug notification.
+
+Signed-off-by: Nikita Travkin <nikita@trvn.ru>
+---
+ .../boot/dts/qcom/sc7180-acer-aspire1.dts     | 58 +++++++++++++++++++
+ 1 file changed, 58 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/sc7180-acer-aspire1.dts b/arch/arm64/boot/dts/qcom/sc7180-acer-aspire1.dts
+index bab52e9bd8ad..7925d1fcaa32 100644
+--- a/arch/arm64/boot/dts/qcom/sc7180-acer-aspire1.dts
++++ b/arch/arm64/boot/dts/qcom/sc7180-acer-aspire1.dts
+@@ -178,6 +178,41 @@ &i2c2 {
+ 	status = "okay";
+ 	clock-frequency = <400000>;
+ 	/* Embedded Controller */
++	battery@76 {
++		compatible = "acer,aspire1-battery";
++		reg = <0x76>;
++
++		interrupt-parent = <&tlmm>;
++		interrupts = <30 IRQ_TYPE_EDGE_BOTH>;
++
++		pinctrl-names = "default";
++		pinctrl-0 = <&ec_int_default>;
++
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		connector@0 {
++			compatible = "usb-c-connector";
++			reg = <0>;
++			power-role = "dual";
++			data-role = "dual";
++
++			ports {
++				#address-cells = <1>;
++				#size-cells = <0>;
++				port@1 {
++					reg = <1>;
++					ec_dp_in: endpoint {
++						remote-endpoint = <&dp_out>;
++					};
++				};
++			};
++		};
++	};
++};
++
++&dp_out {
++	remote-endpoint = <&ec_dp_in>;
+ };
+ 
+ &i2c4 {
+@@ -324,6 +359,15 @@ &mdss {
+ 	status = "okay";
+ };
+ 
++&mdss_dp {
++	status = "okay";
++	pinctrl-names = "default";
++	pinctrl-0 = <&dp_hot_plug_det>;
++	data-lanes = <0 1>;
++	vdda-1p2-supply = <&vreg_l3c_1p2>;
++	vdda-0p9-supply = <&vreg_l4a_0p8>;
++};
++
+ &pm6150_adc {
+ 	thermistor@4e {
+ 		reg = <ADC5_AMUX_THM2_100K_PU>;
+@@ -614,6 +658,13 @@ vreg_bob: bob {
+ 	};
+ };
+ 
++&dp_hot_plug_det {
++	pinconf {
++		pins = "gpio117";
++		bias-disable;
++	};
++};
++
+ &qup_i2c2_default {
+ 	pinconf {
+ 		pins = "gpio15", "gpio16";
+@@ -676,6 +727,13 @@ bridge_en_default: bridge-en-default {
+ 		bias-disable;
+ 	};
+ 
++	ec_int_default: ec-int-default {
++		pins = "gpio30";
++		function = "gpio";
++		drive-strength = <2>;
++		bias-disable;
++	};
++
+ 	edp_bridge_irq_default: edp-bridge-irq-default {
+ 		pins = "gpio11";
+ 		function = "gpio";
+-- 
+2.35.3
+

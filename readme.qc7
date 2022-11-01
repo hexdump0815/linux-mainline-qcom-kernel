@@ -1,0 +1,66 @@
+# directories:
+# - /compile/doc/stable-qc - the files in this dir
+# - /compile/source/linux-stable-qc7 - the kernel sources checked out from gitrepo
+# - /compile/result/stable-qc - the resulting kernel, modules etc. tar.gz files
+# - /compile/doc/kernel-config-options - https://github.com/hexdump0815/kernel-config-options
+# name: stb-qc7 - sc7180 qualcom windows on arm laptops
+
+# INFO: this is not working yet and still very much work in progress
+#       parts are based on commit 3a0f3b28109984d2b2737c85bc375092c571de3c of
+#         https://gitlab.com/TravMurav/pmaports/-/tree/aspire1/device/testing/device-acer-aspire1
+#       and on commit 7b851a798063a206307f16a8e3b6d289f9ace89f of
+#         https://github.com/amcduffee/linux/tree/galaxy-book-go
+
+cd /compile/source/linux-stable-qc7
+
+# patches:
+# patches from the travmurav acer aspire 1 tree - most of them disabled for now
+for i in /compile/doc/stable-qc/misc.qc7/patches/v6.1/*.patch; do
+  echo === $i
+  patch -p1 < $i
+done
+
+# copy the samsung galaxy book go dts into the tree
+cp /compile/doc/stable-qc/misc.qc7/misc/sc7180-samsung-galaxy-book-go.dts arch/arm64/boot/dts/qcom
+
+# apply the multi gen lru kernel extra patches - not needed for initial bringup, neither for v6.1
+#for i in /compile/doc/kernel-extra-patches/multi-gen-lru/v15/*.diff; do
+#  echo === $i
+#  patch -p1 < $i
+#done
+
+export ARCH=arm64
+scripts/kconfig/merge_config.sh -m arch/arm64/configs/defconfig /compile/doc/kernel-config-options/docker-options.cfg /compile/doc/kernel-config-options/options-to-remove-generic.cfg /compile/doc/stable-qc/misc.qc7/options/options-to-remove-special.cfg /compile/doc/kernel-config-options/additional-options-generic.cfg /compile/doc/kernel-config-options/additional-options-aarch64.cfg /compile/doc/stable-qc/misc.qc7/options/additional-options-special.cfg
+( cd /compile/doc/kernel-config-options ; git rev-parse --verify HEAD ) > /compile/doc/stable-qc/misc.qc7/options/kernel-config-options.version
+make olddefconfig
+make -j 8 Image dtbs modules
+cd tools/perf
+make
+cd ../power/cpupower
+make
+cd ../../..
+export kver=`make kernelrelease`
+echo ${kver}
+# remove debug info if there and wanted
+# find . -type f -name '*.ko' | sudo xargs -n 1 objcopy --strip-unneeded
+make modules_install
+mkdir -p /lib/modules/${kver}/tools
+cp -v tools/perf/perf /lib/modules/${kver}/tools
+cp -v tools/power/cpupower/cpupower /lib/modules/${kver}/tools
+cp -v tools/power/cpupower/libcpupower.so.0.0.1 /lib/modules/${kver}/tools/libcpupower.so.0
+# make headers_install INSTALL_HDR_PATH=/usr
+cp -v .config /boot/config-${kver}
+cp -v arch/arm64/boot/Image /boot/Image-${kver}
+# just in case to have it around
+mkimage -A arm64 -O linux -T kernel -C none -a 0x1080000 -e 0x1080000 -n linux-${kver} -d arch/arm64/boot/Image /boot/uImage-${kver}
+mkdir -p /boot/dtb-${kver}
+cp -v arch/arm64/boot/dts/qcom/sc7180*.dtb /boot/dtb-${kver}
+cp -v System.map /boot/System.map-${kver}
+cd /boot
+update-initramfs -c -k ${kver}
+mkimage -A arm64 -O linux -T ramdisk -a 0x0 -e 0x0 -n initrd.img-${kver} -d initrd.img-${kver} uInitrd-${kver}
+tar cvzf /compile/source/linux-stable-qc7/${kver}.tar.gz /boot/*-${kver} /lib/modules/${kver}
+cp -v /compile/doc/stable-qc/config.qc7 /compile/doc/stable-qc/config.qc7.old
+cp -v /compile/source/linux-stable-qc7/.config /compile/doc/stable-qc/config.qc7
+cp -v /compile/source/linux-stable-qc7/.config /compile/doc/stable-qc/config.qc7-${kver}
+cp -v /compile/source/linux-stable-qc7/*.tar.gz /compile/result/stable-qc
