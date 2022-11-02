@@ -1,1 +1,1 @@
-from: https://github.com/amcduffee/linux/blob/d2a5d70f9fbbf879b99c66d9ccb6988625fbe270/arch/arm64/boot/dts/qcom/Makefile
+from: https://github.com/amcduffee/linux/blob/galaxy-book-go/arch/arm64/boot/dts/qcom/sc7180-samsung-galaxy-book-go.dts
