@@ -1,0 +1,373 @@
+based on: https://github.com/TravMurav/linux/compare/3d7cb6b04c3f3115719235cc6866b10326de34cd...13f1cbd185be970053c57e2fccf0c96c509498b3.diff
+
+adjusted to v6.1-rc1
+
+diff --git a/arch/arm64/boot/dts/qcom/Makefile b/arch/arm64/boot/dts/qcom/Makefile
+index d7669a7cee9f..404763943f1b 100644
+--- a/arch/arm64/boot/dts/qcom/Makefile
++++ b/arch/arm64/boot/dts/qcom/Makefile
+@@ -54,6 +54,8 @@ dtb-$(CONFIG_ARCH_QCOM)	+= qcs404-evb-4000.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= qrb5165-rb5.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= sa8155p-adp.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= sa8295p-adp.dtb
++dtb-$(CONFIG_ARCH_QCOM)	+= sc7180-acer-aspire1.dtb
++dtb-$(CONFIG_ARCH_QCOM)	+= sc7180-samsung-galaxy-book-go.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= sc7180-idp.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= sc7180-trogdor-coachz-r1.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= sc7180-trogdor-coachz-r1-lte.dtb
+diff --git a/arch/arm64/boot/dts/qcom/sc7180.dtsi b/arch/arm64/boot/dts/qcom/sc7180.dtsi
+index 58976a1ba06b..2baef52ce9d6 100644
+--- a/arch/arm64/boot/dts/qcom/sc7180.dtsi
++++ b/arch/arm64/boot/dts/qcom/sc7180.dtsi
+@@ -10,6 +10,8 @@
+ #include <dt-bindings/clock/qcom,gpucc-sc7180.h>
+ #include <dt-bindings/clock/qcom,lpasscorecc-sc7180.h>
+ #include <dt-bindings/clock/qcom,rpmh.h>
++#include <dt-bindings/clock/qcom,sm8250-lpass-aoncc.h>
++#include <dt-bindings/clock/qcom,sm8250-lpass-audiocc.h>
+ #include <dt-bindings/clock/qcom,videocc-sc7180.h>
+ #include <dt-bindings/interconnect/qcom,osm-l3.h>
+ #include <dt-bindings/interconnect/qcom,sc7180.h>
+@@ -19,6 +21,8 @@
+ #include <dt-bindings/reset/qcom,sdm845-aoss.h>
+ #include <dt-bindings/reset/qcom,sdm845-pdc.h>
+ #include <dt-bindings/soc/qcom,rpmh-rsc.h>
++#include <dt-bindings/soc/qcom,apr.h>
++#include <dt-bindings/sound/qcom,q6afe.h>
+ #include <dt-bindings/thermal/thermal.h>
+ 
+ / {
+@@ -2578,6 +2582,154 @@ apss_merge_funnel_in: endpoint {
+ 			};
+ 		};
+ 
++		remoteproc_adsp: remoteproc@62400000 {
++			compatible = "qcom,sc7180-adsp-pas";
++			reg = <0 0x62400000 0 0x100>;
++
++			interrupts-extended = <&intc GIC_SPI 162 IRQ_TYPE_EDGE_RISING>,
++						<&adsp_smp2p_in 0 IRQ_TYPE_EDGE_RISING>,
++						<&adsp_smp2p_in 1 IRQ_TYPE_EDGE_RISING>,
++						<&adsp_smp2p_in 2 IRQ_TYPE_EDGE_RISING>,
++						<&adsp_smp2p_in 3 IRQ_TYPE_EDGE_RISING>;
++			interrupt-names = "wdog", "fatal", "ready",
++						"handover", "stop-ack";
++
++			clocks = <&rpmhcc RPMH_CXO_CLK>;
++			clock-names = "xo";
++
++			power-domains = <&rpmhpd SC7180_LCX>,
++					<&rpmhpd SC7180_LMX>;
++			power-domain-names = "lcx", "lmx";
++
++			qcom,qmp = <&aoss_qmp>;
++
++			qcom,smem-states = <&adsp_smp2p_out 0>;
++			qcom,smem-state-names = "stop";
++
++			status = "disabled";
++
++			glink-edge {
++				interrupts = <GIC_SPI 156 IRQ_TYPE_EDGE_RISING>;
++				label = "lpass";
++				qcom,remote-pid = <2>;
++				mboxes = <&apss_shared 8>;
++
++				apr {
++					compatible = "qcom,apr-v2";
++					qcom,glink-channels = "apr_audio_svc";
++					qcom,apr-domain = <APR_DOMAIN_ADSP>;
++					#address-cells = <1>;
++					#size-cells = <0>;
++
++					apr-service@3 {
++						reg = <APR_SVC_ADSP_CORE>;
++						compatible = "qcom,q6core";
++						qcom,protection-domain = "avs/audio", "msm/adsp/audio_pd";
++					};
++
++					q6afe: apr-service@4 {
++						compatible = "qcom,q6afe";
++						reg = <APR_SVC_AFE>;
++						qcom,protection-domain = "avs/audio", "msm/adsp/audio_pd";
++						q6afedai: dais {
++							compatible = "qcom,q6afe-dais";
++							#address-cells = <1>;
++							#size-cells = <0>;
++							#sound-dai-cells = <1>;
++						};
++
++						q6afecc: cc {
++							compatible = "qcom,q6afe-clocks";
++							#clock-cells = <2>;
++						};
++					};
++
++					q6asm: apr-service@7 {
++						compatible = "qcom,q6asm";
++						reg = <APR_SVC_ASM>;
++						qcom,protection-domain = "avs/audio", "msm/adsp/audio_pd";
++						q6asmdai: dais {
++							compatible = "qcom,q6asm-dais";
++							#address-cells = <1>;
++							#size-cells = <0>;
++							#sound-dai-cells = <1>;
++							iommus = <&apps_smmu 0x1001 0x0>;
++						};
++					};
++
++					q6adm: apr-service@8 {
++						compatible = "qcom,q6adm";
++						reg = <APR_SVC_ADM>;
++						qcom,protection-domain = "avs/audio", "msm/adsp/audio_pd";
++						q6routing: routing {
++							compatible = "qcom,q6adm-routing";
++							#sound-dai-cells = <0>;
++						};
++					};
++				};
++
++				fastrpc {
++					compatible = "qcom,fastrpc";
++					qcom,glink-channels = "fastrpcglink-apps-dsp";
++					label = "adsp";
++					#address-cells = <1>;
++					#size-cells = <0>;
++
++					compute-cb@3 {
++						compatible = "qcom,fastrpc-compute-cb";
++						reg = <3>;
++						iommus = <&apps_smmu 0x1003 0x0>;
++					};
++
++					compute-cb@4 {
++						compatible = "qcom,fastrpc-compute-cb";
++						reg = <4>;
++						iommus = <&apps_smmu 0x1004 0x0>;
++					};
++
++					compute-cb@5 {
++						compatible = "qcom,fastrpc-compute-cb";
++						reg = <5>;
++						iommus = <&apps_smmu 0x1005 0x0>;
++						qcom,nsessions = <5>;
++					};
++				};
++			};
++		};
++
++		audiocc: clock-controller@62700000 {
++			compatible = "qcom,sm8250-lpass-audiocc";
++			reg = <0 0x62700000 0 0x30000>;
++			#clock-cells = <1>;
++			clocks = <&q6afecc LPASS_HW_MACRO_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
++				<&q6afecc LPASS_HW_DCODEC_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
++				<&q6afecc LPASS_CLK_ID_TX_CORE_MCLK LPASS_CLK_ATTRIBUTE_COUPLE_NO>;
++			clock-names = "core", "audio", "bus";
++		};
++
++		aoncc: clock-controller@62780000 {
++			compatible = "qcom,sm8250-lpass-aoncc";
++			reg = <0 0x62780000 0 0x40000>;
++			#clock-cells = <1>;
++			clocks = <&q6afecc LPASS_HW_MACRO_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
++				<&q6afecc LPASS_HW_DCODEC_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
++				<&q6afecc LPASS_CLK_ID_TX_CORE_NPL_MCLK LPASS_CLK_ATTRIBUTE_COUPLE_NO>;
++			clock-names = "core", "audio", "bus";
++		};
++
++		lpass_tlmm: pinctrl@627c0000 {
++			compatible = "qcom,sc7280-lpass-lpi-pinctrl";
++			reg = <0 0x627c0000 0x0 0x20000>,
++				<0 0x62950000 0x0 0x10000>;
++			gpio-controller;
++			#gpio-cells = <2>;
++			gpio-ranges = <&lpass_tlmm 0 0 15>;
++
++			clocks = <&q6afecc LPASS_HW_MACRO_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
++				<&q6afecc LPASS_HW_DCODEC_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>;
++			clock-names = "core", "audio";
++		};
++
+ 		sdhc_2: mmc@8804000 {
+ 			compatible = "qcom,sc7180-sdhci", "qcom,sdhci-msm-v5";
+ 			reg = <0 0x08804000 0 0x1000>;
+diff --git a/drivers/gpu/drm/msm/dp/dp_display.c b/drivers/gpu/drm/msm/dp/dp_display.c
+index bfd0aeff3f0d..c0131deb468f 100644
+--- a/drivers/gpu/drm/msm/dp/dp_display.c
++++ b/drivers/gpu/drm/msm/dp/dp_display.c
+@@ -1303,6 +1303,7 @@ static int dp_display_probe(struct platform_device *pdev)
+ 	if (!desc)
+ 		return -EINVAL;
+ 
++	dp->dp_display.dev = &pdev->dev;
+ 	dp->pdev = pdev;
+ 	dp->name = "drm_dp";
+ 	dp->dp_display.connector_type = desc->connector_type;
+@@ -1764,3 +1765,26 @@ void dp_bridge_mode_set(struct drm_bridge *drm_bridge,
+ 	dp_display->dp_mode.h_active_low =
+ 		!!(dp_display->dp_mode.drm_mode.flags & DRM_MODE_FLAG_NHSYNC);
+ }
++
++void dp_bridge_hpd_notify(struct drm_bridge *bridge,
++			  enum drm_connector_status status)
++{
++	struct msm_dp_bridge *dp_bridge = to_dp_bridge(bridge);
++	struct msm_dp *dp_display = dp_bridge->dp_display;
++	struct dp_display_private *dp = container_of(dp_display, struct dp_display_private, dp_display);
++
++	/* Without next_bridge interrupts are handled by the DP core directly */
++	if (!dp_display->next_bridge)
++		return;
++
++	if (!dp->core_initialized) {
++		drm_dbg_dp(dp->drm_dev, "not initialized\n");
++		return;
++	}
++
++	if (!dp_display->is_connected && status == connector_status_connected) {
++		dp_add_event(dp, EV_HPD_PLUG_INT, 0, 0);
++	} else if (dp_display->is_connected && status == connector_status_disconnected) {
++		dp_add_event(dp, EV_HPD_UNPLUG_INT, 0, 0);
++	}
++}
+diff --git a/drivers/gpu/drm/msm/dp/dp_display.h b/drivers/gpu/drm/msm/dp/dp_display.h
+index dcedf021f7fe..5a4b4d6ea25a 100644
+--- a/drivers/gpu/drm/msm/dp/dp_display.h
++++ b/drivers/gpu/drm/msm/dp/dp_display.h
+@@ -11,6 +11,7 @@
+ #include "disp/msm_disp_snapshot.h"
+ 
+ struct msm_dp {
++	struct device *dev;
+ 	struct drm_device *drm_dev;
+ 	struct device *codec_dev;
+ 	struct drm_bridge *bridge;
+diff --git a/drivers/gpu/drm/msm/dp/dp_drm.c b/drivers/gpu/drm/msm/dp/dp_drm.c
+index 6df25f7662e7..d279f784b670 100644
+--- a/drivers/gpu/drm/msm/dp/dp_drm.c
++++ b/drivers/gpu/drm/msm/dp/dp_drm.c
+@@ -31,6 +31,24 @@ static enum drm_connector_status dp_bridge_detect(struct drm_bridge *bridge)
+ 					connector_status_disconnected;
+ }
+ 
++static int dp_bridge_atomic_check(struct drm_bridge *bridge,
++			    struct drm_bridge_state *bridge_state,
++			    struct drm_crtc_state *crtc_state,
++			    struct drm_connector_state *conn_state)
++{
++	struct msm_dp *dp;
++
++	dp = to_dp_bridge(bridge)->dp_display;
++
++	drm_dbg_dp(dp->drm_dev, "is_connected = %s\n",
++		(dp->is_connected) ? "true" : "false");
++
++	if (bridge->ops & DRM_BRIDGE_OP_HPD)
++		return (dp->is_connected) ? 0 : -ENOTCONN;
++
++	return 0;
++}
++
+ /**
+  * dp_bridge_get_modes - callback to add drm modes via drm_mode_probed_add()
+  * @bridge: Poiner to drm bridge
+@@ -61,6 +79,9 @@ static int dp_bridge_get_modes(struct drm_bridge *bridge, struct drm_connector *
+ }
+ 
+ static const struct drm_bridge_funcs dp_bridge_ops = {
++	.atomic_duplicate_state = drm_atomic_helper_bridge_duplicate_state,
++	.atomic_destroy_state   = drm_atomic_helper_bridge_destroy_state,
++	.atomic_reset           = drm_atomic_helper_bridge_reset,
+ 	.enable       = dp_bridge_enable,
+ 	.disable      = dp_bridge_disable,
+ 	.post_disable = dp_bridge_post_disable,
+@@ -68,6 +89,8 @@ static const struct drm_bridge_funcs dp_bridge_ops = {
+ 	.mode_valid   = dp_bridge_mode_valid,
+ 	.get_modes    = dp_bridge_get_modes,
+ 	.detect       = dp_bridge_detect,
++	.hpd_notify   = dp_bridge_hpd_notify,
++	.atomic_check = dp_bridge_atomic_check,
+ };
+ 
+ struct drm_bridge *dp_bridge_init(struct msm_dp *dp_display, struct drm_device *dev,
+diff --git a/drivers/gpu/drm/panel/panel-edp.c b/drivers/gpu/drm/panel/panel-edp.c
+index 4b39d1dd9140..35c152c0b6d8 100644
+--- a/drivers/gpu/drm/panel/panel-edp.c
++++ b/drivers/gpu/drm/panel/panel-edp.c
+@@ -1887,6 +1887,7 @@ static const struct edp_panel_entry edp_panels[] = {
+ 	EDP_PANEL_ENTRY('C', 'M', 'N', 0x1152, &delay_200_500_e80_d50, "N116BCN-EA1"),
+ 	EDP_PANEL_ENTRY('C', 'M', 'N', 0x1154, &delay_200_500_e80_d50, "N116BCA-EA2"),
+ 	EDP_PANEL_ENTRY('C', 'M', 'N', 0x1247, &delay_200_500_e80_d50, "N120ACA-EA1"),
++	EDP_PANEL_ENTRY('C', 'M', 'N', 0x14d4, &delay_200_500_e80_d50, "N140HCA-EAC"),
+ 
+ 	EDP_PANEL_ENTRY('I', 'V', 'O', 0x057d, &delay_200_500_e200, "R140NWF5 RH"),
+ 	EDP_PANEL_ENTRY('I', 'V', 'O', 0x854b, &delay_200_500_p2e100, "M133NW4J-R3"),
+diff --git a/drivers/power/supply/Kconfig b/drivers/power/supply/Kconfig
+index 0bbfe6a7ce4d..5fb4ba086eeb 100644
+--- a/drivers/power/supply/Kconfig
++++ b/drivers/power/supply/Kconfig
+@@ -918,4 +918,11 @@ config BATTERY_UG3105
+ 	  device is off or suspended, the functionality of this driver is
+ 	  limited to reporting capacity only.
+ 
++config ACER_ASPIRE_BATTERY
++	tristate "Aspire1 Battery Fuel Gauge"
++	depends on I2C
++	depends on DRM
++	help
++	  Of course!
++
+ endif # POWER_SUPPLY
+diff --git a/drivers/power/supply/Makefile b/drivers/power/supply/Makefile
+index 0ee8653e882e..bdb2cef5a259 100644
+--- a/drivers/power/supply/Makefile
++++ b/drivers/power/supply/Makefile
+@@ -110,3 +110,4 @@ obj-$(CONFIG_BATTERY_ACER_A500)	+= acer_a500_battery.o
+ obj-$(CONFIG_BATTERY_SURFACE)	+= surface_battery.o
+ obj-$(CONFIG_CHARGER_SURFACE)	+= surface_charger.o
+ obj-$(CONFIG_BATTERY_UG3105)	+= ug3105_battery.o
++obj-$(CONFIG_ACER_ASPIRE_BATTERY) += aspire-ec-battery.o
+diff --git a/drivers/remoteproc/qcom_q6v5_pas.c b/drivers/remoteproc/qcom_q6v5_pas.c
+index 6afd0941e552..92aa60d81845 100644
+--- a/drivers/remoteproc/qcom_q6v5_pas.c
++++ b/drivers/remoteproc/qcom_q6v5_pas.c
+@@ -956,6 +956,7 @@ static const struct of_device_id adsp_of_match[] = {
+ 	{ .compatible = "qcom,qcs404-adsp-pas", .data = &adsp_resource_init },
+ 	{ .compatible = "qcom,qcs404-cdsp-pas", .data = &cdsp_resource_init },
+ 	{ .compatible = "qcom,qcs404-wcss-pas", .data = &wcss_resource_init },
++	{ .compatible = "qcom,sc7180-adsp-pas", .data = &sm8250_adsp_resource},
+ 	{ .compatible = "qcom,sc7180-mpss-pas", .data = &mpss_resource_init},
+ 	{ .compatible = "qcom,sc7280-mpss-pas", .data = &mpss_resource_init},
+ 	{ .compatible = "qcom,sc8180x-adsp-pas", .data = &sm8150_adsp_resource},
+diff --git a/sound/soc/qcom/sm8250.c b/sound/soc/qcom/sm8250.c
+index 8dbe9ef41b1c..448ae7ba0abb 100644
+--- a/sound/soc/qcom/sm8250.c
++++ b/sound/soc/qcom/sm8250.c
+@@ -54,6 +54,14 @@ static int sm8250_snd_startup(struct snd_pcm_substream *substream)
+ 	struct snd_soc_dai *codec_dai = asoc_rtd_to_codec(rtd, 0);
+ 
+ 	switch (cpu_dai->id) {
++	case PRIMARY_MI2S_RX:
++		codec_dai_fmt |= SND_SOC_DAIFMT_NB_NF | SND_SOC_DAIFMT_I2S;
++		snd_soc_dai_set_sysclk(cpu_dai,
++			Q6AFE_LPASS_CLK_ID_PRI_MI2S_IBIT,
++			MI2S_BCLK_RATE, SNDRV_PCM_STREAM_PLAYBACK);
++		snd_soc_dai_set_fmt(cpu_dai, fmt);
++		snd_soc_dai_set_fmt(codec_dai, codec_dai_fmt);
++		break;
+ 	case TERTIARY_MI2S_RX:
+ 		codec_dai_fmt |= SND_SOC_DAIFMT_NB_NF | SND_SOC_DAIFMT_I2S;
+ 		snd_soc_dai_set_sysclk(cpu_dai,
+diff --git a/drivers/gpu/drm/msm/dp/dp_drm.h b/drivers/gpu/drm/msm/dp/dp_drm.h
+index 82035dbb0578..79e6b2cf2d25 100644
+--- a/drivers/gpu/drm/msm/dp/dp_drm.h
++++ b/drivers/gpu/drm/msm/dp/dp_drm.h
+@@ -32,5 +32,7 @@ enum drm_mode_status dp_bridge_mode_valid(struct drm_bridge *bridge,
+ void dp_bridge_mode_set(struct drm_bridge *drm_bridge,
+ 			const struct drm_display_mode *mode,
+ 			const struct drm_display_mode *adjusted_mode);
++void dp_bridge_hpd_notify(struct drm_bridge *bridge,
++			  enum drm_connector_status status);
+ 
+ #endif /* _DP_DRM_H_ */

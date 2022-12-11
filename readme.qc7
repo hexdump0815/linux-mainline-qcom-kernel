@@ -20,7 +20,8 @@ for i in /compile/doc/stable-qc/misc.qc7/patches/v6.1/*.patch; do
   patch -p1 < $i
 done
 
-# copy the samsung galaxy book go dts into the tree
+# copy the samsung galaxy book go and acer aspire 1 dts into the tree
+cp /compile/doc/stable-qc/misc.qc7/misc/sc7180-acer-aspire1.dts arch/arm64/boot/dts/qcom
 cp /compile/doc/stable-qc/misc.qc7/misc/sc7180-samsung-galaxy-book-go.dts arch/arm64/boot/dts/qcom
 
 # apply the multi gen lru kernel extra patches - not needed for initial bringup, neither for v6.1
@@ -52,13 +53,14 @@ cp -v tools/power/cpupower/libcpupower.so.0.0.1 /lib/modules/${kver}/tools/libcp
 cp -v .config /boot/config-${kver}
 cp -v arch/arm64/boot/Image /boot/Image-${kver}
 # just in case to have it around
-mkimage -A arm64 -O linux -T kernel -C none -a 0x1080000 -e 0x1080000 -n linux-${kver} -d arch/arm64/boot/Image /boot/uImage-${kver}
+#mkimage -A arm64 -O linux -T kernel -C none -a 0x1080000 -e 0x1080000 -n linux-${kver} -d arch/arm64/boot/Image /boot/uImage-${kver}
 mkdir -p /boot/dtb-${kver}
 cp -v arch/arm64/boot/dts/qcom/sc7180*.dtb /boot/dtb-${kver}
 cp -v System.map /boot/System.map-${kver}
 cd /boot
 update-initramfs -c -k ${kver}
-mkimage -A arm64 -O linux -T ramdisk -a 0x0 -e 0x0 -n initrd.img-${kver} -d initrd.img-${kver} uInitrd-${kver}
+# just in case to have it around
+#mkimage -A arm64 -O linux -T ramdisk -a 0x0 -e 0x0 -n initrd.img-${kver} -d initrd.img-${kver} uInitrd-${kver}
 tar cvzf /compile/source/linux-stable-qc7/${kver}.tar.gz /boot/*-${kver} /lib/modules/${kver}
 cp -v /compile/doc/stable-qc/config.qc7 /compile/doc/stable-qc/config.qc7.old
 cp -v /compile/source/linux-stable-qc7/.config /compile/doc/stable-qc/config.qc7

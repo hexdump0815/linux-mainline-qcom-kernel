@@ -1,0 +1,1850 @@
+from: https://github.com/TravMurav/linux/compare/3d7cb6b04c3f3115719235cc6866b10326de34cd...13f1cbd185be970053c57e2fccf0c96c509498b3.diff
+
+diff --git a/arch/arm64/boot/dts/qcom/Makefile b/arch/arm64/boot/dts/qcom/Makefile
+index 2f8aec2cc6db63..faa917140a6dbe 100644
+--- a/arch/arm64/boot/dts/qcom/Makefile
++++ b/arch/arm64/boot/dts/qcom/Makefile
+@@ -52,6 +52,7 @@ dtb-$(CONFIG_ARCH_QCOM)	+= qcs404-evb-1000.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= qcs404-evb-4000.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= qrb5165-rb5.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= sa8155p-adp.dtb
++dtb-$(CONFIG_ARCH_QCOM)	+= sc7180-acer-aspire1.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= sc7180-idp.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= sc7180-trogdor-coachz-r1.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= sc7180-trogdor-coachz-r1-lte.dtb
+diff --git a/arch/arm64/boot/dts/qcom/sc7180-acer-aspire1.dts b/arch/arm64/boot/dts/qcom/sc7180-acer-aspire1.dts
+new file mode 100644
+index 00000000000000..f64d609968576a
+--- /dev/null
++++ b/arch/arm64/boot/dts/qcom/sc7180-acer-aspire1.dts
+@@ -0,0 +1,1008 @@
++// SPDX-License-Identifier: BSD-3-Clause
++
++/dts-v1/;
++
++#include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/sound/qcom,q6asm.h>
++#include <dt-bindings/regulator/qcom,rpmh-regulator.h>
++
++#include "sc7180.dtsi"
++
++#include "pm6150.dtsi"
++#include "pm6150l.dtsi"
++
++/delete-node/ &tz_mem;
++/delete-node/ &ipa_fw_mem;
++
++/ {
++	model = "Acer Aspire 1";
++	compatible = "acer,aspire1", "qcom,sc7180";
++	chassis-type = "laptop";
++	/* Aspire 1 A114-61 series, model no. N20Q7 */
++
++	reserved-memory {
++		zap_mem: zap-shader@80840000 {
++			reg = <0 0x80840000 0 0x2000>;
++			no-map;
++		};
++
++		tz_mem: tz@82200000 {
++			reg = <0 0x82200000 0 0x2200000>;
++			no-map;
++		};
++
++		venus_mem: venus@85b00000 {
++			reg = <0 0x85b00000 0 0x500000>;
++			no-map;
++		};
++
++		mpss_mem: mpss@86000000 {
++			reg = <0x0 0x86000000 0x0 0x2000000>;
++			no-map;
++		};
++
++		adsp_mem: adsp@8e400000 {
++			reg = <0x0 0x8e400000 0x0 0x2800000>;
++			no-map;
++		};
++
++		wlan_mem: wlan@93900000 {
++			reg = <0x0 0x93900000 0x0 0x200000>;
++			no-map;
++		};
++
++	};
++
++	aliases {
++		bluetooth0 = &bluetooth;
++		hsuart0 = &uart3;
++		serial0 = &uart8;
++		wifi0 = &wifi;
++	};
++
++	reg_tp_3p3: touchpad-regulator {
++		compatible = "regulator-fixed";
++		regulator-name = "tp_3p3";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++
++		gpio = <&tlmm 25 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++
++		pinctrl-names = "default";
++		pinctrl-0 = <&reg_tp_en_default>;
++	};
++
++	reg_codec_3p3: codec-regulator {
++		compatible = "regulator-fixed";
++		regulator-name = "codec_3p3";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++
++		gpio = <&tlmm 83 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++
++		pinctrl-names = "default";
++		pinctrl-0 = <&reg_audio_en_default>;
++	};
++
++	reg_lcm_3p3: panel-regulator {
++		compatible = "regulator-fixed";
++		regulator-name = "lcm_3p3";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++
++		/* HACK: Display fails with
++		 *
++		 * *ERROR* Unexpected max rate (0x0); assuming 5.4 GHz
++		 * *ERROR* Link training failed, link is off (-5)
++		 *
++		 * if the power to the panel was cut
++		 */
++		regulator-always-on;
++
++		gpio = <&tlmm 26 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++
++		pinctrl-names = "default";
++		pinctrl-0 = <&reg_lcm_en_default>;
++	};
++
++	reg_brij_1p8: bridge-regulator {
++		compatible = "regulator-fixed";
++		regulator-name = "brij_1p8";
++		regulator-min-microvolt = <1800000>;
++		regulator-max-microvolt = <1800000>;
++
++		vin-supply = <&vreg_l8c_1p8>;
++
++		gpio = <&tlmm 20 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++
++		pinctrl-names = "default";
++		pinctrl-0 = <&reg_edp_1p8_en_default>;
++	};
++
++	reg_brij_1p2: bridge-1p2-regulator {
++		compatible = "regulator-fixed";
++		regulator-name = "brij_1p2";
++		regulator-min-microvolt = <1200000>;
++		regulator-max-microvolt = <1200000>;
++
++		gpio = <&tlmm 19 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++
++		pinctrl-names = "default";
++		pinctrl-0 = <&reg_edp_1p2_en_default>;
++	};
++
++	backlight: backlight {
++		compatible = "pwm-backlight";
++		pwms = <&sn65dsi86_bridge 1000000>;
++		enable-gpios = <&tlmm 10 GPIO_ACTIVE_HIGH>;
++
++		pinctrl-names = "default";
++		pinctrl-0 = <&soc_bkoff_default>;
++	};
++
++	max98357a: audio-codec-0 {
++		compatible = "maxim,max98357a";
++		pinctrl-names = "default";
++		pinctrl-0 = <&amp_sd_mode_default>;
++		sdmode-gpios = <&tlmm 23 GPIO_ACTIVE_HIGH>;
++		#sound-dai-cells = <0>;
++	};
++
++	sound: sound {
++		compatible = "qcom,sm8250-sndcard";
++		pinctrl-0 = <&pri_mi2s_active>, <&pri_mi2s_mclk_active>, <&ter_mi2s_active>;
++		pinctrl-names = "default";
++		model = "Acer-Aspire-1";
++
++		dai-link-multimedia1 {
++			link-name = "MultiMedia1";
++			cpu { sound-dai = <&q6asmdai MSM_FRONTEND_DAI_MULTIMEDIA1>; };
++		};
++
++		dai-link-multimedia2 {
++			link-name = "MultiMedia2";
++			status = "disabled";
++			cpu { sound-dai = <&q6asmdai MSM_FRONTEND_DAI_MULTIMEDIA2>; };
++		};
++
++		dai-link-multimedia3 {
++			link-name = "MultiMedia3";
++			status = "disabled";
++			cpu { sound-dai = <&q6asmdai MSM_FRONTEND_DAI_MULTIMEDIA3>; };
++		};
++
++		dai-link-primary {
++			link-name = "Primary MI2S Playback";
++			status = "disabled";
++			cpu { sound-dai = <&q6afedai PRIMARY_MI2S_RX>; };
++			platform { sound-dai = <&q6routing>; };
++			codec { sound-dai = <&alc5682 0>; };
++		};
++
++		dai-link-tertiary {
++			link-name = "Tertiary MI2S Playback";
++			cpu {
++				sound-dai = <&q6afedai TERTIARY_MI2S_RX>;
++			};
++
++			platform {
++				sound-dai = <&q6routing>;
++			};
++
++			codec {
++				sound-dai = <&max98357a>;
++			};
++		};
++	};
++};
++
++&q6afedai {
++	qi2s@16 {
++		reg = <PRIMARY_MI2S_RX>;
++		qcom,sd-lines = <1>;
++		status = "disabled";
++	};
++
++	qi2s@17 {
++		reg = <PRIMARY_MI2S_TX>;
++		qcom,sd-lines = <0>;
++		status = "disabled";
++	};
++
++	qi2s@20 {
++		reg = <TERTIARY_MI2S_RX>;
++		qcom,sd-lines = <0>;
++	};
++};
++
++&q6asmdai {
++	dai@0 {
++		reg = <0>;
++	};
++
++	dai@1 {
++		reg = <1>;
++		status = "disabled";
++	};
++
++	dai@2 {
++		reg = <2>;
++		status = "disabled";
++	};
++};
++
++&camcc { status = "disabled"; };
++
++&dsi0 {
++	status = "okay";
++	vdda-supply = <&vreg_l3c_1p2>;
++};
++
++&dsi0_out {
++	remote-endpoint = <&sn65dsi86_in>;
++	data-lanes = <0 1 2 3>;
++};
++
++&dsi_phy {
++	status = "okay";
++	vdds-supply = <&vreg_l4a_0p8>;
++};
++
++&gpu {
++	status = "okay";
++	zap-shader {
++		memory-region = <&zap_mem>;
++		firmware-name = "qcom/sc7180-acer-aspire1/qcdxkmsuc7180.mbn";
++	};
++};
++
++&i2c2 {
++	status = "okay";
++	clock-frequency = <400000>;
++	/* Embedded Controller */
++	battery@76 {
++		compatible = "acer,aspire1-battery";
++		reg = <0x76>;
++
++		interrupt-parent = <&tlmm>;
++		interrupts = <30 IRQ_TYPE_EDGE_BOTH>;
++
++		pinctrl-names = "default";
++		pinctrl-0 = <&ec_int_default>;
++
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		connector@0 {
++			compatible = "usb-c-connector";
++			reg = <0>;
++			power-role = "dual";
++			data-role = "dual";
++
++			ports {
++				#address-cells = <1>;
++				#size-cells = <0>;
++				port@1 {
++					reg = <1>;
++					ec_dp_in: endpoint {
++						remote-endpoint = <&dp_out>;
++					};
++				};
++			};
++		};
++	};
++};
++
++&dp_out {
++	remote-endpoint = <&ec_dp_in>;
++};
++
++&i2c4 {
++	status = "okay";
++	clock-frequency = <400000>;
++
++	/*
++	 * NOTE: DSDT defines two possible touchpads, other one is
++	 *
++	 * reg = <0x15>;
++	 * hid-descr-addr = <0x1>;
++	 */
++
++	touchpad@2c {
++		compatible = "hid-over-i2c";
++		reg = <0x2c>;
++		hid-descr-addr = <0x20>;
++
++		vdd-supply = <&reg_tp_3p3>;
++
++		interrupts-extended = <&tlmm 94 IRQ_TYPE_LEVEL_LOW>;
++
++		pinctrl-names = "default";
++		pinctrl-0 = <&hid_touchpad_default>;
++	};
++
++	keyboard@3a {
++		compatible = "hid-over-i2c";
++		reg = <0x3a>;
++		hid-descr-addr = <0x1>;
++
++		interrupts-extended = <&tlmm 33 IRQ_TYPE_LEVEL_LOW>;
++
++		pinctrl-names = "default";
++		pinctrl-0 = <&hid_keyboard_default>;
++
++		wakeup-source;
++	};
++};
++
++&i2c9 {
++	status = "okay";
++	clock-frequency = <400000>;
++
++	alc5682: codec@1a {
++		compatible = "realtek,rt5682i";
++		reg = <0x1a>;
++		pinctrl-names = "default";
++		pinctrl-0 = <&codec_irq_default>;
++
++		#sound-dai-cells = <1>;
++
++		interrupt-parent = <&tlmm>;
++		/*
++		 * This will get ignored because the interrupt type
++		 * is set in rt5682.c.
++		 */
++		interrupts = <28 IRQ_TYPE_EDGE_BOTH>;
++
++		AVDD-supply = <&vreg_l15a_1p8>;
++		MICVDD-supply = <&reg_codec_3p3>;
++		VBAT-supply = <&reg_codec_3p3>;
++
++		realtek,dmic1-data-pin = <1>;
++		realtek,dmic1-clk-pin = <1>;
++		realtek,jd-src = <1>;
++	};
++};
++
++&i2c10 {
++	status = "okay";
++	clock-frequency = <400000>;
++
++	sn65dsi86_bridge: bridge@2c {
++		compatible = "ti,sn65dsi86";
++		reg = <0x2c>;
++		pinctrl-names = "default";
++		pinctrl-0 = <&bridge_en_default>,
++			<&edp_bridge_irq_default>,
++			<&bridge_suspend_default>;
++		gpio-controller;
++		#gpio-cells = <2>;
++		#pwm-cells = <1>;
++
++		interrupt-parent = <&tlmm>;
++		interrupts = <11 IRQ_TYPE_LEVEL_HIGH>;
++
++		enable-gpios = <&tlmm 51 GPIO_ACTIVE_HIGH>;
++		suspend-gpios = <&tlmm 22 GPIO_ACTIVE_LOW>;
++
++		vpll-supply = <&reg_brij_1p8>;
++		vccio-supply = <&reg_brij_1p8>;
++		vcca-supply = <&reg_brij_1p2>;
++		vcc-supply = <&reg_brij_1p2>;
++
++		clocks = <&rpmhcc RPMH_LN_BB_CLK3>;
++		clock-names = "refclk";
++
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			port@0 {
++				reg = <0>;
++				sn65dsi86_in: endpoint {
++					remote-endpoint = <&dsi0_out>;
++				};
++			};
++
++			port@1 {
++				reg = <1>;
++				sn65dsi86_out: endpoint {
++					data-lanes = <0 1>;
++					remote-endpoint = <&panel_in_edp>;
++				};
++			};
++		};
++
++		aux-bus {
++			panel: panel {
++				compatible = "edp-panel";
++				power-supply = <&reg_lcm_3p3>;
++				backlight = <&backlight>;
++
++				port {
++					panel_in_edp: endpoint {
++						remote-endpoint = <&sn65dsi86_out>;
++					};
++				};
++			};
++		};
++	};
++};
++
++/* Seems like ADSP really insists on managing those itself */
++&lpasscc { status = "disabled"; };
++&lpass_hm { status = "disabled"; };
++
++&mdp {
++	status = "okay";
++};
++
++&mdss {
++	status = "okay";
++};
++
++&mdss_dp {
++	status = "okay";
++	pinctrl-names = "default";
++	pinctrl-0 = <&dp_hot_plug_det>;
++	data-lanes = <0 1>;
++	vdda-1p2-supply = <&vreg_l3c_1p2>;
++	vdda-0p9-supply = <&vreg_l4a_0p8>;
++};
++
++&pm6150_adc {
++	thermistor@4e {
++		reg = <ADC5_AMUX_THM2_100K_PU>;
++		qcom,ratiometric;
++		qcom,hw-settle-time = <200>;
++	};
++
++	charger-thermistor@4f {
++		reg = <ADC5_AMUX_THM3_100K_PU>;
++		qcom,ratiometric;
++		qcom,hw-settle-time = <200>;
++	};
++};
++
++&pm6150_adc_tm {
++	status = "okay";
++
++	charger-thermistor@0 {
++		reg = <0>;
++		io-channels = <&pm6150_adc ADC5_AMUX_THM3_100K_PU>;
++		qcom,ratiometric;
++		qcom,hw-settle-time-us = <200>;
++	};
++
++	thermistor@1 {
++		reg = <1>;
++		io-channels = <&pm6150_adc ADC5_AMUX_THM2_100K_PU>;
++		qcom,ratiometric;
++		qcom,hw-settle-time-us = <200>;
++	};
++};
++
++&pm6150_pon { status = "disabled"; };
++
++&qupv3_id_0 {
++	status = "okay";
++};
++
++&qupv3_id_1 {
++	status = "okay";
++};
++
++&remoteproc_adsp {
++	status = "okay";
++	memory-region = <&adsp_mem>;
++	firmware-name = "qcom/sc7180-acer-aspire1/qcadsp7180.mbn";
++};
++
++&remoteproc_mpss {
++	status = "okay";
++	firmware-name = "qcom/sc7180-acer-aspire1/qcmpss7180_nm.mbn";
++};
++
++&sdhc_1 {
++	status = "okay";
++
++	pinctrl-names = "default", "sleep";
++	pinctrl-0 = <&sdc1_default>;
++	pinctrl-1 = <&sdc1_sleep>;
++	vmmc-supply = <&vreg_l19a_2p9>;
++	vqmmc-supply = <&vreg_l12a_1p8>;
++};
++
++&uart3 {
++	status = "okay";
++
++	/delete-property/interrupts;
++	interrupts-extended = <&intc GIC_SPI 604 IRQ_TYPE_LEVEL_HIGH>,
++				<&tlmm 41 IRQ_TYPE_EDGE_FALLING>;
++
++	pinctrl-names = "default", "sleep";
++	pinctrl-1 = <&qup_uart3_sleep>;
++
++	bluetooth: bluetooth {
++		compatible = "qcom,wcn3991-bt";
++		vddio-supply = <&vreg_l10a_1p8>;
++		vddxo-supply = <&vreg_l1c_1p8>;
++		vddrf-supply = <&vreg_l2c_1p3>;
++		vddch0-supply = <&vreg_l10c_3p3>;
++		max-speed = <3200000>;
++	};
++};
++
++&uart8 {
++	status = "okay";
++};
++
++&usb_1 {
++	status = "okay";
++};
++
++&usb_1_dwc3 {
++	dr_mode = "host";
++};
++
++&usb_1_hsphy {
++	status = "okay";
++	vdd-supply = <&vreg_l4a_0p8>;
++	vdda-pll-supply = <&vreg_l11a_1p8>;
++	vdda-phy-dpdm-supply = <&vreg_l17a_3p0>;
++	qcom,imp-res-offset-value = <8>;
++	qcom,preemphasis-level = <QUSB2_V2_PREEMPHASIS_15_PERCENT>;
++	qcom,preemphasis-width = <QUSB2_V2_PREEMPHASIS_WIDTH_HALF_BIT>;
++	qcom,bias-ctrl-value = <0x22>;
++	qcom,charge-ctrl-value = <3>;
++	qcom,hsdisc-trim-value = <0>;
++};
++
++&usb_1_qmpphy {
++	status = "okay";
++	vdda-phy-supply = <&vreg_l3c_1p2>;
++	vdda-pll-supply = <&vreg_l4a_0p8>;
++};
++
++&venus {
++	firmware-name = "qcom/sc7180-acer-aspire1/qcvss7180.mbn";
++};
++
++&wifi {
++	status = "okay";
++	vdd-0.8-cx-mx-supply = <&vreg_l9a_0p6>;
++	vdd-1.8-xo-supply = <&vreg_l1c_1p8>;
++	vdd-1.3-rfa-supply = <&vreg_l2c_1p3>;
++	vdd-3.3-ch0-supply = <&vreg_l10c_3p3>;
++	vdd-3.3-ch1-supply = <&vreg_l11c_3p3>;
++};
++
++&apps_rsc {
++	pm6150-rpmh-regulators {
++		compatible = "qcom,pm6150-rpmh-regulators";
++		qcom,pmic-id = "a";
++
++		vreg_s1a_1p1: smps1 {
++			regulator-min-microvolt = <1128000>;
++			regulator-max-microvolt = <1128000>;
++		};
++
++		vreg_l4a_0p8: ldo4 { // acpi p88
++			regulator-min-microvolt = <824000>;
++			regulator-max-microvolt = <928000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
++		};
++
++		vreg_l9a_0p6: ldo9 { // acpi p664
++			regulator-min-microvolt = <488000>;
++			regulator-max-microvolt = <800000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
++		};
++
++		vreg_l10a_1p8: ldo10 { // acpi 1p8 sx -> Vio
++			regulator-min-microvolt = <1800000>;
++			regulator-max-microvolt = <1800000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
++
++			regulator-always-on;
++			regulator-boot-on;
++		};
++
++		vreg_l11a_1p8: ldo11 { // trogdor
++			regulator-min-microvolt = <1800000>;
++			regulator-max-microvolt = <1800000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
++		};
++
++		vreg_l12a_1p8: ldo12 { // acpi 1p8
++			regulator-min-microvolt = <1800000>;
++			regulator-max-microvolt = <1800000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
++		};
++
++		vreg_l13a_1p8: ldo13 { // sx 1p8 NC
++			regulator-min-microvolt = <1800000>;
++			regulator-max-microvolt = <1800000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
++		};
++
++		vreg_l14a_1p8: ldo14 { // sx 1p8 NC
++			regulator-min-microvolt = <1800000>;
++			regulator-max-microvolt = <1800000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
++		};
++
++		vreg_l15a_1p8: ldo15 { // acpi 1p8 sx -> acodec
++			regulator-min-microvolt = <1800000>;
++			regulator-max-microvolt = <1800000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
++		};
++
++		vreg_l16a_2p7: ldo16 { // sx 2p7 NC
++			regulator-min-microvolt = <2496000>;
++			regulator-max-microvolt = <3304000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
++		};
++
++		vreg_l17a_3p0: ldo17 { // acpi 3p088 sx NC
++			regulator-min-microvolt = <2920000>;
++			regulator-max-microvolt = <3232000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
++		};
++
++		vreg_l18a_2p8: ldo18 { // sx 3p3 NC
++			regulator-min-microvolt = <2496000>;
++			regulator-max-microvolt = <3304000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
++		};
++
++		vreg_l19a_2p9: ldo19 { // acpi 2p96
++			regulator-min-microvolt = <2960000>;
++			regulator-max-microvolt = <2960000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
++		};
++	};
++
++	pm6150l-rpmh-regulators {
++		compatible = "qcom,pm6150l-rpmh-regulators";
++		qcom,pmic-id = "c";
++
++		vreg_s8c_1p3: smps8 { // sx 1p3 NC
++			regulator-min-microvolt = <1120000>;
++			regulator-max-microvolt = <1408000>;
++		};
++
++		vreg_l1c_1p8: ldo1 { // acpi 1p8
++			regulator-min-microvolt = <1616000>;
++			regulator-max-microvolt = <1984000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
++		};
++
++		vreg_l2c_1p3: ldo2 { // acpi 1p304
++			regulator-min-microvolt = <1168000>;
++			regulator-max-microvolt = <1304000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
++		};
++
++		vreg_l3c_1p2: ldo3 { // acpi 1p2
++			regulator-min-microvolt = <1144000>;
++			regulator-max-microvolt = <1304000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
++		};
++
++		vreg_l4c_1p8: ldo4 { // sx 1p8 -> UIM1 (nc)
++			regulator-min-microvolt = <1648000>;
++			regulator-max-microvolt = <3304000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_LPM>;
++		};
++
++		vreg_l5c_1p8: ldo5 { // sx 1p8 -> e-UIM (nc)
++			regulator-min-microvolt = <1648000>;
++			regulator-max-microvolt = <3304000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_LPM>;
++		};
++
++		vreg_l6c_2p9: ldo6 { // sx 2p96 NC?
++			regulator-min-microvolt = <1800000>;
++			regulator-max-microvolt = <2950000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
++		};
++
++		vreg_l7c_3p0: ldo7 { // sx 3p0 NC?
++			regulator-min-microvolt = <3000000>;
++			regulator-max-microvolt = <3312000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_LPM>;
++		};
++
++		vreg_l8c_1p8: ldo8 { // acpi 1p8 sx -> BRIJ
++			regulator-min-microvolt = <1800000>;
++			regulator-max-microvolt = <1800000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
++		};
++
++		vreg_l9c_2p9: ldo9 { // sx 2p95 NC
++			regulator-min-microvolt = <2952000>;
++			regulator-max-microvolt = <2952000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
++		};
++
++		vreg_l10c_3p3: ldo10 { // acpi 3p304
++			regulator-min-microvolt = <3000000>;
++			regulator-max-microvolt = <3400000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
++		};
++
++		vreg_l11c_3p3: ldo11 {
++			regulator-min-microvolt = <3000000>;
++			regulator-max-microvolt = <3400000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
++		};
++
++		vreg_bob: bob {
++			regulator-min-microvolt = <3008000>;
++			regulator-max-microvolt = <3960000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_AUTO>;
++		};
++	};
++};
++
++&dp_hot_plug_det {
++	pinconf {
++		pins = "gpio117";
++		bias-disable;
++	};
++};
++
++&qup_i2c2_default {
++	pinconf {
++		pins = "gpio15", "gpio16";
++		drive-strength = <16>;
++
++		/* Has external pullup */
++		bias-disable;
++	};
++};
++
++&qup_i2c4_default {
++	pinconf {
++		pins = "gpio115", "gpio116";
++		drive-strength = <16>;
++
++		/* Has external pullup */
++		bias-disable;
++	};
++};
++
++&qup_i2c9_default {
++	pinconf {
++		pins = "gpio46", "gpio47";
++		drive-strength = <16>;
++
++		/* Has external pullup */
++		bias-disable;
++	};
++};
++
++&qup_i2c10_default {
++	pinconf {
++		pins = "gpio86", "gpio87";
++		drive-strength = <16>;
++
++		/* Has external pullup */
++		bias-disable;
++	};
++};
++
++&tlmm {
++	/*
++	 * The TZ seem to protect those because some boards can have
++	 * fingerprint sensor connected to this range. Not connected
++	 * on this board
++	 */
++	gpio-reserved-ranges = <58 5>;
++
++	hid_keyboard_default: hid-keyboard-default {
++		pins = "gpio33";
++		function = "gpio";
++		drive-strength = <2>;
++		bias-disable;
++	};
++
++	bridge_en_default: bridge-en-default {
++		pins = "gpio51";
++		function = "gpio";
++		drive-strength = <16>;
++		bias-disable;
++	};
++
++	ec_int_default: ec-int-default {
++		pins = "gpio30";
++		function = "gpio";
++		drive-strength = <2>;
++		bias-disable;
++	};
++
++	edp_bridge_irq_default: edp-bridge-irq-default {
++		pins = "gpio11";
++		function = "gpio";
++		drive-strength = <2>;
++		bias-pull-down;
++	};
++
++	bridge_suspend_default: bridge-suspend-default {
++		pins = "gpio22";
++		function = "gpio";
++		drive-strength = <16>;
++		bias-pull-up;
++	};
++
++	hid_touchpad_default: hid-touchpad-default {
++		pins = "gpio94";
++		function = "gpio";
++		drive-strength = <2>;
++		bias-disable;
++	};
++
++	reg_edp_1p2_en_default: reg-edp-1p2-en-deault {
++		pins = "gpio19";
++		function = "gpio";
++		drive-strength = <16>;
++		bias-disable;
++	};
++
++	reg_edp_1p8_en_default: reg-edp-1p8-en-deault {
++		pins = "gpio20";
++		function = "gpio";
++		drive-strength = <16>;
++		bias-disable;
++	};
++
++	reg_lcm_en_default: reg-lcm-en-deault {
++		pins = "gpio26";
++		function = "gpio";
++		drive-strength = <16>;
++		bias-disable;
++	};
++
++	reg_audio_en_default: reg-audio-en-deault {
++		pins = "gpio83";
++		function = "gpio";
++		drive-strength = <2>;
++		bias-disable;
++	};
++
++	reg_tp_en_default: reg-tp-en-deault {
++		pins = "gpio25";
++		function = "gpio";
++		drive-strength = <2>;
++		bias-disable;
++	};
++
++	codec_irq_default: codec-irq-deault {
++		pins = "gpio28";
++		function = "gpio";
++		drive-strength = <2>;
++		bias-disable;
++	};
++
++	soc_bkoff_default: soc-bkoff-deault {
++		pins = "gpio10";
++		function = "gpio";
++		drive-strength = <16>;
++		bias-disable;
++	};
++
++	amp_sd_mode_default: amp-sd-mode-deault {
++		pins = "gpio23";
++		function = "gpio";
++		drive-strength = <16>;
++		bias-disable;
++	};
++
++	ter_mi2s_active: ter-mi2s-active {
++		pins = "gpio63", "gpio64", "gpio65";
++		function = "mi2s_2";
++	};
++
++	sdc1_default: sdc1-default {
++		pinconf-clk {
++			pins = "sdc1_clk";
++			bias-disable;
++			drive-strength = <16>;
++		};
++
++		pinconf-cmd {
++			pins = "sdc1_cmd";
++			bias-pull-up;
++			drive-strength = <16>;
++		};
++
++		pinconf-data {
++			pins = "sdc1_data";
++			bias-pull-up;
++			drive-strength = <16>;
++		};
++
++		pinconf-rclk {
++			pins = "sdc1_rclk";
++			bias-pull-down;
++		};
++	};
++
++	sdc1_sleep: sdc1-sleep {
++		pinconf-clk {
++			pins = "sdc1_clk";
++			bias-disable;
++			drive-strength = <2>;
++		};
++
++		pinconf-cmd {
++			pins = "sdc1_cmd";
++			bias-pull-up;
++			drive-strength = <2>;
++		};
++
++		pinconf-data {
++			pins = "sdc1_data";
++			bias-pull-up;
++			drive-strength = <2>;
++		};
++
++		pinconf-rclk {
++			pins = "sdc1_rclk";
++			bias-pull-down;
++		};
++	};
++
++	qup_uart3_sleep: qup-uart3-sleep {
++		pinmux {
++			pins = "gpio38", "gpio39",
++			       "gpio40", "gpio41";
++			function = "gpio";
++		};
++
++		pinconf-cts {
++			/*
++			 * Configure a pull-down on CTS to match the pull of
++			 * the Bluetooth module.
++			 */
++			pins = "gpio38";
++			bias-pull-down;
++		};
++
++		pinconf-rts {
++			/*
++			 * Configure pull-down on RTS. As RTS is active low
++			 * signal, pull it low to indicate the BT SoC that it
++			 * can wakeup the system anytime from suspend state by
++			 * pulling RX low (by sending wakeup bytes).
++			 */
++			 pins = "gpio39";
++			 bias-pull-down;
++		};
++
++		pinconf-tx {
++			/*
++			 * Configure pull-up on TX when it isn't actively driven
++			 * to prevent BT SoC from receiving garbage during sleep.
++			 */
++			pins = "gpio40";
++			bias-pull-up;
++		};
++
++		pinconf-rx {
++			/*
++			 * Configure a pull-up on RX. This is needed to avoid
++			 * garbage data when the TX pin of the Bluetooth module
++			 * is floating which may cause spurious wakeups.
++			 */
++			pins = "gpio41";
++			bias-pull-up;
++		};
++	};
++};
+diff --git a/arch/arm64/boot/dts/qcom/sc7180.dtsi b/arch/arm64/boot/dts/qcom/sc7180.dtsi
+index 5dcaac23a13816..79e0eb3ed7379a 100644
+--- a/arch/arm64/boot/dts/qcom/sc7180.dtsi
++++ b/arch/arm64/boot/dts/qcom/sc7180.dtsi
+@@ -10,6 +10,8 @@
+ #include <dt-bindings/clock/qcom,gpucc-sc7180.h>
+ #include <dt-bindings/clock/qcom,lpasscorecc-sc7180.h>
+ #include <dt-bindings/clock/qcom,rpmh.h>
++#include <dt-bindings/clock/qcom,sm8250-lpass-aoncc.h>
++#include <dt-bindings/clock/qcom,sm8250-lpass-audiocc.h>
+ #include <dt-bindings/clock/qcom,videocc-sc7180.h>
+ #include <dt-bindings/interconnect/qcom,osm-l3.h>
+ #include <dt-bindings/interconnect/qcom,sc7180.h>
+@@ -19,6 +21,8 @@
+ #include <dt-bindings/reset/qcom,sdm845-aoss.h>
+ #include <dt-bindings/reset/qcom,sdm845-pdc.h>
+ #include <dt-bindings/soc/qcom,rpmh-rsc.h>
++#include <dt-bindings/soc/qcom,apr.h>
++#include <dt-bindings/sound/qcom,q6afe.h>
+ #include <dt-bindings/thermal/thermal.h>
+ 
+ / {
+@@ -2578,6 +2582,154 @@
+ 			};
+ 		};
+ 
++		remoteproc_adsp: remoteproc@62400000 {
++			compatible = "qcom,sc7180-adsp-pas";
++			reg = <0 0x62400000 0 0x100>;
++
++			interrupts-extended = <&intc GIC_SPI 162 IRQ_TYPE_EDGE_RISING>,
++						<&adsp_smp2p_in 0 IRQ_TYPE_EDGE_RISING>,
++						<&adsp_smp2p_in 1 IRQ_TYPE_EDGE_RISING>,
++						<&adsp_smp2p_in 2 IRQ_TYPE_EDGE_RISING>,
++						<&adsp_smp2p_in 3 IRQ_TYPE_EDGE_RISING>;
++			interrupt-names = "wdog", "fatal", "ready",
++						"handover", "stop-ack";
++
++			clocks = <&rpmhcc RPMH_CXO_CLK>;
++			clock-names = "xo";
++
++			power-domains = <&rpmhpd SC7180_LCX>,
++					<&rpmhpd SC7180_LMX>;
++			power-domain-names = "lcx", "lmx";
++
++			qcom,qmp = <&aoss_qmp>;
++
++			qcom,smem-states = <&adsp_smp2p_out 0>;
++			qcom,smem-state-names = "stop";
++
++			status = "disabled";
++
++			glink-edge {
++				interrupts = <GIC_SPI 156 IRQ_TYPE_EDGE_RISING>;
++				label = "lpass";
++				qcom,remote-pid = <2>;
++				mboxes = <&apss_shared 8>;
++
++				apr {
++					compatible = "qcom,apr-v2";
++					qcom,glink-channels = "apr_audio_svc";
++					qcom,apr-domain = <APR_DOMAIN_ADSP>;
++					#address-cells = <1>;
++					#size-cells = <0>;
++
++					apr-service@3 {
++						reg = <APR_SVC_ADSP_CORE>;
++						compatible = "qcom,q6core";
++						qcom,protection-domain = "avs/audio", "msm/adsp/audio_pd";
++					};
++
++					q6afe: apr-service@4 {
++						compatible = "qcom,q6afe";
++						reg = <APR_SVC_AFE>;
++						qcom,protection-domain = "avs/audio", "msm/adsp/audio_pd";
++						q6afedai: dais {
++							compatible = "qcom,q6afe-dais";
++							#address-cells = <1>;
++							#size-cells = <0>;
++							#sound-dai-cells = <1>;
++						};
++
++						q6afecc: cc {
++							compatible = "qcom,q6afe-clocks";
++							#clock-cells = <2>;
++						};
++					};
++
++					q6asm: apr-service@7 {
++						compatible = "qcom,q6asm";
++						reg = <APR_SVC_ASM>;
++						qcom,protection-domain = "avs/audio", "msm/adsp/audio_pd";
++						q6asmdai: dais {
++							compatible = "qcom,q6asm-dais";
++							#address-cells = <1>;
++							#size-cells = <0>;
++							#sound-dai-cells = <1>;
++							iommus = <&apps_smmu 0x1001 0x0>;
++						};
++					};
++
++					q6adm: apr-service@8 {
++						compatible = "qcom,q6adm";
++						reg = <APR_SVC_ADM>;
++						qcom,protection-domain = "avs/audio", "msm/adsp/audio_pd";
++						q6routing: routing {
++							compatible = "qcom,q6adm-routing";
++							#sound-dai-cells = <0>;
++						};
++					};
++				};
++
++				fastrpc {
++					compatible = "qcom,fastrpc";
++					qcom,glink-channels = "fastrpcglink-apps-dsp";
++					label = "adsp";
++					#address-cells = <1>;
++					#size-cells = <0>;
++
++					compute-cb@3 {
++						compatible = "qcom,fastrpc-compute-cb";
++						reg = <3>;
++						iommus = <&apps_smmu 0x1003 0x0>;
++					};
++
++					compute-cb@4 {
++						compatible = "qcom,fastrpc-compute-cb";
++						reg = <4>;
++						iommus = <&apps_smmu 0x1004 0x0>;
++					};
++
++					compute-cb@5 {
++						compatible = "qcom,fastrpc-compute-cb";
++						reg = <5>;
++						iommus = <&apps_smmu 0x1005 0x0>;
++						qcom,nsessions = <5>;
++					};
++				};
++			};
++		};
++
++		audiocc: clock-controller@62700000 {
++			compatible = "qcom,sm8250-lpass-audiocc";
++			reg = <0 0x62700000 0 0x30000>;
++			#clock-cells = <1>;
++			clocks = <&q6afecc LPASS_HW_MACRO_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
++				<&q6afecc LPASS_HW_DCODEC_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
++				<&q6afecc LPASS_CLK_ID_TX_CORE_MCLK LPASS_CLK_ATTRIBUTE_COUPLE_NO>;
++			clock-names = "core", "audio", "bus";
++		};
++
++		aoncc: clock-controller@62780000 {
++			compatible = "qcom,sm8250-lpass-aoncc";
++			reg = <0 0x62780000 0 0x40000>;
++			#clock-cells = <1>;
++			clocks = <&q6afecc LPASS_HW_MACRO_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
++				<&q6afecc LPASS_HW_DCODEC_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
++				<&q6afecc LPASS_CLK_ID_TX_CORE_NPL_MCLK LPASS_CLK_ATTRIBUTE_COUPLE_NO>;
++			clock-names = "core", "audio", "bus";
++		};
++
++		lpass_tlmm: pinctrl@627c0000 {
++			compatible = "qcom,sc7280-lpass-lpi-pinctrl";
++			reg = <0 0x627c0000 0x0 0x20000>,
++				<0 0x62950000 0x0 0x10000>;
++			gpio-controller;
++			#gpio-cells = <2>;
++			gpio-ranges = <&lpass_tlmm 0 0 15>;
++
++			clocks = <&q6afecc LPASS_HW_MACRO_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
++				<&q6afecc LPASS_HW_DCODEC_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>;
++			clock-names = "core", "audio";
++		};
++
+ 		sdhc_2: sdhci@8804000 {
+ 			compatible = "qcom,sc7180-sdhci", "qcom,sdhci-msm-v5";
+ 			reg = <0 0x08804000 0 0x1000>;
+diff --git a/drivers/gpu/drm/msm/dp/dp_display.c b/drivers/gpu/drm/msm/dp/dp_display.c
+index 239c8e3f2fbdc8..78580fc3aa881a 100644
+--- a/drivers/gpu/drm/msm/dp/dp_display.c
++++ b/drivers/gpu/drm/msm/dp/dp_display.c
+@@ -1308,6 +1308,7 @@ static int dp_display_probe(struct platform_device *pdev)
+ 	if (!desc)
+ 		return -EINVAL;
+ 
++	dp->dp_display.dev = &pdev->dev;
+ 	dp->pdev = pdev;
+ 	dp->name = "drm_dp";
+ 	dp->dp_display.connector_type = desc->connector_type;
+@@ -1624,8 +1625,6 @@ int msm_dp_modeset_init(struct msm_dp *dp_display, struct drm_device *dev,
+ 		return ret;
+ 	}
+ 
+-	dp_display->encoder = encoder;
+-
+ 	ret = dp_display_get_next_bridge(dp_display);
+ 	if (ret)
+ 		return ret;
+@@ -1641,7 +1640,7 @@ int msm_dp_modeset_init(struct msm_dp *dp_display, struct drm_device *dev,
+ 
+ 	priv->bridges[priv->num_bridges++] = dp_display->bridge;
+ 
+-	dp_display->connector = dp_drm_connector_init(dp_display);
++	dp_display->connector = dp_drm_connector_init(dp_display, encoder);
+ 	if (IS_ERR(dp_display->connector)) {
+ 		ret = PTR_ERR(dp_display->connector);
+ 		DRM_DEV_ERROR(dev->dev,
+@@ -1796,3 +1795,26 @@ void dp_bridge_mode_set(struct drm_bridge *drm_bridge,
+ 	dp_display->dp_mode.h_active_low =
+ 		!!(dp_display->dp_mode.drm_mode.flags & DRM_MODE_FLAG_NHSYNC);
+ }
++
++void dp_bridge_hpd_notify(struct drm_bridge *bridge,
++			  enum drm_connector_status status)
++{
++	struct msm_dp_bridge *dp_bridge = to_dp_bridge(bridge);
++	struct msm_dp *dp_display = dp_bridge->dp_display;
++	struct dp_display_private *dp = container_of(dp_display, struct dp_display_private, dp_display);
++
++	/* Without next_bridge interrupts are handled by the DP core directly */
++	if (!dp_display->next_bridge)
++		return;
++
++	if (!dp->core_initialized) {
++		drm_dbg_dp(dp->drm_dev, "not initialized\n");
++		return;
++	}
++
++	if (!dp_display->is_connected && status == connector_status_connected) {
++		dp_add_event(dp, EV_HPD_PLUG_INT, 0, 0);
++	} else if (dp_display->is_connected && status == connector_status_disconnected) {
++		dp_add_event(dp, EV_HPD_UNPLUG_INT, 0, 0);
++	}
++}
+diff --git a/drivers/gpu/drm/msm/dp/dp_display.h b/drivers/gpu/drm/msm/dp/dp_display.h
+index 4f9fe4d7610b35..d7bc537ead31ea 100644
+--- a/drivers/gpu/drm/msm/dp/dp_display.h
++++ b/drivers/gpu/drm/msm/dp/dp_display.h
+@@ -11,11 +11,11 @@
+ #include "disp/msm_disp_snapshot.h"
+ 
+ struct msm_dp {
++	struct device *dev;
+ 	struct drm_device *drm_dev;
+ 	struct device *codec_dev;
+ 	struct drm_bridge *bridge;
+ 	struct drm_connector *connector;
+-	struct drm_encoder *encoder;
+ 	struct drm_bridge *next_bridge;
+ 	bool is_connected;
+ 	bool audio_enabled;
+diff --git a/drivers/gpu/drm/msm/dp/dp_drm.c b/drivers/gpu/drm/msm/dp/dp_drm.c
+index 62d58b9c46472e..6aa19642c85682 100644
+--- a/drivers/gpu/drm/msm/dp/dp_drm.c
++++ b/drivers/gpu/drm/msm/dp/dp_drm.c
+@@ -31,6 +31,24 @@ static enum drm_connector_status dp_bridge_detect(struct drm_bridge *bridge)
+ 					connector_status_disconnected;
+ }
+ 
++static int dp_bridge_atomic_check(struct drm_bridge *bridge,
++			    struct drm_bridge_state *bridge_state,
++			    struct drm_crtc_state *crtc_state,
++			    struct drm_connector_state *conn_state)
++{
++	struct msm_dp *dp;
++
++	dp = to_dp_bridge(bridge)->dp_display;
++
++	drm_dbg_dp(dp->drm_dev, "is_connected = %s\n",
++		(dp->is_connected) ? "true" : "false");
++
++	if (bridge->ops & DRM_BRIDGE_OP_HPD)
++		return (dp->is_connected) ? 0 : -ENOTCONN;
++
++	return 0;
++}
++
+ /**
+  * dp_bridge_get_modes - callback to add drm modes via drm_mode_probed_add()
+  * @bridge: Poiner to drm bridge
+@@ -61,6 +79,9 @@ static int dp_bridge_get_modes(struct drm_bridge *bridge, struct drm_connector *
+ }
+ 
+ static const struct drm_bridge_funcs dp_bridge_ops = {
++	.atomic_duplicate_state = drm_atomic_helper_bridge_duplicate_state,
++	.atomic_destroy_state   = drm_atomic_helper_bridge_destroy_state,
++	.atomic_reset           = drm_atomic_helper_bridge_reset,
+ 	.enable       = dp_bridge_enable,
+ 	.disable      = dp_bridge_disable,
+ 	.post_disable = dp_bridge_post_disable,
+@@ -68,6 +89,8 @@ static const struct drm_bridge_funcs dp_bridge_ops = {
+ 	.mode_valid   = dp_bridge_mode_valid,
+ 	.get_modes    = dp_bridge_get_modes,
+ 	.detect       = dp_bridge_detect,
++	.hpd_notify   = dp_bridge_hpd_notify,
++	.atomic_check = dp_bridge_atomic_check,
+ };
+ 
+ struct drm_bridge *dp_bridge_init(struct msm_dp *dp_display, struct drm_device *dev,
+@@ -116,7 +139,7 @@ struct drm_bridge *dp_bridge_init(struct msm_dp *dp_display, struct drm_device *
+ 	}
+ 
+ 	if (dp_display->next_bridge) {
+-		rc = drm_bridge_attach(dp_display->encoder,
++		rc = drm_bridge_attach(encoder,
+ 					dp_display->next_bridge, bridge,
+ 					DRM_BRIDGE_ATTACH_NO_CONNECTOR);
+ 		if (rc < 0) {
+@@ -130,15 +153,17 @@ struct drm_bridge *dp_bridge_init(struct msm_dp *dp_display, struct drm_device *
+ }
+ 
+ /* connector initialization */
+-struct drm_connector *dp_drm_connector_init(struct msm_dp *dp_display)
++struct drm_connector *dp_drm_connector_init(struct msm_dp *dp_display, struct drm_encoder *encoder)
+ {
+ 	struct drm_connector *connector = NULL;
+ 
+-	connector = drm_bridge_connector_init(dp_display->drm_dev, dp_display->encoder);
++	connector = drm_bridge_connector_init(dp_display->drm_dev, encoder);
+ 	if (IS_ERR(connector))
+ 		return connector;
+ 
+-	drm_connector_attach_encoder(connector, dp_display->encoder);
++	connector->fwnode = fwnode_handle_get(dev_fwnode(dp_display->dev));
++
++	drm_connector_attach_encoder(connector, encoder);
+ 
+ 	return connector;
+ }
+diff --git a/drivers/gpu/drm/msm/dp/dp_drm.h b/drivers/gpu/drm/msm/dp/dp_drm.h
+index f4b1ed1e24f7b4..79e6b2cf2d250d 100644
+--- a/drivers/gpu/drm/msm/dp/dp_drm.h
++++ b/drivers/gpu/drm/msm/dp/dp_drm.h
+@@ -19,7 +19,7 @@ struct msm_dp_bridge {
+ 
+ #define to_dp_bridge(x)     container_of((x), struct msm_dp_bridge, bridge)
+ 
+-struct drm_connector *dp_drm_connector_init(struct msm_dp *dp_display);
++struct drm_connector *dp_drm_connector_init(struct msm_dp *dp_display, struct drm_encoder *encoder);
+ struct drm_bridge *dp_bridge_init(struct msm_dp *dp_display, struct drm_device *dev,
+ 			struct drm_encoder *encoder);
+ 
+@@ -32,5 +32,7 @@ enum drm_mode_status dp_bridge_mode_valid(struct drm_bridge *bridge,
+ void dp_bridge_mode_set(struct drm_bridge *drm_bridge,
+ 			const struct drm_display_mode *mode,
+ 			const struct drm_display_mode *adjusted_mode);
++void dp_bridge_hpd_notify(struct drm_bridge *bridge,
++			  enum drm_connector_status status);
+ 
+ #endif /* _DP_DRM_H_ */
+diff --git a/drivers/gpu/drm/panel/panel-edp.c b/drivers/gpu/drm/panel/panel-edp.c
+index a189982601a48a..4564e5ecefeac5 100644
+--- a/drivers/gpu/drm/panel/panel-edp.c
++++ b/drivers/gpu/drm/panel/panel-edp.c
+@@ -1856,6 +1856,7 @@ static const struct edp_panel_entry edp_panels[] = {
+ 	EDP_PANEL_ENTRY('B', 'O', 'E', 0x0a5d, &delay_200_500_e50, "NV116WHM-N45"),
+ 
+ 	EDP_PANEL_ENTRY('C', 'M', 'N', 0x114c, &innolux_n116bca_ea1.delay, "N116BCA-EA1"),
++	EDP_PANEL_ENTRY('C', 'M', 'N', 0x14d4, &delay_200_500_e80_d50, "N140HCA-EAC"),
+ 
+ 	EDP_PANEL_ENTRY('K', 'D', 'B', 0x0624, &kingdisplay_kd116n21_30nv_a010.delay, "116N21-30NV-A010"),
+ 	EDP_PANEL_ENTRY('K', 'D', 'B', 0x1120, &delay_200_500_e80_d50, "116N29-30NK-C007"),
+diff --git a/drivers/power/supply/Kconfig b/drivers/power/supply/Kconfig
+index 1aa8323ad9f6a0..397a7409f218be 100644
+--- a/drivers/power/supply/Kconfig
++++ b/drivers/power/supply/Kconfig
+@@ -897,4 +897,11 @@ config BATTERY_UG3105
+ 	  device is off or suspended, the functionality of this driver is
+ 	  limited to reporting capacity only.
+ 
++config ACER_ASPIRE_BATTERY
++	tristate "Aspire1 Battery Fuel Gauge"
++	depends on I2C
++	depends on DRM
++	help
++	  Of course!
++
+ endif # POWER_SUPPLY
+diff --git a/drivers/power/supply/Makefile b/drivers/power/supply/Makefile
+index 7f02f36aea55d8..8faf03a3052c04 100644
+--- a/drivers/power/supply/Makefile
++++ b/drivers/power/supply/Makefile
+@@ -108,3 +108,4 @@ obj-$(CONFIG_BATTERY_ACER_A500)	+= acer_a500_battery.o
+ obj-$(CONFIG_BATTERY_SURFACE)	+= surface_battery.o
+ obj-$(CONFIG_CHARGER_SURFACE)	+= surface_charger.o
+ obj-$(CONFIG_BATTERY_UG3105)	+= ug3105_battery.o
++obj-$(CONFIG_ACER_ASPIRE_BATTERY) += aspire-ec-battery.o
+diff --git a/drivers/power/supply/aspire-ec-battery.c b/drivers/power/supply/aspire-ec-battery.c
+new file mode 100644
+index 00000000000000..6f83b74562eb14
+--- /dev/null
++++ b/drivers/power/supply/aspire-ec-battery.c
+@@ -0,0 +1,398 @@
++// SPDX-License-Identifier: GPL-2.0-only
++
++#include <linux/module.h>
++#include <linux/platform_device.h>
++#include <linux/power_supply.h>
++#include <linux/i2c.h>
++#include <linux/input.h>
++
++#include <linux/usb/typec_mux.h>
++#include <drm/drm_bridge.h>
++
++#define ACER_FG_STATIC  0x08
++#define ACER_FG_DYNAMIC 0x07
++
++#define ACER_FG_FLAG_PRESENT		BIT(0)
++#define ACER_FG_FLAG_FULL		BIT(1)
++#define ACER_FG_FLAG_DISCHARGING	BIT(2)
++#define ACER_FG_FLAG_CHARGING		BIT(3)
++
++struct aspire_battery {
++	struct i2c_client	*client;
++	struct power_supply	*psy;
++	//struct input_dev	*idev;
++
++	bool bridge_configured;
++	struct drm_bridge bridge;
++};
++
++struct fg_static_data {
++	u8 unk1;
++	u8 flags;
++	__le16 unk2;
++	__le16 voltage_design;
++	__le16 capacity_full;
++	__le16 unk3;
++	__le16 serial;
++	u8 model_id;
++	u8 vendor_id;
++};
++
++struct fg_dynamic_data {
++	u8 unk1;
++	u8 flags;
++	u8 unk2;
++	__be16 capacity_now;
++	__be16 voltage_now;
++	__be16 current_now;
++	__be16 unk3;
++	__be16 unk4;
++};
++
++static int acpi_gsb_i2c_read_bytes(struct i2c_client *client,
++		u8 cmd, u8 *data, u8 data_len)
++{
++
++	struct i2c_msg msgs[2];
++	int ret;
++	u8 *buffer;
++
++	buffer = kzalloc(data_len, GFP_KERNEL);
++	if (!buffer)
++		return -ENOMEM;
++
++	msgs[0].addr = client->addr;
++	msgs[0].flags = client->flags;
++	msgs[0].len = 1;
++	msgs[0].buf = &cmd;
++
++	msgs[1].addr = client->addr;
++	msgs[1].flags = client->flags | I2C_M_RD;
++	msgs[1].len = data_len;
++	msgs[1].buf = buffer;
++
++	ret = i2c_transfer(client->adapter, msgs, ARRAY_SIZE(msgs));
++	if (ret < 0)
++		dev_err(&client->adapter->dev, "i2c read failed\n");
++	else
++		memcpy(data, buffer, data_len);
++
++	kfree(buffer);
++	return ret;
++}
++
++static int acpi_gsb_i2c_write_bytes(struct i2c_client *client,
++		u8 cmd, u8 *data, u8 data_len)
++{
++
++	struct i2c_msg msgs[1];
++	u8 *buffer;
++	int ret = AE_OK;
++
++	buffer = kzalloc(data_len + 1, GFP_KERNEL);
++	if (!buffer)
++		return AE_NO_MEMORY;
++
++	buffer[0] = cmd;
++	memcpy(buffer + 1, data, data_len);
++
++	msgs[0].addr = client->addr;
++	msgs[0].flags = client->flags;
++	msgs[0].len = data_len + 1;
++	msgs[0].buf = buffer;
++
++	ret = i2c_transfer(client->adapter, msgs, ARRAY_SIZE(msgs));
++
++	kfree(buffer);
++
++	if (ret < 0) {
++		dev_err(&client->adapter->dev, "i2c write failed: %d\n", ret);
++		return ret;
++	}
++
++	/* 1 transfer must have completed successfully */
++	return (ret == 1) ? 0 : -EIO;
++}
++
++static int aspire_battery_get_property(struct power_supply *psy,
++		enum power_supply_property psp,
++		union power_supply_propval *val)
++{
++	struct aspire_battery *battery = power_supply_get_drvdata(psy);
++	struct fg_static_data sdat = {};
++	struct fg_dynamic_data ddat = {};
++
++	acpi_gsb_i2c_read_bytes(battery->client, ACER_FG_STATIC, (u8*)&sdat, sizeof(sdat));
++	acpi_gsb_i2c_read_bytes(battery->client, ACER_FG_DYNAMIC, (u8*)&ddat, sizeof(ddat));
++
++	switch (psp) {
++	case POWER_SUPPLY_PROP_STATUS:
++		val->intval = POWER_SUPPLY_STATUS_UNKNOWN;
++		if (ddat.flags & ACER_FG_FLAG_CHARGING)
++			val->intval = POWER_SUPPLY_STATUS_CHARGING;
++		else if (ddat.flags & ACER_FG_FLAG_DISCHARGING)
++			val->intval = POWER_SUPPLY_STATUS_DISCHARGING;
++		else if (ddat.flags & ACER_FG_FLAG_FULL)
++			val->intval = POWER_SUPPLY_STATUS_FULL;
++		break;
++
++	case POWER_SUPPLY_PROP_VOLTAGE_NOW:
++		val->intval = be16_to_cpu(ddat.voltage_now) * 1000;
++		break;
++
++	case POWER_SUPPLY_PROP_VOLTAGE_MAX_DESIGN:
++		val->intval = le16_to_cpu(sdat.voltage_design) * 1000;
++		break;
++
++	case POWER_SUPPLY_PROP_CHARGE_NOW:
++		val->intval = be16_to_cpu(ddat.capacity_now) * 1000;
++		break;
++
++	case POWER_SUPPLY_PROP_CHARGE_FULL:
++		val->intval = le16_to_cpu(sdat.capacity_full) * 1000;
++		break;
++
++	case POWER_SUPPLY_PROP_CAPACITY:
++		val->intval = be16_to_cpu(ddat.capacity_now) * 100 / le16_to_cpu(sdat.capacity_full);
++		break;
++	case POWER_SUPPLY_PROP_PRESENT:
++		val->intval = 1;
++		break;
++
++	default:
++		return -EINVAL;
++	}
++	return 0;
++}
++
++static enum power_supply_property aspire_battery_props[] = {
++	POWER_SUPPLY_PROP_STATUS,
++	POWER_SUPPLY_PROP_VOLTAGE_NOW,
++	POWER_SUPPLY_PROP_VOLTAGE_MAX_DESIGN,
++	POWER_SUPPLY_PROP_CHARGE_NOW,
++	POWER_SUPPLY_PROP_CHARGE_FULL,
++	POWER_SUPPLY_PROP_CAPACITY,
++	POWER_SUPPLY_PROP_PRESENT,
++};
++
++static const struct power_supply_desc aspire_battery_desc = {
++	.name		= "aspire-battery",
++	.type		= POWER_SUPPLY_TYPE_BATTERY,
++	.get_property	= aspire_battery_get_property,
++	.properties	= aspire_battery_props,
++	.num_properties	= ARRAY_SIZE(aspire_battery_props),
++};
++
++static int aspire_battery_ram_read(struct i2c_client *client,
++		u8 off, u8 *data, u8 data_len)
++{
++	u8 tmp[1] = {off};
++	/* set addr */
++	acpi_gsb_i2c_write_bytes(client, 0x20, tmp, sizeof(tmp));
++	/* read bytes out */
++	acpi_gsb_i2c_read_bytes(client, 0x20, data, data_len);
++	return 0;
++}
++
++static int aspire_battery_ram_write(struct i2c_client *client,
++		u8 off, u8 data)
++{
++	u8 tmp[2] = {off, data};
++	/* set addr */
++	acpi_gsb_i2c_write_bytes(client, 0x21, tmp, sizeof(tmp));
++	return 0;
++}
++
++static irqreturn_t aspire_battery_irq_handler(int irq, void *aspire_handler)
++{
++	struct aspire_battery *battery = aspire_handler;
++	u8 status = 0;
++
++	acpi_gsb_i2c_read_bytes(battery->client, 0x05, &status, sizeof(status));
++
++	switch (status) {
++		case 0x0:
++			break;
++		case 0x20:
++			/*
++			 * here acpi responds to the event and clears some bit or smh
++			 * Notify (\_SB.I2C3.BAT1, 0x81) // Information Change
++			 * Notify (\_SB.I2C3.ADP1, 0x80) // Status Change
++			 */
++			/*
++			aspire_battery_ram_read(battery->client, 0x19, &status, sizeof(status));
++			dev_info(&battery->client->dev, "charger irq id=0x20 val=0x%x\n", status);
++			aspire_battery_ram_write(battery->client, 0x19, status & 0xbf, sizeof(status));
++			power_supply_changed(battery->psy);
++			*/
++			break;
++		case 0x9b: /* close */
++			/* Notify (\_SB.LID0, 0x80) // Status Change */
++			//input_report_switch(battery->idev, SW_LID, 1);
++			//input_sync(battery->idev);
++			//dev_info(&battery->client->dev, "lid cl irq id=0x%x\n", status);
++			break;
++		case 0x9c: /* open */
++			/* Notify (\_SB.LID0, 0x80) // Status Change */
++			//input_report_switch(battery->idev, SW_LID, 0);
++			//input_sync(battery->idev);
++			//pm_wakeup_event(&battery->client->dev, 0);
++			//dev_info(&battery->client->dev, "lid op irq id=0x%x\n", status);
++			break;
++		case 0x85:
++			/* Notify (\_SB.I2C3.BAT1, 0x81) // Information Change */
++		case 0xc6:
++			/* Notify (\_SB.I2C3.BAT1, 0x80) // Status Change */
++			//dev_info(&battery->client->dev, "bat irq id=0x%x\n", status);
++			power_supply_changed(battery->psy);
++			break;
++		case 0xa3:
++			dev_info(&battery->client->dev, "hpd dis irq id=0x%x\n", status);
++			if (battery->bridge_configured)
++				drm_bridge_hpd_notify(&battery->bridge, connector_status_disconnected);
++			break;
++		case 0xa4:
++			dev_info(&battery->client->dev, "hpd con irq id=0x%x\n", status);
++			if (battery->bridge_configured)
++				drm_bridge_hpd_notify(&battery->bridge, connector_status_connected);
++			break;
++		default:
++			dev_warn(&battery->client->dev, "unknown irq id=0x%x\n", status);
++	}
++
++	return IRQ_HANDLED;
++}
++
++static int yoga_c630_ec_attach(struct drm_bridge *bridge,
++			    enum drm_bridge_attach_flags flags)
++{
++	return flags & DRM_BRIDGE_ATTACH_NO_CONNECTOR ? 0 : -EINVAL;
++}
++
++static const struct drm_bridge_funcs yoga_c630_ec_bridge_funcs = {
++	.attach = yoga_c630_ec_attach,
++};
++
++static int aspire_battery_probe(struct i2c_client *client,
++		const struct i2c_device_id *id)
++{
++	struct power_supply_config psy_cfg = {};
++	struct device *dev = &client->dev;
++	struct aspire_battery *battery;
++	struct fwnode_handle *fwnode;
++	u8 tmp;
++	u32 port;
++	int ret;
++
++	battery = devm_kzalloc(&client->dev, sizeof(*battery), GFP_KERNEL);
++	if (!battery)
++		return -ENOMEM;
++
++	battery->client = client;
++
++	i2c_set_clientdata(client, battery);
++	psy_cfg.drv_data = battery;
++
++	/* batery status reports */
++	battery->psy = power_supply_register(&client->dev,
++					     &aspire_battery_desc, &psy_cfg);
++	if (IS_ERR(battery->psy)) {
++		dev_err(&client->dev, "Failed to register power supply\n");
++		return PTR_ERR(battery->psy);
++	}
++
++	/* Lid switch */
++	//battery->idev = devm_input_allocate_device(&client->dev);
++	//if (!battery->idev)
++	//	return -ENOMEM;
++
++	//battery->idev->name = "aspire-ec";
++	//battery->idev->phys = "aspire-ec/input0";
++	//input_set_capability(battery->idev, EV_SW, SW_LID);
++
++	//ret = input_register_device(battery->idev);
++	//if (ret) {
++	//	dev_err(&client->dev, "Input register failed: %d\n", ret);
++	//	return ret;
++	//}
++
++	//device_init_wakeup(&client->dev, true);
++
++	/* Also enable the keyboard fn keys */
++	aspire_battery_ram_write(client, 0x43, 0x61);
++
++	/* Prepare for external display attach reports */
++	device_for_each_child_node(dev, fwnode) {
++		ret = fwnode_property_read_u32(fwnode, "reg", &port);
++		if (ret < 0)
++			continue;
++
++		if (port != 0)
++			continue;
++
++		battery->bridge.funcs = &yoga_c630_ec_bridge_funcs;
++		battery->bridge.of_node = to_of_node(fwnode);
++		battery->bridge.ops = DRM_BRIDGE_OP_HPD;
++		battery->bridge.type = DRM_MODE_CONNECTOR_USB;
++
++		/*ret = devm_*/drm_bridge_add(/*dev, */&battery->bridge);
++		if (ret) {
++			dev_err(dev, "failed to register drm bridge\n");
++			fwnode_handle_put(fwnode);
++			return ret;
++		}
++
++		battery->bridge_configured = true;
++
++		/* Report initial state */
++		ret = aspire_battery_ram_read(client, 0xf4, &tmp, sizeof(tmp));
++		if (tmp == 0x03)
++			drm_bridge_hpd_notify(&battery->bridge, connector_status_connected);
++	}
++
++	ret = devm_request_threaded_irq(&client->dev, client->irq, NULL,
++					aspire_battery_irq_handler, IRQF_ONESHOT,
++					dev_name(&client->dev), battery);
++	if (ret) {
++		dev_err(&client->dev, "Failed to request irq: %d\n", ret);
++	}
++
++	return 0;
++}
++
++static int aspire_battery_remove(struct i2c_client *client)
++{
++	struct aspire_battery *battery = i2c_get_clientdata(client);
++
++	drm_bridge_remove(&battery->bridge);
++	power_supply_unregister(battery->psy);
++
++	return 0;
++}
++
++static const struct i2c_device_id aspire_battery_id[] = {
++	{ "aspire1-battery", },
++	{ }
++};
++MODULE_DEVICE_TABLE(i2c, aspire_battery_id);
++
++static const struct of_device_id aspire_battery_of_match[] = {
++	{ .compatible = "acer,aspire1-battery", },
++	{ }
++};
++MODULE_DEVICE_TABLE(of, aspire_battery_of_match);
++
++static struct i2c_driver aspire_battery_driver = {
++	.driver = {
++		.name = "aspire-battery",
++		.of_match_table = aspire_battery_of_match,
++	},
++	.probe = aspire_battery_probe,
++	.remove = aspire_battery_remove,
++	.id_table = aspire_battery_id,
++};
++module_i2c_driver(aspire_battery_driver);
++
++MODULE_DESCRIPTION("Some other fuel gauge driver");
++MODULE_AUTHOR("Nikita Travkin <nikita@trvn.ru>");
++MODULE_LICENSE("GPL");
+diff --git a/drivers/remoteproc/qcom_q6v5_pas.c b/drivers/remoteproc/qcom_q6v5_pas.c
+index 6ae39c5653b1c3..cf11569547b6c9 100644
+--- a/drivers/remoteproc/qcom_q6v5_pas.c
++++ b/drivers/remoteproc/qcom_q6v5_pas.c
+@@ -887,6 +887,7 @@ static const struct of_device_id adsp_of_match[] = {
+ 	{ .compatible = "qcom,qcs404-adsp-pas", .data = &adsp_resource_init },
+ 	{ .compatible = "qcom,qcs404-cdsp-pas", .data = &cdsp_resource_init },
+ 	{ .compatible = "qcom,qcs404-wcss-pas", .data = &wcss_resource_init },
++	{ .compatible = "qcom,sc7180-adsp-pas", .data = &sm8250_adsp_resource},
+ 	{ .compatible = "qcom,sc7180-mpss-pas", .data = &mpss_resource_init},
+ 	{ .compatible = "qcom,sc7280-mpss-pas", .data = &mpss_resource_init},
+ 	{ .compatible = "qcom,sc8180x-adsp-pas", .data = &sm8150_adsp_resource},
+diff --git a/sound/soc/qcom/sm8250.c b/sound/soc/qcom/sm8250.c
+index 6e1184c8b672a6..10025b2bd4171a 100644
+--- a/sound/soc/qcom/sm8250.c
++++ b/sound/soc/qcom/sm8250.c
+@@ -103,6 +103,14 @@ static int sm8250_snd_startup(struct snd_pcm_substream *substream)
+ 	struct snd_soc_dai *codec_dai = asoc_rtd_to_codec(rtd, 0);
+ 
+ 	switch (cpu_dai->id) {
++	case PRIMARY_MI2S_RX:
++		codec_dai_fmt |= SND_SOC_DAIFMT_NB_NF | SND_SOC_DAIFMT_I2S;
++		snd_soc_dai_set_sysclk(cpu_dai,
++			Q6AFE_LPASS_CLK_ID_PRI_MI2S_IBIT,
++			MI2S_BCLK_RATE, SNDRV_PCM_STREAM_PLAYBACK);
++		snd_soc_dai_set_fmt(cpu_dai, fmt);
++		snd_soc_dai_set_fmt(codec_dai, codec_dai_fmt);
++		break;
+ 	case TERTIARY_MI2S_RX:
+ 		codec_dai_fmt |= SND_SOC_DAIFMT_NB_NF | SND_SOC_DAIFMT_I2S;
+ 		snd_soc_dai_set_sysclk(cpu_dai,
