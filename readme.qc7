@@ -19,16 +19,11 @@ for i in /compile/doc/stable-qc/misc.qc7/patches/v6.1/*.patch; do
   echo === $i
   patch -p1 < $i
 done
-
 # copy the samsung galaxy book go and acer aspire 1 dts into the tree
-cp /compile/doc/stable-qc/misc.qc7/misc/sc7180-acer-aspire1.dts arch/arm64/boot/dts/qcom
-cp /compile/doc/stable-qc/misc.qc7/misc/sc7180-samsung-galaxy-book-go.dts arch/arm64/boot/dts/qcom
-
-# apply the multi gen lru kernel extra patches - not needed for initial bringup, neither for v6.1
-#for i in /compile/doc/kernel-extra-patches/multi-gen-lru/v15/*.diff; do
-#  echo === $i
-#  patch -p1 < $i
-#done
+cp -v /compile/doc/stable-qc/misc.qc7/misc/sc7180-acer-aspire1.dts arch/arm64/boot/dts/qcom
+cp -v /compile/doc/stable-qc/misc.qc7/misc/sc7180-samsung-galaxy-book-go.dts arch/arm64/boot/dts/qcom
+# copy the aspire 1 battery hack into the tree
+cp -v /compile/doc/stable-qc/misc.qc7/misc/aspire-ec-battery.c drivers/power/supply
 
 export ARCH=arm64
 scripts/kconfig/merge_config.sh -m arch/arm64/configs/defconfig /compile/doc/kernel-config-options/docker-options.cfg /compile/doc/kernel-config-options/options-to-remove-generic.cfg /compile/doc/stable-qc/misc.qc7/options/options-to-remove-special.cfg /compile/doc/kernel-config-options/additional-options-generic.cfg /compile/doc/kernel-config-options/additional-options-aarch64.cfg /compile/doc/stable-qc/misc.qc7/options/additional-options-special.cfg

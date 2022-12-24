@@ -360,14 +360,12 @@ static int aspire_battery_probe(struct i2c_client *client,
 	return 0;
 }
 
-static int aspire_battery_remove(struct i2c_client *client)
+static void aspire_battery_remove(struct i2c_client *client)
 {
 	struct aspire_battery *battery = i2c_get_clientdata(client);
 
 	drm_bridge_remove(&battery->bridge);
 	power_supply_unregister(battery->psy);
-
-	return 0;
 }
 
 static const struct i2c_device_id aspire_battery_id[] = {
