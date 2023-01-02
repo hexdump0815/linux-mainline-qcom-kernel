@@ -62,9 +62,15 @@
 		regulator-name = "vdd-touchpad";
 		regulator-min-microvolt = <3300000>;
 		regulator-max-microvolt = <3300000>;
-		gpio = <&tlmm 31 GPIO_ACTIVE_HIGH>;
-		/* add "enable-active-high;" when GPIO is active high */
-		enable-active-high;
+// 		gpio = <&tlmm 31 GPIO_ACTIVE_HIGH>;
+// CHANGED - above value was used so far, but the galaxy dsl says 0x20 = 32 in TPXC
+//		gpio = <&tlmm 32 GPIO_ACTIVE_HIGH>;
+// CHANGED - by looking at the c630 dsl and dts it looks like TSC1 looks similar: irq and gpio in dts is 125
+//           and that is only the first TLMMGPIO in dsl = 0x7D / 0x007D for the different TSC1 entries
+//           that first TLMMGPIO there has all Zero and maybe due to this has IRQ_TYPE_LEVEL_LOW maybe (LABEL_01 - for a note below)
+		gpio = <&tlmm 31 GPIO_ACTIVE_LOW>;
+// 		/* add "enable-active-high;" when GPIO is active high */
+// 		enable-active-high;
 		pinctrl-names = "default";
 		pinctrl-0 = <&en_touchpad>;
 	};
@@ -154,6 +160,7 @@
 	backlight: backlight {
 		compatible = "pwm-backlight";
 		pwms = <&sn65dsi86_bridge 1000000>;
+// TODO
 		enable-gpios = <&tlmm 10 GPIO_ACTIVE_HIGH>;
 
 		pinctrl-names = "default";
@@ -168,7 +175,7 @@
 // 		sdmode-gpios = <&tlmm 23 GPIO_ACTIVE_HIGH>;
 // 		#sound-dai-cells = <0>;
 // 	};
-// };
+};
 
 // NEW - ufs storage taken over from sm7125 - lets looks at this later
 // start: this should go to sc7180.dtsi in the end
@@ -345,7 +352,7 @@
 		};
 
 		aux-bus {
-// INFO - seaching for PanelNam (without the e at the end to avoid the line break in the search) gives "eDP dynamic"
+// INFO - searching for PanelNam (without the e at the end to avoid the line break in the search) gives "eDP dynamic"
 //        in the galacy dsl where it gives a real panel name in the acer dsl "NV140FHM-N64"
 			panel: panel {
 				compatible = "edp-panel";
@@ -419,7 +426,10 @@
 		hid-descr-addr = <0x20>;
 
 // TODO - maybe correct already as the keyboard works
-		interrupts-extended = <&tlmm 32 IRQ_TYPE_LEVEL_LOW>;
+// 		interrupts-extended = <&tlmm 32 IRQ_TYPE_LEVEL_LOW>;
+// CHANGED - I2C7 in galaxy dsl has 0x3B and 0X3C set which would be 59 and 60
+// UPDATE - this does not seem to work ...
+		interrupts-extended = <&tlmm 59 IRQ_TYPE_LEVEL_LOW>;
 
 		wakeup-source;
 	};
@@ -466,7 +476,9 @@
 		hid-descr-addr = <0x0e>;
 
 // TODO - i think this was found out already as the proper one in the irc session
-		interrupts-extended = <&tlmm 33 IRQ_TYPE_LEVEL_LOW>;
+//		interrupts-extended = <&tlmm 33 IRQ_TYPE_LEVEL_LOW>;
+// CHANGED - maybe it is actually 31 or maybe 32 - see TPXC in dsl
+		interrupts-extended = <&tlmm 31 IRQ_TYPE_LEVEL_LOW>;
 
 		vdd-supply = <&vdd_touchpad>;
 		vddl-supply = <&vreg_l10a_1p8>;
@@ -604,14 +616,28 @@
 //	firmware-name = "qcom/sc7180-samsung-galaxy-book-go/qcmpss7180_nm.mbn";
 };
 
-&sdhc_1 {
+// OLD - sdhc_2 worked for the galaxy, so lets use that one
+// &sdhc_1 {
+// 	status = "okay";
+// 
+// 	pinctrl-names = "default", "sleep";
+// 	pinctrl-0 = <&sdc1_default>;
+// 	pinctrl-1 = <&sdc1_sleep>;
+// 	vmmc-supply = <&vreg_l19a_2p9>;
+// 	vqmmc-supply = <&vreg_l12a_1p8>;
+// };
+
+// NEW - sdhc_2 from aceridus adjusted to pinctrl and supplies from this dts
+&sdhc_2 {
 	status = "okay";
 
 	pinctrl-names = "default", "sleep";
-	pinctrl-0 = <&sdc1_default>;
-	pinctrl-1 = <&sdc1_sleep>;
-	vmmc-supply = <&vreg_l19a_2p9>;
-	vqmmc-supply = <&vreg_l12a_1p8>;
+	pinctrl-0 = <&sdc2_on>;
+	pinctrl-1 = <&sdc2_off>;
+	vmmc-supply = <&vreg_l9c_2p9>;
+	vqmmc-supply = <&vreg_l6c_2p9>;
+
+	cd-gpios = <&tlmm 69 GPIO_ACTIVE_LOW>;
 };
 
 // LATER - this is bluetooth - lets do this later ...
@@ -923,8 +949,10 @@
 	gpio-reserved-ranges = <58 5>;
 
 	hid_keyboard_default: hid-keyboard-default {
-// TODO
-		pins = "gpio33";
+// TODO - maybe gpio59 and/or gpio60 due to 0x3B and 0x3C for I2C7 in galaxy dsl
+// UPDATE - this does not seem to work ...
+//		pins = "gpio33";
+		pins = "gpio59";
 		function = "gpio";
 		drive-strength = <2>;
 		bias-disable;
@@ -955,25 +983,29 @@
 	};
 
 // NEW - touchpad - based on aceridus work
-	en_touchpad: en-touchpad {
-		pinmux {
-			pins = "gpio31";
-			function = "gpio";
-		};
-
-		pinconf {
-			pins = "gpio31";
-			drive-strength = <2>;
-			bias-disable;
-		};
-	};
-// ALTERNATIVE - based on old reg_tp_en_default below
-// 	en_touchpad: en_touchpad {
-// 		pins = "gpio31";
-// 		function = "gpio";
-// 		drive-strength = <2>;
-// 		bias-disable;
+// 	en_touchpad: en-touchpad {
+// 		pinmux {
+// 			pins = "gpio31";
+// 			function = "gpio";
+// 		};
+// 
+// 		pinconf {
+// 			pins = "gpio31";
+// 			drive-strength = <2>;
+// 			bias-disable;
+// 		};
 // 	};
+// ALTERNATIVE - based on old reg_tp_en_default below
+	en_touchpad: en_touchpad {
+// 		pins = "gpio31";
+// CHANGED - above value was used so far, but the galaxy dsl says 0x20 = 32 in TPXC
+//		pins = "gpio32";
+// CHANGED - see LABEL_01 above
+		pins = "gpio31";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
 
 // OLD - touchpad
 //	hid_touchpad_default: hid-touchpad-default {
@@ -1060,55 +1092,110 @@
 		function = "mi2s_2";
 	};
 
-	sdc1_default: sdc1-default {
+// OLD - we use sdc2 below as it worked for aceridus
+// 	sdc1_default: sdc1-default {
+// 		pinconf-clk {
+// 			pins = "sdc1_clk";
+// 			bias-disable;
+// 			drive-strength = <16>;
+// 		};
+// 
+// 		pinconf-cmd {
+// 			pins = "sdc1_cmd";
+// 			bias-pull-up;
+// 			drive-strength = <16>;
+// 		};
+// 
+// 		pinconf-data {
+// 			pins = "sdc1_data";
+// 			bias-pull-up;
+// 			drive-strength = <16>;
+// 		};
+// 
+// 		pinconf-rclk {
+// 			pins = "sdc1_rclk";
+// 			bias-pull-down;
+// 		};
+// 	};
+// 
+// 	sdc1_sleep: sdc1-sleep {
+// 		pinconf-clk {
+// 			pins = "sdc1_clk";
+// 			bias-disable;
+// 			drive-strength = <2>;
+// 		};
+// 
+// 		pinconf-cmd {
+// 			pins = "sdc1_cmd";
+// 			bias-pull-up;
+// 			drive-strength = <2>;
+// 		};
+// 
+// 		pinconf-data {
+// 			pins = "sdc1_data";
+// 			bias-pull-up;
+// 			drive-strength = <2>;
+// 		};
+// 
+// 		pinconf-rclk {
+// 			pins = "sdc1_rclk";
+// 			bias-pull-down;
+// 		};
+// 	};
+
+// NEW - lets use sdc2 as it worked for aceridus
+	sdc2_on: sdc2-on {
 		pinconf-clk {
-			pins = "sdc1_clk";
+			pins = "sdc2_clk";
 			bias-disable;
 			drive-strength = <16>;
 		};
 
 		pinconf-cmd {
-			pins = "sdc1_cmd";
+			pins = "sdc2_cmd";
 			bias-pull-up;
-			drive-strength = <16>;
+			drive-strength = <10>;
 		};
 
 		pinconf-data {
-			pins = "sdc1_data";
+			pins = "sdc2_data";
 			bias-pull-up;
-			drive-strength = <16>;
+			drive-strength = <10>;
 		};
 
-		pinconf-rclk {
-			pins = "sdc1_rclk";
-			bias-pull-down;
+		pinconf-sd-cd {
+			pins = "gpio69";
+			bias-pull-up;
+			drive-strength = <2>;
 		};
 	};
 
-	sdc1_sleep: sdc1-sleep {
+	sdc2_off: sdc2-off {
 		pinconf-clk {
-			pins = "sdc1_clk";
+			pins = "sdc2_clk";
 			bias-disable;
 			drive-strength = <2>;
 		};
 
 		pinconf-cmd {
-			pins = "sdc1_cmd";
+			pins = "sdc2_cmd";
 			bias-pull-up;
 			drive-strength = <2>;
 		};
 
 		pinconf-data {
-			pins = "sdc1_data";
+			pins = "sdc2_data";
 			bias-pull-up;
 			drive-strength = <2>;
 		};
 
-		pinconf-rclk {
-			pins = "sdc1_rclk";
-			bias-pull-down;
+		pinconf-sd-cd {
+			pins = "gpio69";
+			bias-pull-up;
+			drive-strength = <2>;
 		};
 	};
+
 
 // LATER - this is bluetooth - lets do this later ...
 // 	qup_uart3_sleep: qup-uart3-sleep {
