@@ -18,5 +18,5 @@ https://github.com/msm8916-mainline/linux branch: master
 make olddefconfig
 # afterwards add CONFIG_LRU_GEN=y and CONFIG_LRU_GEN_ENABLED=y via kconfig edit
 
-acer aspire 1 tree
-https://github.com/TravMurav/linux/tree/aspire1-cleanup
+travmurav acer aspire 1 tree - branch: aspire1
+https://github.com/TravMurav/linux/

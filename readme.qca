@@ -3,12 +3,12 @@
 # - /compile/source/linux-stable-qca - the kernel sources checked out from gitrepo
 # - /compile/result/stable-qc - the resulting kernel, modules etc. tar.gz files
 # - /compile/doc/kernel-config-options - https://github.com/hexdump0815/kernel-config-options
-# name: stb-qca - sc7180 qualcom acer aspire 1
+# name: stb-qca - sc7180 qualcom - based on the travmurav acer aspire 1 tree
 
 # INFO: this is not working yet and still very much work in progress
-#       based on commit: 13f1cbd185be970053c57e2fccf0c96c509498b3
+#       based on commit: ffff27b96b1a542c768df0cb5bfa2abb5ca0adaa
 #       of the aspire1 branch of https://github.com/TravMurav/linux
-#       see also: https://oftc.irclog.whitequark.org/aarch64-laptops/2022-07-30#31145280;
+#       see also: https://oftc.irclog.whitequark.org/aarch64-laptops/2023-02-18#31906710
 
 cd /compile/source/linux-stable-qca
 
@@ -23,7 +23,7 @@ export ARCH=arm64
 #scripts/kconfig/merge_config.sh -m arch/arm64/configs/defconfig /compile/doc/kernel-config-options/docker-options.cfg /compile/doc/kernel-config-options/options-to-remove-generic.cfg /compile/doc/stable-qc/misc.qca/options/options-to-remove-special.cfg /compile/doc/kernel-config-options/additional-options-generic.cfg /compile/doc/kernel-config-options/additional-options-aarch64.cfg /compile/doc/stable-qc/misc.qca/options/additional-options-special.cfg
 #( cd /compile/doc/kernel-config-options ; git rev-parse --verify HEAD ) > /compile/doc/stable-qc/misc.qca/options/kernel-config-options.version
 # use the fixed config which seems to have worked for travmurav
-cp /compile/doc/stable-qc/misc.qc7/misc/config-postmarketos-qcom-sc7180.aarch64 .config
+make sc7180_defconfig
 ./scripts/config --set-str CONFIG_LOCALVERSION "-stb-qca"
 make olddefconfig
 make -j 8 Image dtbs modules
