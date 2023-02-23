@@ -3,31 +3,31 @@
 # - /compile/source/linux-stable-qc7 - the kernel sources checked out from gitrepo
 # - /compile/result/stable-qc - the resulting kernel, modules etc. tar.gz files
 # - /compile/doc/kernel-config-options - https://github.com/hexdump0815/kernel-config-options
-# name: stb-qc7 - sc7180 qualcom windows on arm laptops
+# name: stb-qc7 - sc7180 qualcom windows on arm laptops based on the linux-stable v6.1 lts tree for now
 
-# INFO: this is not working yet and still very much work in progress
-#       parts are based on commit 3a0f3b28109984d2b2737c85bc375092c571de3c of
-#         https://gitlab.com/TravMurav/pmaports/-/tree/aspire1/device/testing/device-acer-aspire1
-#       and on commit 7b851a798063a206307f16a8e3b6d289f9ace89f of
-#         https://github.com/amcduffee/linux/tree/galaxy-book-go
+# INFO: this is not working completely and still very much work in progress
+#       parts are based on commit: ffff27b96b1a542c768df0cb5bfa2abb5ca0adaa
+#       of the aspire1 branch of https://github.com/TravMurav/linux
+#       see also: https://oftc.irclog.whitequark.org/aarch64-laptops/2023-02-18#31906710
 
 cd /compile/source/linux-stable-qc7
 
 # patches:
-# patches from the travmurav acer aspire 1 tree - most of them disabled for now
-for i in /compile/doc/stable-qc/misc.qc7/patches/v6.1/*.patch; do
-  echo === $i
-  patch -p1 < $i
-done
-# copy the samsung galaxy book go and acer aspire 1 dts into the tree
-cp -v /compile/doc/stable-qc/misc.qc7/misc/sc7180-acer-aspire1.dts arch/arm64/boot/dts/qcom
-cp -v /compile/doc/stable-qc/misc.qc7/misc/sc7180-samsung-galaxy-book-go.dts arch/arm64/boot/dts/qcom
-# copy the aspire 1 battery hack into the tree
-cp -v /compile/doc/stable-qc/misc.qc7/misc/aspire-ec-battery.c drivers/power/supply
+# add changes from the travmurav v6.2.0 aspire 1 tree mentioned above 
+patch -p1 < /compile/doc/stable-qc/misc.qc7/patches/v6.1/travmurav-changes.patch
+# add samsung galaxy book go dts to the dts makefile
+patch -p1 < /compile/doc/stable-qc/misc.qc7/patches/v6.1/add-new-dts-files-to-makefile.patch
+# add panel info for it
+patch -p1 < /compile/doc/stable-qc/misc.qc7/patches/v6.1/add-galaxy-book-go-panel-info.patch
+
+# copy the wip samsung galaxy book go dts into the tree
+cp /compile/doc/stable-qc/misc.qc7/misc/sc7180-samsung-galaxy-book-go.wip arch/arm64/boot/dts/qcom/sc7180-samsung-galaxy-book-go.dts
 
 export ARCH=arm64
-scripts/kconfig/merge_config.sh -m arch/arm64/configs/defconfig /compile/doc/kernel-config-options/docker-options.cfg /compile/doc/kernel-config-options/options-to-remove-generic.cfg /compile/doc/stable-qc/misc.qc7/options/options-to-remove-special.cfg /compile/doc/kernel-config-options/additional-options-generic.cfg /compile/doc/kernel-config-options/additional-options-aarch64.cfg /compile/doc/stable-qc/misc.qc7/options/additional-options-special.cfg
-( cd /compile/doc/kernel-config-options ; git rev-parse --verify HEAD ) > /compile/doc/stable-qc/misc.qc7/options/kernel-config-options.version
+#scripts/kconfig/merge_config.sh -m arch/arm64/configs/defconfig /compile/doc/kernel-config-options/docker-options.cfg /compile/doc/kernel-config-options/options-to-remove-generic.cfg /compile/doc/stable-qc/misc.qc7/options/options-to-remove-special.cfg /compile/doc/kernel-config-options/additional-options-generic.cfg /compile/doc/kernel-config-options/additional-options-aarch64.cfg /compile/doc/stable-qc/misc.qc7/options/additional-options-special.cfg
+#( cd /compile/doc/kernel-config-options ; git rev-parse --verify HEAD ) > /compile/doc/stable-qc/misc.qc7/options/kernel-config-options.version
+make sc7180_defconfig
+./scripts/config --set-str CONFIG_LOCALVERSION "-stb-qc7"
 make olddefconfig
 make -j 8 Image dtbs modules
 cd tools/perf
