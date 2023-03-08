@@ -1,0 +1,97 @@
+from: https://github.com/TravMurav/linux/compare/ffff27b96b1a542c768df0cb5bfa2abb5ca0adaa...9ead94ec70ce59f7ad03b214316da46be395e8f2.diff
+
+diff --git a/arch/arm64/boot/dts/qcom/sc7180-acer-aspire1.dts b/arch/arm64/boot/dts/qcom/sc7180-acer-aspire1.dts
+index 6fd50db0c406a1..a38276b369d500 100644
+--- a/arch/arm64/boot/dts/qcom/sc7180-acer-aspire1.dts
++++ b/arch/arm64/boot/dts/qcom/sc7180-acer-aspire1.dts
+@@ -26,11 +26,6 @@
+ 			no-map;
+ 		};
+ 
+-		tz_mem: tz@82200000 {
+-			reg = <0 0x82200000 0 0x2200000>;
+-			no-map;
+-		};
+-
+ 		venus_mem: venus@85b00000 {
+ 			reg = <0 0x85b00000 0 0x500000>;
+ 			no-map;
+diff --git a/arch/arm64/configs/sc7180_defconfig b/arch/arm64/configs/sc7180_defconfig
+index 252095273f8665..e6f8756d1ae6f9 100644
+--- a/arch/arm64/configs/sc7180_defconfig
++++ b/arch/arm64/configs/sc7180_defconfig
+@@ -217,6 +217,7 @@ CONFIG_MTD_NAND_BRCMNAND_IPROC=m
+ CONFIG_MTD_NAND_QCOM=y
+ CONFIG_MTD_SPI_NOR=y
+ CONFIG_ZRAM=m
++CONFIG_ZRAM_DEF_COMP_LZ4=y
+ CONFIG_BLK_DEV_LOOP=y
+ CONFIG_BLK_DEV_NBD=m
+ # CONFIG_XEN_BLKDEV_FRONTEND is not set
+@@ -774,6 +775,7 @@ CONFIG_CRYPTO_ECHAINIV=y
+ CONFIG_CRYPTO_CMAC=y
+ CONFIG_CRYPTO_MICHAEL_MIC=m
+ CONFIG_CRYPTO_LZ4=m
++CONFIG_CRYPTO_ZSTD=m
+ CONFIG_CRYPTO_ANSI_CPRNG=y
+ CONFIG_CRYPTO_USER_API_HASH=m
+ CONFIG_CRYPTO_USER_API_SKCIPHER=m
+diff --git a/drivers/gpu/drm/msm/disp/dpu1/dpu_kms.c b/drivers/gpu/drm/msm/disp/dpu1/dpu_kms.c
+index b71199511a52d7..c6155cdde8ddb2 100644
+--- a/drivers/gpu/drm/msm/disp/dpu1/dpu_kms.c
++++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_kms.c
+@@ -726,6 +726,8 @@ static int _dpu_kms_drm_obj_init(struct dpu_kms *dpu_kms)
+ 	struct drm_crtc *crtc;
+ 	struct drm_encoder *encoder;
+ 	unsigned int num_encoders;
++	unsigned primary_idx = 0;
++	unsigned cursor_idx = 0;
+ 
+ 	struct msm_drm_private *priv;
+ 	const struct dpu_mdss_cfg *catalog;
+@@ -753,21 +755,28 @@ static int _dpu_kms_drm_obj_init(struct dpu_kms *dpu_kms)
+ 	/* Create the planes, keeping track of one primary/cursor per crtc */
+ 	for (i = 0; i < catalog->sspp_count; i++) {
+ 		enum drm_plane_type type;
++		unsigned possible_crtcs;
+ 
+ 		if ((catalog->sspp[i].features & BIT(DPU_SSPP_CURSOR))
+-			&& cursor_planes_idx < max_crtc_count)
++			&& cursor_planes_idx < max_crtc_count) {
+ 			type = DRM_PLANE_TYPE_CURSOR;
+-		else if (primary_planes_idx < max_crtc_count)
++			possible_crtcs = BIT(cursor_idx);
++			cursor_idx++;
++		} else if (primary_planes_idx < max_crtc_count) {
+ 			type = DRM_PLANE_TYPE_PRIMARY;
+-		else
++			possible_crtcs = BIT(primary_idx);
++			primary_idx++;
++		} else {
+ 			type = DRM_PLANE_TYPE_OVERLAY;
++			possible_crtcs = (1UL << max_crtc_count) - 1;
++		}
+ 
+ 		DPU_DEBUG("Create plane type %d with features %lx (cur %lx)\n",
+ 			  type, catalog->sspp[i].features,
+ 			  catalog->sspp[i].features & BIT(DPU_SSPP_CURSOR));
+ 
+ 		plane = dpu_plane_init(dev, catalog->sspp[i].id, type,
+-				       (1UL << max_crtc_count) - 1);
++				       possible_crtcs);
+ 		if (IS_ERR(plane)) {
+ 			DPU_ERROR("dpu_plane_init failed\n");
+ 			ret = PTR_ERR(plane);
+diff --git a/drivers/gpu/drm/msm/disp/dpu1/dpu_plane.c b/drivers/gpu/drm/msm/disp/dpu1/dpu_plane.c
+index 86719020afe20b..4fea6402bc3488 100644
+--- a/drivers/gpu/drm/msm/disp/dpu1/dpu_plane.c
++++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_plane.c
+@@ -1498,7 +1498,7 @@ struct drm_plane *dpu_plane_init(struct drm_device *dev,
+ 	format_list = pdpu->pipe_hw->cap->sblk->format_list;
+ 	num_formats = pdpu->pipe_hw->cap->sblk->num_formats;
+ 
+-	ret = drm_universal_plane_init(dev, plane, 0xff, &dpu_plane_funcs,
++	ret = drm_universal_plane_init(dev, plane, possible_crtcs, &dpu_plane_funcs,
+ 				format_list, num_formats,
+ 				supported_format_modifiers, type, NULL);
+ 	if (ret)

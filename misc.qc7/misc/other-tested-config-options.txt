@@ -1,0 +1,74 @@
+the below options are options i tested to add to misc.qc7/options/additional-options-special.cfg
+in order to try to get a kernel config for the sc7180 woa systems which is based on defconfig,
+but in the end i still ended up with rcu stalls and a still not properly booting kernel - the
+changes which made it work in the end are the ones coming in the above mentioned file with this
+same commit as this file
+
+# some more options taken over from the travmurav sc7180_defconfig resulting .config
+# looks like they were not really required to avoid rcu stalls at boot
+CONFIG_CMA=y
+CONFIG_DMA_CMA=y
+CONFIG_ATH10K_SDIO=m
+CONFIG_DEVFREQ_GOV_PASSIVE=m
+CONFIG_DEVFREQ_GOV_USERSPACE=m
+CONFIG_DRM_DISPLAY_CONNECTOR=m
+CONFIG_DRM_GUD=m
+CONFIG_DRM_LEGACY=y
+CONFIG_GPIO_GENERIC_PLATFORM=y
+CONFIG_HID_BATTERY_STRENGTH=y
+CONFIG_HTE=y
+CONFIG_I2C_SLAVE=y
+CONFIG_INDIRECT_PIO=y
+CONFIG_IOMMU_IO_PGTABLE_ARMV7S=y
+CONFIG_MEMORY=y
+CONFIG_QCOM_LMH=m
+CONFIG_TCG_TIS=m
+CONFIG_TCG_TIS_I2C_CR50=m
+CONFIG_TCG_TIS_SPI=m
+CONFIG_THERMAL_DEFAULT_GOV_STEP_WISE=y
+CONFIG_THERMAL_GOV_STEP_WISE=y
+CONFIG_UEVENT_HELPER=y
+# at least some of the below options maybe have to be m to avoid rcu stalls at boot
+# looks like that did not help ...
+CONFIG_QCOM_IPA=m
+CONFIG_QCOM_LLCC=m
+CONFIG_QCOM_MDT_LOADER=m
+CONFIG_QCOM_OCMEM=m
+CONFIG_QCOM_PIL_INFO=m
+CONFIG_QCOM_Q6V5_COMMON=m
+CONFIG_QCOM_Q6V5_MSS=m
+CONFIG_QCOM_QMI_HELPERS=m
+CONFIG_QCOM_RMTFS_MEM=m
+CONFIG_QCOM_RPROC_COMMON=m
+CONFIG_QCOM_SOCINFO=m
+CONFIG_QCOM_SYSMON=m
+CONFIG_QCOM_WDT=m
+# hard sync of qcom options to travmurav config - lets see if this helps
+# also these did not help in the end to make the defconfig based kernel boot properly
+# CONFIG_EDAC_QCOM is not set
+# CONFIG_INTERCONNECT_QCOM_MSM8916 is not set
+# CONFIG_INTERCONNECT_QCOM_MSM8996 is not set
+# CONFIG_INTERCONNECT_QCOM_QCS404 is not set
+# CONFIG_INTERCONNECT_QCOM_SC7280 is not set
+# CONFIG_INTERCONNECT_QCOM_SC8280XP is not set
+# CONFIG_INTERCONNECT_QCOM_SDM845 is not set
+# CONFIG_INTERCONNECT_QCOM_SM8150 is not set
+# CONFIG_INTERCONNECT_QCOM_SM8250 is not set
+# CONFIG_INTERCONNECT_QCOM_SM8350 is not set
+# CONFIG_INTERCONNECT_QCOM_SM8450 is not set
+# CONFIG_PHY_QCOM_EDP is not set
+# CONFIG_PHY_QCOM_PCIE2 is not set
+# CONFIG_PHY_QCOM_USB_HS is not set
+# CONFIG_PHY_QCOM_USB_HS_28NM is not set
+# CONFIG_PHY_QCOM_USB_SNPS_FEMTO_V2 is not set
+# CONFIG_PHY_QCOM_USB_SS is not set
+# CONFIG_QCOM_A53PLL is not set
+# CONFIG_QCOM_CLK_APCC_MSM8996 is not set
+# CONFIG_QCOM_CLK_APCS_MSM8916 is not set
+# CONFIG_TYPEC_QCOM_PMIC is not set
+# CONFIG_POWER_RESET_QCOM_PON is not set
+# CONFIG_RESET_QCOM_PDC is not set
+# CONFIG_RPMSG_QCOM_GLINK_SMEM is not set
+CONFIG_SND_SOC_QCOM=m
+CONFIG_SPI_QCOM_GENI=m
+CONFIG_SPI_QCOM_QSPI=m
