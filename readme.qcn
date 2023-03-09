@@ -3,29 +3,25 @@
 # - /compile/source/linux-stable-qcn - the kernel sources checked out from gitrepo
 # - /compile/result/stable-qc - the resulting kernel, modules etc. tar.gz files
 # - /compile/doc/kernel-config-options - https://github.com/hexdump0815/kernel-config-options
-# name: m98-qcn - msm8998 qualcom asus novago
+# name: stb-qcn - msm8998 qualcom asus novago
 
 # INFO: this is not working yet and still very much work in progress
-#       based on commit: 5d5ddedb777221b1a22ef4398f9a93e091f7fb68
-#       of the master branch of https://gitlab.com/msm8998-mainline/linux.git/
+#       based on commit: b9550ca03daff5fd7664d10a045bd4ab073f81d4
+#       of the mainline/6.1 branch of https://gitlab.com/msm8998-mainline/linux.git/
 
 cd /compile/source/linux-stable-qcn
 
 # patches:
 # some tries to enable the gpu and cpufreq scaling following the oneplus dts - not working yet
-patch -p1 < /compile/doc/stable-qc/misc.qcn/patches/add-gpu-and-cpufreq-to-novago-dts-v5.18.patch
+#patch -p1 < /compile/doc/stable-qc/misc.qcn/patches/add-gpu-and-cpufreq-to-novago-dts-v5.18.patch
 # patch the tree up to v5.18.1
-patch -p1 < /compile/doc/stable-qc/misc.qcn/patches/linux-v5.18-rc1-to-v5.18-adjusted.patch
-patch -p1 < /compile/doc/stable-qc/misc.qcn/patches/qcom-cpufreq-hw-patch-fix.patch
-patch -p1 < /compile/doc/stable-qc/misc.qcn/patches/v5.18.1.patch
+#patch -p1 < /compile/doc/stable-qc/misc.qcn/patches/linux-v5.18-rc1-to-v5.18-adjusted.patch
+#patch -p1 < /compile/doc/stable-qc/misc.qcn/patches/qcom-cpufreq-hw-patch-fix.patch
+#patch -p1 < /compile/doc/stable-qc/misc.qcn/patches/v5.18.1.patch
 
 export ARCH=arm64
-# the kernel config is not yet arch/arm64/configs/defconfig based - instead a
-# working kernel config is used as starting point for now
-scripts/kconfig/merge_config.sh -m /compile/doc/stable-qc/misc.qcn/misc/config-working /compile/doc/kernel-config-options/docker-options.cfg /compile/doc/kernel-config-options/options-to-remove-generic.cfg /compile/doc/stable-qc/misc.qcn/options/options-to-remove-special.cfg /compile/doc/kernel-config-options/additional-options-generic.cfg /compile/doc/kernel-config-options/additional-options-aarch64.cfg /compile/doc/stable-qc/misc.qcn/options/additional-options-special.cfg
+scripts/kconfig/merge_config.sh -m arch/arm64/configs/defconfig /compile/doc/kernel-config-options/docker-options.cfg /compile/doc/kernel-config-options/options-to-remove-generic.cfg /compile/doc/stable-qc/misc.qcn/options/options-to-remove-special.cfg /compile/doc/kernel-config-options/additional-options-generic.cfg /compile/doc/kernel-config-options/additional-options-aarch64.cfg /compile/doc/stable-qc/misc.qcn/options/additional-options-special.cfg
 ( cd /compile/doc/kernel-config-options ; git rev-parse --verify HEAD ) > /compile/doc/stable-qc/misc.qcn/options/kernel-config-options.version
-# old approach: using a working config as a starting point
-# cp /compile/doc/stable-qc/misc.qcn/misc/config-working .config
 make olddefconfig
 make -j 8 Image dtbs modules
 cd tools/perf
