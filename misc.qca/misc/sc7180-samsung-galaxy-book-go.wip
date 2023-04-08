@@ -62,9 +62,9 @@
 		regulator-name = "vdd-touchpad";
 		regulator-min-microvolt = <3300000>;
 		regulator-max-microvolt = <3300000>;
- 		gpio = <&tlmm 31 GPIO_ACTIVE_HIGH>;
+// 		gpio = <&tlmm 31 GPIO_ACTIVE_HIGH>;
 // CHANGED - above value was used so far, but the galaxy dsl says 0x20 = 32 in TPXC
-//		gpio = <&tlmm 32 GPIO_ACTIVE_HIGH>;
+		gpio = <&tlmm 32 GPIO_ACTIVE_HIGH>;
 // CHANGED - by looking at the c630 dsl and dts it looks like TSC1 looks similar: irq and gpio in dts is 125
 //           and that is only the first TLMMGPIO in dsl = 0x7D / 0x007D for the different TSC1 entries
 //           that first TLMMGPIO there has all Zero and maybe due to this has IRQ_TYPE_LEVEL_LOW maybe (LABEL_01 - for a note below)
@@ -103,29 +103,29 @@
 // 		pinctrl-0 = <&reg_audio_en_default>;
 // 	};
 
-	reg_lcm_3p3: panel-regulator {
-		compatible = "regulator-fixed";
-		regulator-name = "lcm_3p3";
-		regulator-min-microvolt = <3300000>;
-		regulator-max-microvolt = <3300000>;
+// 	reg_lcm_3p3: panel-regulator {
+// 		compatible = "regulator-fixed";
+// 		regulator-name = "lcm_3p3";
+// 		regulator-min-microvolt = <3300000>;
+// 		regulator-max-microvolt = <3300000>;
 
-// INFO - comment from the acer dts
-// 		/* HACK: Display fails with
-// 		 *
-// 		 * *ERROR* Unexpected max rate (0x0); assuming 5.4 GHz
-// 		 * *ERROR* Link training failed, link is off (-5)
-// 		 *
-// 		 * if the power to the panel was cut
-// 		 */
-		regulator-always-on;
+// // INFO - comment from the acer dts
+// // 		/* HACK: Display fails with
+// // 		 *
+// // 		 * *ERROR* Unexpected max rate (0x0); assuming 5.4 GHz
+// // 		 * *ERROR* Link training failed, link is off (-5)
+// // 		 *
+// // 		 * if the power to the panel was cut
+// // 		 */
+// 		regulator-always-on;
 
 // TODO
-		gpio = <&tlmm 26 GPIO_ACTIVE_HIGH>;
-		enable-active-high;
+// 		gpio = <&tlmm 26 GPIO_ACTIVE_HIGH>;
+// 		enable-active-high;
 
-		pinctrl-names = "default";
-		pinctrl-0 = <&reg_lcm_en_default>;
-	};
+// 		pinctrl-names = "default";
+// 		pinctrl-0 = <&reg_lcm_en_default>;
+// 	};
 
 	reg_brij_1p8: bridge-regulator {
 		compatible = "regulator-fixed";
@@ -157,15 +157,15 @@
 		pinctrl-0 = <&reg_edp_1p2_en_default>;
 	};
 
-	backlight: backlight {
-		compatible = "pwm-backlight";
-		pwms = <&sn65dsi86_bridge 1000000>;
-// TODO
-		enable-gpios = <&tlmm 10 GPIO_ACTIVE_HIGH>;
+// 	backlight: backlight {
+// 		compatible = "pwm-backlight";
+// 		pwms = <&sn65dsi86_bridge 1000000>;
+// // TODO
+// 		enable-gpios = <&tlmm 10 GPIO_ACTIVE_HIGH>;
 
-		pinctrl-names = "default";
-		pinctrl-0 = <&soc_bkoff_default>;
-	};
+// 		pinctrl-names = "default";
+// 		pinctrl-0 = <&soc_bkoff_default>;
+// 	};
 
 // LATER - this is audio - lets do this later ...
 // 	max98357a: audio-codec-0 {
@@ -356,8 +356,8 @@
 //        in the galaxy dsl where it gives a real panel name in the acer dsl "NV140FHM-N64"
 			panel: panel {
 				compatible = "edp-panel";
-				power-supply = <&reg_lcm_3p3>;
-				backlight = <&backlight>;
+// 				power-supply = <&reg_lcm_3p3>;
+// 				backlight = <&backlight>;
 
 				port {
 					panel_in_edp: endpoint {
@@ -438,7 +438,10 @@
 		reg = <0x5>;
 		hid-descr-addr = <0x20>;
 
- 		interrupts-extended = <&tlmm 32 IRQ_TYPE_LEVEL_LOW>;
+// 		interrupts-extended = <&tlmm 32 IRQ_TYPE_LEVEL_LOW>;
+// UPDATE - 32 is definitely wrong as its definitely defined as enable gpio for the touchpad
+//          experiments have shown 38 to work as well and as bad as 32, 30-42 tested so far
+		interrupts-extended = <&tlmm 38 IRQ_TYPE_LEVEL_LOW>;
 // CHANGED - I2C7 in galaxy dsl has 0x3B and 0X3C set which would be 59 and 60
 //		interrupts-extended = <&tlmm 59 IRQ_TYPE_LEVEL_LOW>;
 // UPDATE - this does not seem to work ...
@@ -575,8 +578,8 @@
 
 // LATER - this seems to be audio too - so lets do this later as well ...
 // /* Seems like ADSP really insists on managing those itself */
-// &lpasscc { status = "disabled"; };
-// &lpass_hm { status = "disabled"; };
+&lpasscc { status = "disabled"; };
+&lpass_hm { status = "disabled"; };
 
 &mdp {
 	status = "okay";
@@ -1025,29 +1028,29 @@
 	};
 
 // NEW - touchpad - based on aceridus work
- 	en_touchpad: en-touchpad {
- 		pinmux {
- 			pins = "gpio31";
- 			function = "gpio";
- 		};
- 
- 		pinconf {
- 			pins = "gpio31";
- 			drive-strength = <2>;
- 			bias-disable;
- 		};
- 	};
+//  	en_touchpad: en-touchpad {
+//  		pinmux {
+//  			pins = "gpio31";
+//  			function = "gpio";
+//  		};
+//
+//  		pinconf {
+//  			pins = "gpio31";
+//  			drive-strength = <2>;
+//  			bias-disable;
+//  		};
+//  	};
 // ALTERNATIVE - based on old reg_tp_en_default below
-//	en_touchpad: en_touchpad {
+	en_touchpad: en_touchpad {
 // 		pins = "gpio31";
 // CHANGED - above value was used so far, but the galaxy dsl says 0x20 = 32 in TPXC
-//		pins = "gpio32";
+		pins = "gpio32";
 // CHANGED - see LABEL_01 above
 //		pins = "gpio31";
-//		function = "gpio";
-//		drive-strength = <2>;
-//		bias-disable;
-//	};
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
 
 // OLD - touchpad
 //	hid_touchpad_default: hid-touchpad-default {
