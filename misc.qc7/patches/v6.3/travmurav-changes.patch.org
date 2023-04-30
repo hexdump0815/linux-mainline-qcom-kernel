@@ -1,0 +1,4279 @@
+from: https://github.com/TravMurav/linux/compare/457391b0380335d5e9a5babdec90ac53928b23b4...509724f7c7c92a0b94561fb9e7634c7b4ad24918.diff
+
+diff --git a/Documentation/devicetree/bindings/arm/qcom.yaml b/Documentation/devicetree/bindings/arm/qcom.yaml
+index 1bb24d46e4eec9..5c50bff56ea719 100644
+--- a/Documentation/devicetree/bindings/arm/qcom.yaml
++++ b/Documentation/devicetree/bindings/arm/qcom.yaml
+@@ -352,9 +352,9 @@ properties:
+               - qcom,qru1000-idp
+           - const: qcom,qru1000
+ 
+-      - description: Qualcomm Technologies, Inc. SC7180 IDP
+-        items:
++      - items:
+           - enum:
++              - acer,aspire1
+               - qcom,sc7180-idp
+           - const: qcom,sc7180
+ 
+diff --git a/arch/arm64/boot/dts/qcom/Makefile b/arch/arm64/boot/dts/qcom/Makefile
+index 31aa54f0428c32..8f0ffe35ca920d 100644
+--- a/arch/arm64/boot/dts/qcom/Makefile
++++ b/arch/arm64/boot/dts/qcom/Makefile
+@@ -75,6 +75,7 @@ dtb-$(CONFIG_ARCH_QCOM)	+= qru1000-idp.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= sa8155p-adp.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= sa8295p-adp.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= sa8540p-ride.dtb
++dtb-$(CONFIG_ARCH_QCOM)	+= sc7180-acer-aspire1.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= sc7180-idp.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= sc7180-trogdor-coachz-r1.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= sc7180-trogdor-coachz-r1-lte.dtb
+diff --git a/arch/arm64/boot/dts/qcom/pm6150.dtsi b/arch/arm64/boot/dts/qcom/pm6150.dtsi
+index 2e6afa2961411b..a66c36d1f10b64 100644
+--- a/arch/arm64/boot/dts/qcom/pm6150.dtsi
++++ b/arch/arm64/boot/dts/qcom/pm6150.dtsi
+@@ -88,6 +88,12 @@
+ 			status = "disabled";
+ 		};
+ 
++		rtc@6000 {
++			compatible = "qcom,pm8941-rtc";
++			reg = <0x6000>;
++			interrupts = <0x0 0x61 0x1 IRQ_TYPE_NONE>;
++		};
++
+ 		pm6150_gpios: gpio@c000 {
+ 			compatible = "qcom,pm6150-gpio", "qcom,spmi-gpio";
+ 			reg = <0xc000>;
+diff --git a/arch/arm64/boot/dts/qcom/sc7180-acer-aspire1.dts b/arch/arm64/boot/dts/qcom/sc7180-acer-aspire1.dts
+new file mode 100644
+index 00000000000000..076120de413817
+--- /dev/null
++++ b/arch/arm64/boot/dts/qcom/sc7180-acer-aspire1.dts
+@@ -0,0 +1,992 @@
++// SPDX-License-Identifier: BSD-3-Clause
++
++/dts-v1/;
++
++#include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/sound/qcom,q6asm.h>
++#include <dt-bindings/regulator/qcom,rpmh-regulator.h>
++
++#include "sc7180.dtsi"
++
++#include "pm6150.dtsi"
++#include "pm6150l.dtsi"
++
++/delete-node/ &tz_mem;
++/delete-node/ &ipa_fw_mem;
++
++/ {
++	model = "Acer Aspire 1";
++	compatible = "acer,aspire1", "qcom,sc7180";
++	chassis-type = "laptop";
++
++	aliases {
++		bluetooth0 = &bluetooth;
++		hsuart0 = &uart3;
++		serial0 = &uart8;
++		wifi0 = &wifi;
++	};
++
++	chosen {
++		stdout-path = "serial0:115200n8";
++	};
++
++	reserved-memory {
++		zap_mem: zap-shader@80840000 {
++			reg = <0x0 0x80840000 0 0x2000>;
++			no-map;
++		};
++
++		venus_mem: venus@85b00000 {
++			reg = <0x0 0x85b00000 0 0x500000>;
++			no-map;
++		};
++
++		mpss_mem: mpss@86000000 {
++			reg = <0x0 0x86000000 0x0 0x2000000>;
++			no-map;
++		};
++
++		adsp_mem: adsp@8e400000 {
++			reg = <0x0 0x8e400000 0x0 0x2800000>;
++			no-map;
++		};
++
++		wlan_mem: wlan@93900000 {
++			reg = <0x0 0x93900000 0x0 0x200000>;
++			no-map;
++		};
++	};
++
++	max98357a: audio-codec {
++		compatible = "maxim,max98357a";
++		sdmode-gpios = <&tlmm 23 GPIO_ACTIVE_HIGH>;
++
++		pinctrl-0 = <&amp_sd_mode_default>;
++		pinctrl-names = "default";
++
++		#sound-dai-cells = <0>;
++	};
++
++	backlight: backlight {
++		compatible = "pwm-backlight";
++		pwms = <&sn65dsi86_bridge 1000000>;
++		enable-gpios = <&tlmm 10 GPIO_ACTIVE_HIGH>;
++
++		pinctrl-0 = <&soc_bkoff_default>;
++		pinctrl-names = "default";
++	};
++
++	reg_brij_1p2: bridge-1p2-regulator {
++		compatible = "regulator-fixed";
++		regulator-name = "brij_1p2";
++		regulator-min-microvolt = <1200000>;
++		regulator-max-microvolt = <1200000>;
++
++		gpio = <&tlmm 19 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++
++		pinctrl-0 = <&reg_edp_1p2_en_default>;
++		pinctrl-names = "default";
++	};
++
++	reg_brij_1p8: bridge-regulator {
++		compatible = "regulator-fixed";
++		regulator-name = "brij_1p8";
++		regulator-min-microvolt = <1800000>;
++		regulator-max-microvolt = <1800000>;
++
++		vin-supply = <&vreg_l8c_1p8>;
++
++		gpio = <&tlmm 20 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++
++		pinctrl-0 = <&reg_edp_1p8_en_default>;
++		pinctrl-names = "default";
++	};
++
++	reg_codec_3p3: codec-regulator {
++		compatible = "regulator-fixed";
++		regulator-name = "codec_3p3";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++
++		gpio = <&tlmm 83 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++
++		pinctrl-0 = <&reg_audio_en_default>;
++		pinctrl-names = "default";
++	};
++
++	reg_lcm_3p3: panel-regulator {
++		compatible = "regulator-fixed";
++		regulator-name = "lcm_3p3";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++
++		gpio = <&tlmm 26 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++
++		pinctrl-0 = <&reg_lcm_en_default>;
++		pinctrl-names = "default";
++	};
++
++	reg_tp_3p3: touchpad-regulator {
++		compatible = "regulator-fixed";
++		regulator-name = "tp_3p3";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++
++		gpio = <&tlmm 25 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++
++		pinctrl-0 = <&reg_tp_en_default>;
++		pinctrl-names = "default";
++	};
++
++	sound: sound {
++		compatible = "qcom,sm8250-sndcard";
++		pinctrl-0 = <&pri_mi2s_active>, <&pri_mi2s_mclk_active>, <&ter_mi2s_active>;
++		pinctrl-names = "default";
++		model = "Acer-Aspire-1";
++		status = "disabled";
++
++		dai-link-multimedia1 {
++			link-name = "MultiMedia1";
++			cpu { sound-dai = <&q6asmdai MSM_FRONTEND_DAI_MULTIMEDIA1>; };
++		};
++
++		dai-link-multimedia2 {
++			link-name = "MultiMedia2";
++			status = "disabled";
++			cpu { sound-dai = <&q6asmdai MSM_FRONTEND_DAI_MULTIMEDIA2>; };
++		};
++
++		dai-link-multimedia3 {
++			link-name = "MultiMedia3";
++			status = "disabled";
++			cpu { sound-dai = <&q6asmdai MSM_FRONTEND_DAI_MULTIMEDIA3>; };
++		};
++
++		dai-link-primary {
++			link-name = "Primary MI2S Playback";
++			status = "disabled";
++			cpu { sound-dai = <&q6afedai PRIMARY_MI2S_RX>; };
++			platform { sound-dai = <&q6routing>; };
++			codec { sound-dai = <&alc5682 0>; };
++		};
++
++		dai-link-tertiary {
++			link-name = "Tertiary MI2S Playback";
++			cpu { sound-dai = <&q6afedai TERTIARY_MI2S_RX>;	};
++			platform { sound-dai = <&q6routing>; };
++			codec { sound-dai = <&max98357a>; };
++		};
++	};
++};
++
++&q6afedai {
++	qi2s@16 {
++		reg = <PRIMARY_MI2S_RX>;
++		qcom,sd-lines = <1>;
++		status = "disabled";
++	};
++
++	qi2s@17 {
++		reg = <PRIMARY_MI2S_TX>;
++		qcom,sd-lines = <0>;
++		status = "disabled";
++	};
++
++	qi2s@20 {
++		reg = <TERTIARY_MI2S_RX>;
++		qcom,sd-lines = <0>;
++	};
++};
++
++&q6asmdai {
++	dai@0 {
++		reg = <0>;
++	};
++
++	dai@1 {
++		reg = <1>;
++		status = "disabled";
++	};
++
++	dai@2 {
++		reg = <2>;
++		status = "disabled";
++	};
++};
++
++&dsi0 {
++	vdda-supply = <&vreg_l3c_1p2>;
++	status = "okay";
++};
++
++&dsi0_out {
++	remote-endpoint = <&sn65dsi86_in>;
++	data-lanes = <0 1 2 3>;
++};
++
++&dsi_phy {
++	vdds-supply = <&vreg_l4a_0p8>;
++	status = "okay";
++};
++
++&i2c2 {
++	clock-frequency = <400000>;
++	status = "okay";
++
++	embedded-controller@76 {
++		compatible = "acer,aspire1-battery";
++		reg = <0x76>;
++
++		interrupt-parent = <&tlmm>;
++		interrupts = <30 IRQ_TYPE_EDGE_BOTH>;
++
++		pinctrl-0 = <&ec_int_default>;
++		pinctrl-names = "default";
++
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		connector@0 {
++			compatible = "usb-c-connector";
++			reg = <0>;
++			power-role = "dual";
++			data-role = "dual";
++
++			ports {
++				#address-cells = <1>;
++				#size-cells = <0>;
++				port@1 {
++					reg = <1>;
++					ec_dp_in: endpoint {
++						remote-endpoint = <&mdss_dp_out>;
++					};
++				};
++			};
++		};
++	};
++};
++
++&mdss_dp_out {
++	remote-endpoint = <&ec_dp_in>;
++};
++
++&i2c4 {
++	clock-frequency = <400000>;
++	status = "okay";
++
++	/*
++	 * NOTE: DSDT defines two possible touchpads, other one is
++	 *
++	 * reg = <0x15>;
++	 * hid-descr-addr = <0x1>;
++	 */
++
++	touchpad@2c {
++		compatible = "hid-over-i2c";
++		reg = <0x2c>;
++		hid-descr-addr = <0x20>;
++
++		vdd-supply = <&reg_tp_3p3>;
++
++		interrupts-extended = <&tlmm 94 IRQ_TYPE_LEVEL_LOW>;
++
++		pinctrl-0 = <&hid_touchpad_default>;
++		pinctrl-names = "default";
++
++		wakeup-source;
++	};
++
++	keyboard@3a {
++		compatible = "hid-over-i2c";
++		reg = <0x3a>;
++		hid-descr-addr = <0x1>;
++
++		interrupts-extended = <&tlmm 33 IRQ_TYPE_LEVEL_LOW>;
++
++		pinctrl-0 = <&hid_keyboard_default>;
++		pinctrl-names = "default";
++
++		wakeup-source;
++	};
++};
++
++&i2c9 {
++	clock-frequency = <400000>;
++	status = "okay";
++
++	alc5682: codec@1a {
++		compatible = "realtek,rt5682i";
++		reg = <0x1a>;
++
++		#sound-dai-cells = <1>;
++
++		interrupt-parent = <&tlmm>;
++		interrupts = <28 IRQ_TYPE_EDGE_BOTH>;
++
++		pinctrl-0 = <&codec_irq_default>;
++		pinctrl-names = "default";
++
++		AVDD-supply = <&vreg_l15a_1p8>;
++		MICVDD-supply = <&reg_codec_3p3>;
++		VBAT-supply = <&reg_codec_3p3>;
++
++		realtek,dmic1-data-pin = <1>;
++		realtek,dmic1-clk-pin = <1>;
++		realtek,jd-src = <1>;
++	};
++};
++
++&i2c10 {
++	clock-frequency = <400000>;
++	status = "okay";
++
++	sn65dsi86_bridge: bridge@2c {
++		compatible = "ti,sn65dsi86";
++		reg = <0x2c>;
++		gpio-controller;
++		#gpio-cells = <2>;
++		#pwm-cells = <1>;
++
++		interrupt-parent = <&tlmm>;
++		interrupts = <11 IRQ_TYPE_LEVEL_HIGH>;
++
++		enable-gpios = <&tlmm 51 GPIO_ACTIVE_HIGH>;
++		suspend-gpios = <&tlmm 22 GPIO_ACTIVE_LOW>;
++
++		pinctrl-0 = <&bridge_en_default>,
++			    <&edp_bridge_irq_default>,
++			    <&bridge_suspend_default>;
++		pinctrl-names = "default";
++
++		vpll-supply = <&reg_brij_1p8>;
++		vccio-supply = <&reg_brij_1p8>;
++		vcca-supply = <&reg_brij_1p2>;
++		vcc-supply = <&reg_brij_1p2>;
++
++		clocks = <&rpmhcc RPMH_LN_BB_CLK3>;
++		clock-names = "refclk";
++
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			port@0 {
++				reg = <0>;
++
++				sn65dsi86_in: endpoint {
++					remote-endpoint = <&dsi0_out>;
++				};
++			};
++
++			port@1 {
++				reg = <1>;
++
++				sn65dsi86_out: endpoint {
++					data-lanes = <0 1>;
++					remote-endpoint = <&panel_in_edp>;
++				};
++			};
++		};
++
++		aux-bus {
++			panel: panel {
++				compatible = "edp-panel";
++				power-supply = <&reg_lcm_3p3>;
++				backlight = <&backlight>;
++				hpd-absent-delay-ms = <200>;
++
++				port {
++					panel_in_edp: endpoint {
++						remote-endpoint = <&sn65dsi86_out>;
++					};
++				};
++			};
++		};
++	};
++};
++
++&gpu {
++	status = "okay";
++
++	zap-shader {
++		memory-region = <&zap_mem>;
++		firmware-name = "qcom/sc7180/acer/aspire1/qcdxkmsuc7180.mbn";
++	};
++};
++
++&mdss {
++	status = "okay";
++};
++
++&mdss_dp {
++	data-lanes = <0 1>;
++
++	pinctrl-0 = <&dp_hot_plug_det>;
++	pinctrl-names = "default";
++
++	vdda-1p2-supply = <&vreg_l3c_1p2>;
++	vdda-0p9-supply = <&vreg_l4a_0p8>;
++
++	status = "okay";
++};
++
++&pm6150_adc {
++	thermistor@4e {
++		reg = <ADC5_AMUX_THM2_100K_PU>;
++		qcom,ratiometric;
++		qcom,hw-settle-time = <200>;
++	};
++
++	charger-thermistor@4f {
++		reg = <ADC5_AMUX_THM3_100K_PU>;
++		qcom,ratiometric;
++		qcom,hw-settle-time = <200>;
++	};
++};
++
++&pm6150_adc_tm {
++	status = "okay";
++
++	charger-thermistor@0 {
++		reg = <0>;
++		io-channels = <&pm6150_adc ADC5_AMUX_THM3_100K_PU>;
++		qcom,ratiometric;
++		qcom,hw-settle-time-us = <200>;
++	};
++
++	thermistor@1 {
++		reg = <1>;
++		io-channels = <&pm6150_adc ADC5_AMUX_THM2_100K_PU>;
++		qcom,ratiometric;
++		qcom,hw-settle-time-us = <200>;
++	};
++};
++
++&pm6150_pon {
++	status = "disabled";
++};
++
++&qupv3_id_0 {
++	status = "okay";
++};
++
++&qupv3_id_1 {
++	status = "okay";
++};
++
++&remoteproc_adsp {
++	memory-region = <&adsp_mem>;
++	firmware-name = "qcom/sc7180-acer-aspire1/qcadsp7180.mbn";
++	status = "okay";
++};
++
++&remoteproc_mpss {
++	firmware-name = "qcom/sc7180/acer/aspire1/qcmpss7180_nm.mbn";
++	status = "okay";
++};
++
++&sdhc_1 {
++	pinctrl-0 = <&sdc1_default>;
++	pinctrl-1 = <&sdc1_sleep>;
++	pinctrl-names = "default", "sleep";
++	vmmc-supply = <&vreg_l19a_2p9>;
++	vqmmc-supply = <&vreg_l12a_1p8>;
++
++	status = "okay";
++};
++
++&uart3 {
++	/delete-property/interrupts;
++	interrupts-extended = <&intc GIC_SPI 604 IRQ_TYPE_LEVEL_HIGH>,
++			      <&tlmm 41 IRQ_TYPE_EDGE_FALLING>;
++
++	pinctrl-1 = <&qup_uart3_sleep>;
++	pinctrl-names = "default", "sleep";
++
++	status = "okay";
++
++	bluetooth: bluetooth {
++		compatible = "qcom,wcn3991-bt";
++		vddio-supply = <&vreg_l10a_1p8>;
++		vddxo-supply = <&vreg_l1c_1p8>;
++		vddrf-supply = <&vreg_l2c_1p3>;
++		vddch0-supply = <&vreg_l10c_3p3>;
++		max-speed = <3200000>;
++	};
++};
++
++&uart8 {
++	status = "okay";
++};
++
++&usb_1 {
++	status = "okay";
++};
++
++&usb_1_dwc3 {
++	dr_mode = "host";
++	#address-cells = <1>;
++	#size-cells = <0>;
++
++	usb_hub_2_x: hub@1 {
++		compatible = "usbbda,5411";
++		reg = <1>;
++		peer-hub = <&usb_hub_3_x>;
++	};
++
++	usb_hub_3_x: hub@2 {
++		compatible = "usbbda,411";
++		reg = <2>;
++		peer-hub = <&usb_hub_2_x>;
++	};
++};
++
++&usb_1_hsphy {
++	vdd-supply = <&vreg_l4a_0p8>;
++	vdda-pll-supply = <&vreg_l11a_1p8>;
++	vdda-phy-dpdm-supply = <&vreg_l17a_3p0>;
++	qcom,imp-res-offset-value = <8>;
++	qcom,preemphasis-level = <QUSB2_V2_PREEMPHASIS_15_PERCENT>;
++	qcom,preemphasis-width = <QUSB2_V2_PREEMPHASIS_WIDTH_HALF_BIT>;
++	qcom,bias-ctrl-value = <0x22>;
++	qcom,charge-ctrl-value = <3>;
++	qcom,hsdisc-trim-value = <0>;
++
++	status = "okay";
++};
++
++&usb_1_qmpphy {
++	vdda-phy-supply = <&vreg_l3c_1p2>;
++	vdda-pll-supply = <&vreg_l4a_0p8>;
++
++	status = "okay";
++};
++
++&venus {
++	firmware-name = "qcom/sc7180/acer/aspire1/qcvss7180.mbn";
++};
++
++&wifi {
++	vdd-0.8-cx-mx-supply = <&vreg_l9a_0p6>;
++	vdd-1.8-xo-supply = <&vreg_l1c_1p8>;
++	vdd-1.3-rfa-supply = <&vreg_l2c_1p3>;
++	vdd-3.3-ch0-supply = <&vreg_l10c_3p3>;
++	vdd-3.3-ch1-supply = <&vreg_l11c_3p3>;
++
++	status = "okay";
++};
++
++&apps_rsc {
++	regulators-0 {
++		compatible = "qcom,pm6150-rpmh-regulators";
++		qcom,pmic-id = "a";
++
++		vreg_s1a_1p1: smps1 {
++			regulator-min-microvolt = <1128000>;
++			regulator-max-microvolt = <1128000>;
++		};
++
++		vreg_l4a_0p8: ldo4 {
++			regulator-min-microvolt = <824000>;
++			regulator-max-microvolt = <928000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
++		};
++
++		vreg_l9a_0p6: ldo9 {
++			regulator-min-microvolt = <488000>;
++			regulator-max-microvolt = <800000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
++		};
++
++		vreg_l10a_1p8: ldo10 {
++			regulator-min-microvolt = <1800000>;
++			regulator-max-microvolt = <1800000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
++			regulator-always-on;
++			regulator-boot-on;
++		};
++
++		vreg_l11a_1p8: ldo11 {
++			regulator-min-microvolt = <1800000>;
++			regulator-max-microvolt = <1800000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
++		};
++
++		vreg_l12a_1p8: ldo12 {
++			regulator-min-microvolt = <1800000>;
++			regulator-max-microvolt = <1800000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
++		};
++
++		vreg_l13a_1p8: ldo13 {
++			regulator-min-microvolt = <1800000>;
++			regulator-max-microvolt = <1800000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
++		};
++
++		vreg_l14a_1p8: ldo14 {
++			regulator-min-microvolt = <1800000>;
++			regulator-max-microvolt = <1800000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
++		};
++
++		vreg_l15a_1p8: ldo15 {
++			regulator-min-microvolt = <1800000>;
++			regulator-max-microvolt = <1800000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
++		};
++
++		vreg_l16a_2p7: ldo16 {
++			regulator-min-microvolt = <2496000>;
++			regulator-max-microvolt = <3304000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
++		};
++
++		vreg_l17a_3p0: ldo17 {
++			regulator-min-microvolt = <2920000>;
++			regulator-max-microvolt = <3232000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
++		};
++
++		vreg_l18a_2p8: ldo18 {
++			regulator-min-microvolt = <2496000>;
++			regulator-max-microvolt = <3304000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
++		};
++
++		vreg_l19a_2p9: ldo19 {
++			regulator-min-microvolt = <2960000>;
++			regulator-max-microvolt = <2960000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
++		};
++	};
++
++	regulators-1 {
++		compatible = "qcom,pm6150l-rpmh-regulators";
++		qcom,pmic-id = "c";
++
++		vreg_s8c_1p3: smps8 {
++			regulator-min-microvolt = <1120000>;
++			regulator-max-microvolt = <1408000>;
++		};
++
++		vreg_l1c_1p8: ldo1 {
++			regulator-min-microvolt = <1616000>;
++			regulator-max-microvolt = <1984000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
++		};
++
++		vreg_l2c_1p3: ldo2 {
++			regulator-min-microvolt = <1168000>;
++			regulator-max-microvolt = <1304000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
++		};
++
++		vreg_l3c_1p2: ldo3 {
++			regulator-min-microvolt = <1144000>;
++			regulator-max-microvolt = <1304000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
++		};
++
++		vreg_l4c_1p8: ldo4 {
++			regulator-min-microvolt = <1648000>;
++			regulator-max-microvolt = <3304000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_LPM>;
++		};
++
++		vreg_l5c_1p8: ldo5 {
++			regulator-min-microvolt = <1648000>;
++			regulator-max-microvolt = <3304000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_LPM>;
++		};
++
++		vreg_l6c_2p9: ldo6 {
++			regulator-min-microvolt = <1800000>;
++			regulator-max-microvolt = <2950000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
++		};
++
++		vreg_l7c_3p0: ldo7 {
++			regulator-min-microvolt = <3000000>;
++			regulator-max-microvolt = <3312000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_LPM>;
++		};
++
++		vreg_l8c_1p8: ldo8 {
++			regulator-min-microvolt = <1800000>;
++			regulator-max-microvolt = <1800000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
++		};
++
++		vreg_l9c_2p9: ldo9 {
++			regulator-min-microvolt = <2952000>;
++			regulator-max-microvolt = <2952000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
++		};
++
++		vreg_l10c_3p3: ldo10 {
++			regulator-min-microvolt = <3000000>;
++			regulator-max-microvolt = <3400000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
++		};
++
++		vreg_l11c_3p3: ldo11 {
++			regulator-min-microvolt = <3000000>;
++			regulator-max-microvolt = <3400000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
++		};
++
++		vreg_bob: bob {
++			regulator-min-microvolt = <3008000>;
++			regulator-max-microvolt = <3960000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_AUTO>;
++		};
++	};
++};
++
++&dp_hot_plug_det {
++	pinconf {
++		pins = "gpio117";
++		bias-disable;
++	};
++};
++
++&qup_i2c2_default {
++	drive-strength = <2>;
++
++	/* Has external pullup */
++	bias-disable;
++};
++
++&qup_i2c4_default {
++	drive-strength = <2>;
++
++	/* Has external pullup */
++	bias-disable;
++};
++
++&qup_i2c9_default {
++	drive-strength = <2>;
++
++	/* Has external pullup */
++	bias-disable;
++};
++
++&qup_i2c10_default {
++	drive-strength = <2>;
++
++	/* Has external pullup */
++	bias-disable;
++};
++
++&tlmm {
++	/*
++	 * The TZ seem to protect those because some boards can have
++	 * fingerprint sensor connected to this range. Not connected
++	 * on this board
++	 */
++	gpio-reserved-ranges = <58 5>;
++
++	amp_sd_mode_default: amp-sd-mode-deault-state {
++		pins = "gpio23";
++		function = "gpio";
++		drive-strength = <16>;
++		bias-disable;
++	};
++
++	bridge_en_default: bridge-en-default-state {
++		pins = "gpio51";
++		function = "gpio";
++		drive-strength = <16>;
++		bias-disable;
++	};
++
++	bridge_suspend_default: bridge-suspend-default-state {
++		pins = "gpio22";
++		function = "gpio";
++		drive-strength = <16>;
++		bias-pull-up;
++	};
++
++	codec_irq_default: codec-irq-deault-state {
++		pins = "gpio28";
++		function = "gpio";
++		drive-strength = <2>;
++		bias-disable;
++	};
++
++	ec_int_default: ec-int-default-state {
++		pins = "gpio30";
++		function = "gpio";
++		drive-strength = <2>;
++		bias-disable;
++	};
++
++	edp_bridge_irq_default: edp-bridge-irq-default-state {
++		pins = "gpio11";
++		function = "gpio";
++		drive-strength = <2>;
++		bias-pull-down;
++	};
++
++	hid_keyboard_default: hid-keyboard-default-state {
++		pins = "gpio33";
++		function = "gpio";
++		drive-strength = <2>;
++		bias-disable;
++	};
++
++	hid_touchpad_default: hid-touchpad-default-state {
++		pins = "gpio94";
++		function = "gpio";
++		drive-strength = <2>;
++		bias-disable;
++	};
++
++	qup_uart3_sleep: qup-uart3-sleep-state {
++		cts-pins {
++			/*
++			 * Configure a pull-down on CTS to match the pull of
++			 * the Bluetooth module.
++			 */
++			pins = "gpio38";
++			function = "gpio";
++			bias-pull-down;
++		};
++
++		rts-pins {
++			/*
++			 * Configure pull-down on RTS. As RTS is active low
++			 * signal, pull it low to indicate the BT SoC that it
++			 * can wakeup the system anytime from suspend state by
++			 * pulling RX low (by sending wakeup bytes).
++			 */
++			pins = "gpio39";
++			function = "gpio";
++			bias-pull-down;
++		};
++
++		tx-pins {
++			/*
++			 * Configure pull-up on TX when it isn't actively driven
++			 * to prevent BT SoC from receiving garbage during sleep.
++			 */
++			pins = "gpio40";
++			function = "gpio";
++			bias-pull-up;
++		};
++
++		rx-pins {
++			/*
++			 * Configure a pull-up on RX. This is needed to avoid
++			 * garbage data when the TX pin of the Bluetooth module
++			 * is floating which may cause spurious wakeups.
++			 */
++			pins = "gpio41";
++			function = "gpio";
++			bias-pull-up;
++		};
++	};
++
++	reg_edp_1p2_en_default: reg-edp-1p2-en-deault-state {
++		pins = "gpio19";
++		function = "gpio";
++		drive-strength = <16>;
++		bias-disable;
++	};
++
++	reg_edp_1p8_en_default: reg-edp-1p8-en-deault-state {
++		pins = "gpio20";
++		function = "gpio";
++		drive-strength = <16>;
++		bias-disable;
++	};
++
++	reg_lcm_en_default: reg-lcm-en-deault-state {
++		pins = "gpio26";
++		function = "gpio";
++		drive-strength = <16>;
++		bias-disable;
++	};
++
++	reg_audio_en_default: reg-audio-en-deault-state {
++		pins = "gpio83";
++		function = "gpio";
++		drive-strength = <2>;
++		bias-disable;
++	};
++
++	reg_tp_en_default: reg-tp-en-deault-state {
++		pins = "gpio25";
++		function = "gpio";
++		drive-strength = <2>;
++		bias-disable;
++	};
++
++	soc_bkoff_default: soc-bkoff-deault-state {
++		pins = "gpio10";
++		function = "gpio";
++		drive-strength = <16>;
++		bias-disable;
++	};
++
++	sdc1_default: sdc1-default-state {
++		clk-pins {
++			pins = "sdc1_clk";
++			drive-strength = <16>;
++			bias-disable;
++		};
++
++		cmd-pins {
++			pins = "sdc1_cmd";
++			drive-strength = <16>;
++			bias-pull-up;
++		};
++
++		data-pins {
++			pins = "sdc1_data";
++			drive-strength = <16>;
++			bias-pull-up;
++		};
++
++		rclk-pins {
++			pins = "sdc1_rclk";
++			bias-pull-down;
++		};
++	};
++
++	sdc1_sleep: sdc1-sleep-state {
++		clk-pins {
++			pins = "sdc1_clk";
++			drive-strength = <2>;
++			bias-disable;
++		};
++
++		cmd-pins {
++			pins = "sdc1_cmd";
++			drive-strength = <2>;
++			bias-pull-up;
++		};
++
++		data-pins {
++			pins = "sdc1_data";
++			drive-strength = <2>;
++			bias-pull-up;
++		};
++
++		rclk-pins {
++			pins = "sdc1_rclk";
++			bias-pull-down;
++		};
++	};
++
++	ter_mi2s_active: ter-mi2s-active-state {
++		pins = "gpio63", "gpio64", "gpio65";
++		function = "mi2s_2";
++	};
++};
+diff --git a/arch/arm64/boot/dts/qcom/sc7180-idp.dts b/arch/arm64/boot/dts/qcom/sc7180-idp.dts
+index c3bdd3295c024d..828c8b55d925e4 100644
+--- a/arch/arm64/boot/dts/qcom/sc7180-idp.dts
++++ b/arch/arm64/boot/dts/qcom/sc7180-idp.dts
+@@ -339,10 +339,6 @@
+ 	vdds-supply = <&vreg_l4a_0p8>;
+ };
+ 
+-&mdp {
+-	status = "okay";
+-};
+-
+ &mdss {
+ 	status = "okay";
+ };
+diff --git a/arch/arm64/boot/dts/qcom/sc7180-trogdor.dtsi b/arch/arm64/boot/dts/qcom/sc7180-trogdor.dtsi
+index 423630c4d02c74..1d2867cc0526e2 100644
+--- a/arch/arm64/boot/dts/qcom/sc7180-trogdor.dtsi
++++ b/arch/arm64/boot/dts/qcom/sc7180-trogdor.dtsi
+@@ -785,6 +785,10 @@ hp_i2c: &i2c9 {
+ 	};
+ };
+ 
++&lpasscc {
++	status = "okay";
++};
++
+ &lpass_cpu {
+ 	status = "okay";
+ 
+@@ -810,7 +814,7 @@ hp_i2c: &i2c9 {
+ 	};
+ };
+ 
+-&mdp {
++&lpass_hm {
+ 	status = "okay";
+ };
+ 
+diff --git a/arch/arm64/boot/dts/qcom/sc7180.dtsi b/arch/arm64/boot/dts/qcom/sc7180.dtsi
+index ebfa21e9ed8a89..2f08eeb02e6556 100644
+--- a/arch/arm64/boot/dts/qcom/sc7180.dtsi
++++ b/arch/arm64/boot/dts/qcom/sc7180.dtsi
+@@ -10,6 +10,8 @@
+ #include <dt-bindings/clock/qcom,gpucc-sc7180.h>
+ #include <dt-bindings/clock/qcom,lpasscorecc-sc7180.h>
+ #include <dt-bindings/clock/qcom,rpmh.h>
++#include <dt-bindings/clock/qcom,sm8250-lpass-aoncc.h>
++#include <dt-bindings/clock/qcom,sm8250-lpass-audiocc.h>
+ #include <dt-bindings/clock/qcom,videocc-sc7180.h>
+ #include <dt-bindings/interconnect/qcom,osm-l3.h>
+ #include <dt-bindings/interconnect/qcom,sc7180.h>
+@@ -19,6 +21,8 @@
+ #include <dt-bindings/reset/qcom,sdm845-aoss.h>
+ #include <dt-bindings/reset/qcom,sdm845-pdc.h>
+ #include <dt-bindings/soc/qcom,rpmh-rsc.h>
++#include <dt-bindings/soc/qcom,apr.h>
++#include <dt-bindings/sound/qcom,q6afe.h>
+ #include <dt-bindings/thermal/thermal.h>
+ 
+ / {
+@@ -77,9 +81,8 @@
+ 			compatible = "qcom,kryo468";
+ 			reg = <0x0 0x0>;
+ 			enable-method = "psci";
+-			cpu-idle-states = <&LITTLE_CPU_SLEEP_0
+-					   &LITTLE_CPU_SLEEP_1
+-					   &CLUSTER_SLEEP_0>;
++			power-domains = <&CPU_PD0>;
++			power-domain-names = "psci";
+ 			capacity-dmips-mhz = <415>;
+ 			dynamic-power-coefficient = <137>;
+ 			operating-points-v2 = <&cpu0_opp_table>;
+@@ -104,9 +107,8 @@
+ 			compatible = "qcom,kryo468";
+ 			reg = <0x0 0x100>;
+ 			enable-method = "psci";
+-			cpu-idle-states = <&LITTLE_CPU_SLEEP_0
+-					   &LITTLE_CPU_SLEEP_1
+-					   &CLUSTER_SLEEP_0>;
++			power-domains = <&CPU_PD1>;
++			power-domain-names = "psci";
+ 			capacity-dmips-mhz = <415>;
+ 			dynamic-power-coefficient = <137>;
+ 			next-level-cache = <&L2_100>;
+@@ -127,9 +129,8 @@
+ 			compatible = "qcom,kryo468";
+ 			reg = <0x0 0x200>;
+ 			enable-method = "psci";
+-			cpu-idle-states = <&LITTLE_CPU_SLEEP_0
+-					   &LITTLE_CPU_SLEEP_1
+-					   &CLUSTER_SLEEP_0>;
++			power-domains = <&CPU_PD2>;
++			power-domain-names = "psci";
+ 			capacity-dmips-mhz = <415>;
+ 			dynamic-power-coefficient = <137>;
+ 			next-level-cache = <&L2_200>;
+@@ -150,9 +151,8 @@
+ 			compatible = "qcom,kryo468";
+ 			reg = <0x0 0x300>;
+ 			enable-method = "psci";
+-			cpu-idle-states = <&LITTLE_CPU_SLEEP_0
+-					   &LITTLE_CPU_SLEEP_1
+-					   &CLUSTER_SLEEP_0>;
++			power-domains = <&CPU_PD3>;
++			power-domain-names = "psci";
+ 			capacity-dmips-mhz = <415>;
+ 			dynamic-power-coefficient = <137>;
+ 			next-level-cache = <&L2_300>;
+@@ -173,9 +173,8 @@
+ 			compatible = "qcom,kryo468";
+ 			reg = <0x0 0x400>;
+ 			enable-method = "psci";
+-			cpu-idle-states = <&LITTLE_CPU_SLEEP_0
+-					   &LITTLE_CPU_SLEEP_1
+-					   &CLUSTER_SLEEP_0>;
++			power-domains = <&CPU_PD4>;
++			power-domain-names = "psci";
+ 			capacity-dmips-mhz = <415>;
+ 			dynamic-power-coefficient = <137>;
+ 			next-level-cache = <&L2_400>;
+@@ -196,9 +195,8 @@
+ 			compatible = "qcom,kryo468";
+ 			reg = <0x0 0x500>;
+ 			enable-method = "psci";
+-			cpu-idle-states = <&LITTLE_CPU_SLEEP_0
+-					   &LITTLE_CPU_SLEEP_1
+-					   &CLUSTER_SLEEP_0>;
++			power-domains = <&CPU_PD5>;
++			power-domain-names = "psci";
+ 			capacity-dmips-mhz = <415>;
+ 			dynamic-power-coefficient = <137>;
+ 			next-level-cache = <&L2_500>;
+@@ -219,9 +217,8 @@
+ 			compatible = "qcom,kryo468";
+ 			reg = <0x0 0x600>;
+ 			enable-method = "psci";
+-			cpu-idle-states = <&BIG_CPU_SLEEP_0
+-					   &BIG_CPU_SLEEP_1
+-					   &CLUSTER_SLEEP_0>;
++			power-domains = <&CPU_PD6>;
++			power-domain-names = "psci";
+ 			capacity-dmips-mhz = <1024>;
+ 			dynamic-power-coefficient = <480>;
+ 			next-level-cache = <&L2_600>;
+@@ -242,9 +239,8 @@
+ 			compatible = "qcom,kryo468";
+ 			reg = <0x0 0x700>;
+ 			enable-method = "psci";
+-			cpu-idle-states = <&BIG_CPU_SLEEP_0
+-					   &BIG_CPU_SLEEP_1
+-					   &CLUSTER_SLEEP_0>;
++			power-domains = <&CPU_PD7>;
++			power-domain-names = "psci";
+ 			capacity-dmips-mhz = <1024>;
+ 			dynamic-power-coefficient = <480>;
+ 			next-level-cache = <&L2_700>;
+@@ -338,7 +334,9 @@
+ 				min-residency-us = <5555>;
+ 				local-timer-stop;
+ 			};
++		};
+ 
++		domain-idle-states {
+ 			CLUSTER_SLEEP_0: cluster-sleep-0 {
+ 				compatible = "arm,idle-state";
+ 				idle-state-name = "cluster-power-down";
+@@ -549,6 +547,59 @@
+ 	psci {
+ 		compatible = "arm,psci-1.0";
+ 		method = "smc";
++
++		CPU_PD0: cpu0 {
++			#power-domain-cells = <0>;
++			power-domains = <&CLUSTER_PD>;
++			domain-idle-states = <&LITTLE_CPU_SLEEP_0 &LITTLE_CPU_SLEEP_1>;
++		};
++
++		CPU_PD1: cpu1 {
++			#power-domain-cells = <0>;
++			power-domains = <&CLUSTER_PD>;
++			domain-idle-states = <&LITTLE_CPU_SLEEP_0 &LITTLE_CPU_SLEEP_1>;
++		};
++
++		CPU_PD2: cpu2 {
++			#power-domain-cells = <0>;
++			power-domains = <&CLUSTER_PD>;
++			domain-idle-states = <&LITTLE_CPU_SLEEP_0 &LITTLE_CPU_SLEEP_1>;
++		};
++
++		CPU_PD3: cpu3 {
++			#power-domain-cells = <0>;
++			power-domains = <&CLUSTER_PD>;
++			domain-idle-states = <&LITTLE_CPU_SLEEP_0 &LITTLE_CPU_SLEEP_1>;
++		};
++
++		CPU_PD4: cpu4 {
++			#power-domain-cells = <0>;
++			power-domains = <&CLUSTER_PD>;
++			domain-idle-states = <&LITTLE_CPU_SLEEP_0 &LITTLE_CPU_SLEEP_1>;
++		};
++
++		CPU_PD5: cpu5 {
++			#power-domain-cells = <0>;
++			power-domains = <&CLUSTER_PD>;
++			domain-idle-states = <&LITTLE_CPU_SLEEP_0 &LITTLE_CPU_SLEEP_1>;
++		};
++
++		CPU_PD6: cpu6 {
++			#power-domain-cells = <0>;
++			power-domains = <&CLUSTER_PD>;
++			domain-idle-states = <&BIG_CPU_SLEEP_0 &BIG_CPU_SLEEP_1>;
++		};
++
++		CPU_PD7: cpu7 {
++			#power-domain-cells = <0>;
++			power-domains = <&CLUSTER_PD>;
++			domain-idle-states = <&BIG_CPU_SLEEP_0 &BIG_CPU_SLEEP_1>;
++		};
++
++		CLUSTER_PD: cpu-cluster0 {
++			#power-domain-cells = <0>;
++			domain-idle-states = <&CLUSTER_SLEEP_0>;
++		};
+ 	};
+ 
+ 	reserved_memory: reserved-memory {
+@@ -2632,6 +2683,154 @@
+ 			};
+ 		};
+ 
++		remoteproc_adsp: remoteproc@62400000 {
++			compatible = "qcom,sc7180-adsp-pas";
++			reg = <0 0x62400000 0 0x100>;
++
++			interrupts-extended = <&intc GIC_SPI 162 IRQ_TYPE_EDGE_RISING>,
++						<&adsp_smp2p_in 0 IRQ_TYPE_EDGE_RISING>,
++						<&adsp_smp2p_in 1 IRQ_TYPE_EDGE_RISING>,
++						<&adsp_smp2p_in 2 IRQ_TYPE_EDGE_RISING>,
++						<&adsp_smp2p_in 3 IRQ_TYPE_EDGE_RISING>;
++			interrupt-names = "wdog", "fatal", "ready",
++						"handover", "stop-ack";
++
++			clocks = <&rpmhcc RPMH_CXO_CLK>;
++			clock-names = "xo";
++
++			power-domains = <&rpmhpd SC7180_LCX>,
++					<&rpmhpd SC7180_LMX>;
++			power-domain-names = "lcx", "lmx";
++
++			qcom,qmp = <&aoss_qmp>;
++
++			qcom,smem-states = <&adsp_smp2p_out 0>;
++			qcom,smem-state-names = "stop";
++
++			status = "disabled";
++
++			glink-edge {
++				interrupts = <GIC_SPI 156 IRQ_TYPE_EDGE_RISING>;
++				label = "lpass";
++				qcom,remote-pid = <2>;
++				mboxes = <&apss_shared 8>;
++
++				apr {
++					compatible = "qcom,apr-v2";
++					qcom,glink-channels = "apr_audio_svc";
++					qcom,apr-domain = <APR_DOMAIN_ADSP>;
++					#address-cells = <1>;
++					#size-cells = <0>;
++
++					apr-service@3 {
++						reg = <APR_SVC_ADSP_CORE>;
++						compatible = "qcom,q6core";
++						qcom,protection-domain = "avs/audio", "msm/adsp/audio_pd";
++					};
++
++					q6afe: apr-service@4 {
++						compatible = "qcom,q6afe";
++						reg = <APR_SVC_AFE>;
++						qcom,protection-domain = "avs/audio", "msm/adsp/audio_pd";
++						q6afedai: dais {
++							compatible = "qcom,q6afe-dais";
++							#address-cells = <1>;
++							#size-cells = <0>;
++							#sound-dai-cells = <1>;
++						};
++
++						q6afecc: cc {
++							compatible = "qcom,q6afe-clocks";
++							#clock-cells = <2>;
++						};
++					};
++
++					q6asm: apr-service@7 {
++						compatible = "qcom,q6asm";
++						reg = <APR_SVC_ASM>;
++						qcom,protection-domain = "avs/audio", "msm/adsp/audio_pd";
++						q6asmdai: dais {
++							compatible = "qcom,q6asm-dais";
++							#address-cells = <1>;
++							#size-cells = <0>;
++							#sound-dai-cells = <1>;
++							iommus = <&apps_smmu 0x1001 0x0>;
++						};
++					};
++
++					q6adm: apr-service@8 {
++						compatible = "qcom,q6adm";
++						reg = <APR_SVC_ADM>;
++						qcom,protection-domain = "avs/audio", "msm/adsp/audio_pd";
++						q6routing: routing {
++							compatible = "qcom,q6adm-routing";
++							#sound-dai-cells = <0>;
++						};
++					};
++				};
++
++				fastrpc {
++					compatible = "qcom,fastrpc";
++					qcom,glink-channels = "fastrpcglink-apps-dsp";
++					label = "adsp";
++					#address-cells = <1>;
++					#size-cells = <0>;
++
++					compute-cb@3 {
++						compatible = "qcom,fastrpc-compute-cb";
++						reg = <3>;
++						iommus = <&apps_smmu 0x1003 0x0>;
++					};
++
++					compute-cb@4 {
++						compatible = "qcom,fastrpc-compute-cb";
++						reg = <4>;
++						iommus = <&apps_smmu 0x1004 0x0>;
++					};
++
++					compute-cb@5 {
++						compatible = "qcom,fastrpc-compute-cb";
++						reg = <5>;
++						iommus = <&apps_smmu 0x1005 0x0>;
++						qcom,nsessions = <5>;
++					};
++				};
++			};
++		};
++
++		audiocc: clock-controller@62700000 {
++			compatible = "qcom,sm8250-lpass-audiocc";
++			reg = <0 0x62700000 0 0x30000>;
++			#clock-cells = <1>;
++			clocks = <&q6afecc LPASS_HW_MACRO_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
++				<&q6afecc LPASS_HW_DCODEC_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
++				<&q6afecc LPASS_CLK_ID_TX_CORE_MCLK LPASS_CLK_ATTRIBUTE_COUPLE_NO>;
++			clock-names = "core", "audio", "bus";
++		};
++
++		aoncc: clock-controller@62780000 {
++			compatible = "qcom,sm8250-lpass-aoncc";
++			reg = <0 0x62780000 0 0x40000>;
++			#clock-cells = <1>;
++			clocks = <&q6afecc LPASS_HW_MACRO_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
++				<&q6afecc LPASS_HW_DCODEC_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
++				<&q6afecc LPASS_CLK_ID_TX_CORE_NPL_MCLK LPASS_CLK_ATTRIBUTE_COUPLE_NO>;
++			clock-names = "core", "audio", "bus";
++		};
++
++		lpass_tlmm: pinctrl@627c0000 {
++			compatible = "qcom,sc7280-lpass-lpi-pinctrl";
++			reg = <0 0x627c0000 0x0 0x20000>,
++				<0 0x62950000 0x0 0x10000>;
++			gpio-controller;
++			#gpio-cells = <2>;
++			gpio-ranges = <&lpass_tlmm 0 0 15>;
++
++			clocks = <&q6afecc LPASS_HW_MACRO_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
++				<&q6afecc LPASS_HW_DCODEC_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>;
++			clock-names = "core", "audio";
++		};
++
+ 		sdhc_2: mmc@8804000 {
+ 			compatible = "qcom,sc7180-sdhci", "qcom,sdhci-msm-v5";
+ 			reg = <0 0x08804000 0 0x1000>;
+@@ -2975,8 +3174,6 @@
+ 				interrupt-parent = <&mdss>;
+ 				interrupts = <0>;
+ 
+-				status = "disabled";
+-
+ 				ports {
+ 					#address-cells = <1>;
+ 					#size-cells = <0>;
+@@ -3492,6 +3689,7 @@
+ 					  <SLEEP_TCS   3>,
+ 					  <WAKE_TCS    3>,
+ 					  <CONTROL_TCS 1>;
++			power-domains = <&CLUSTER_PD>;
+ 
+ 			rpmhcc: clock-controller {
+ 				compatible = "qcom,sc7180-rpmh-clk";
+@@ -3614,6 +3812,8 @@
+ 			power-domains = <&lpass_hm LPASS_CORE_HM_GDSCR>;
+ 			#clock-cells = <1>;
+ 			#power-domain-cells = <1>;
++
++			status = "reserved"; /* Controlled by ADSP */
+ 		};
+ 
+ 		lpass_cpu: lpass@62d87000 {
+@@ -3662,6 +3862,8 @@
+ 
+ 			#clock-cells = <1>;
+ 			#power-domain-cells = <1>;
++
++			status = "reserved"; /* Controlled by ADSP */
+ 		};
+ 	};
+ 
+diff --git a/arch/arm64/configs/cros_defconfig b/arch/arm64/configs/cros_defconfig
+new file mode 100644
+index 00000000000000..05c813da6b28d9
+--- /dev/null
++++ b/arch/arm64/configs/cros_defconfig
+@@ -0,0 +1,1056 @@
++CONFIG_LOCALVERSION="-stb-cbq"
++# CONFIG_LOCALVERSION_AUTO is not set
++CONFIG_SYSVIPC=y
++CONFIG_POSIX_MQUEUE=y
++CONFIG_NO_HZ_IDLE=y
++CONFIG_HIGH_RES_TIMERS=y
++CONFIG_BPF_SYSCALL=y
++CONFIG_BPF_JIT=y
++CONFIG_PREEMPT=y
++CONFIG_IRQ_TIME_ACCOUNTING=y
++CONFIG_BSD_PROCESS_ACCT=y
++CONFIG_BSD_PROCESS_ACCT_V3=y
++CONFIG_TASKSTATS=y
++CONFIG_TASK_DELAY_ACCT=y
++CONFIG_TASK_XACCT=y
++CONFIG_TASK_IO_ACCOUNTING=y
++CONFIG_IKCONFIG=m
++CONFIG_IKCONFIG_PROC=y
++CONFIG_NUMA_BALANCING=y
++CONFIG_MEMCG=y
++CONFIG_BLK_CGROUP=y
++CONFIG_CFS_BANDWIDTH=y
++CONFIG_RT_GROUP_SCHED=y
++CONFIG_CGROUP_PIDS=y
++CONFIG_CGROUP_FREEZER=y
++CONFIG_CGROUP_HUGETLB=y
++CONFIG_CPUSETS=y
++CONFIG_CGROUP_DEVICE=y
++CONFIG_CGROUP_CPUACCT=y
++CONFIG_CGROUP_PERF=y
++CONFIG_CGROUP_BPF=y
++CONFIG_USER_NS=y
++CONFIG_SCHED_AUTOGROUP=y
++CONFIG_BLK_DEV_INITRD=y
++CONFIG_KALLSYMS_ALL=y
++CONFIG_PROFILING=y
++CONFIG_ARCH_QCOM=y
++CONFIG_ARM64_VA_BITS_48=y
++CONFIG_SCHED_MC=y
++CONFIG_SCHED_SMT=y
++CONFIG_NUMA=y
++CONFIG_KEXEC=y
++CONFIG_KEXEC_FILE=y
++CONFIG_CRASH_DUMP=y
++CONFIG_XEN=y
++CONFIG_COMPAT=y
++CONFIG_RANDOMIZE_BASE=y
++CONFIG_CMDLINE="clk_ignore_unused deferred_probe_timeout=30"
++CONFIG_HIBERNATION=y
++CONFIG_WQ_POWER_EFFICIENT_DEFAULT=y
++CONFIG_ENERGY_MODEL=y
++CONFIG_CPU_IDLE=y
++CONFIG_CPU_IDLE_GOV_LADDER=y
++CONFIG_ARM_PSCI_CPUIDLE=y
++CONFIG_CPU_FREQ=y
++CONFIG_CPU_FREQ_STAT=y
++CONFIG_CPU_FREQ_GOV_POWERSAVE=m
++CONFIG_CPU_FREQ_GOV_USERSPACE=y
++CONFIG_CPU_FREQ_GOV_ONDEMAND=y
++CONFIG_CPU_FREQ_GOV_CONSERVATIVE=m
++CONFIG_CPUFREQ_DT=y
++CONFIG_ARM_SCPI_CPUFREQ=y
++CONFIG_ARM_QCOM_CPUFREQ_NVMEM=y
++CONFIG_ARM_QCOM_CPUFREQ_HW=y
++CONFIG_ARM_SCMI_CPUFREQ=y
++CONFIG_VIRTUALIZATION=y
++CONFIG_KVM=y
++CONFIG_JUMP_LABEL=y
++CONFIG_MODULES=y
++CONFIG_MODULE_UNLOAD=y
++CONFIG_BLK_DEV_THROTTLING=y
++# CONFIG_IOSCHED_BFQ is not set
++# CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
++CONFIG_ZSWAP=y
++CONFIG_Z3FOLD=y
++CONFIG_ZSMALLOC=y
++# CONFIG_COMPAT_BRK is not set
++CONFIG_MEMORY_HOTPLUG=y
++CONFIG_MEMORY_HOTREMOVE=y
++CONFIG_KSM=y
++CONFIG_MEMORY_FAILURE=y
++CONFIG_TRANSPARENT_HUGEPAGE=y
++CONFIG_LRU_GEN=y
++CONFIG_LRU_GEN_ENABLED=y
++CONFIG_NET=y
++CONFIG_PACKET=y
++CONFIG_UNIX=y
++CONFIG_XFRM_USER=m
++CONFIG_INET=y
++CONFIG_IP_MULTICAST=y
++CONFIG_IP_ADVANCED_ROUTER=y
++CONFIG_IP_MULTIPLE_TABLES=y
++CONFIG_IP_PNP=y
++CONFIG_IP_PNP_DHCP=y
++CONFIG_IP_PNP_BOOTP=y
++CONFIG_INET_ESP=m
++CONFIG_IPV6=m
++CONFIG_IPV6_MULTIPLE_TABLES=y
++CONFIG_NETFILTER=y
++CONFIG_BRIDGE_NETFILTER=m
++CONFIG_NF_CONNTRACK=m
++CONFIG_NF_CONNTRACK_EVENTS=y
++CONFIG_NF_CONNTRACK_FTP=m
++CONFIG_NF_CONNTRACK_TFTP=m
++CONFIG_NETFILTER_XT_MARK=m
++CONFIG_NETFILTER_XT_TARGET_CHECKSUM=m
++CONFIG_NETFILTER_XT_TARGET_LOG=m
++CONFIG_NETFILTER_XT_MATCH_ADDRTYPE=m
++CONFIG_NETFILTER_XT_MATCH_CONNTRACK=m
++CONFIG_NETFILTER_XT_MATCH_IPVS=m
++CONFIG_IP_VS=m
++CONFIG_IP_VS_RR=m
++CONFIG_IP_VS_NFCT=y
++CONFIG_IP_NF_IPTABLES=m
++CONFIG_IP_NF_FILTER=m
++CONFIG_IP_NF_TARGET_REJECT=m
++CONFIG_IP_NF_NAT=m
++CONFIG_IP_NF_TARGET_MASQUERADE=m
++CONFIG_IP_NF_MANGLE=m
++CONFIG_IP6_NF_IPTABLES=m
++CONFIG_IP6_NF_FILTER=m
++CONFIG_IP6_NF_TARGET_REJECT=m
++CONFIG_IP6_NF_MANGLE=m
++CONFIG_IP6_NF_NAT=m
++CONFIG_IP6_NF_TARGET_MASQUERADE=m
++CONFIG_BRIDGE=m
++CONFIG_BRIDGE_VLAN_FILTERING=y
++CONFIG_NET_DSA=m
++CONFIG_VLAN_8021Q=m
++CONFIG_VLAN_8021Q_GVRP=y
++CONFIG_VLAN_8021Q_MVRP=y
++CONFIG_NET_SCHED=y
++CONFIG_NET_SCH_CBS=m
++CONFIG_NET_SCH_ETF=m
++CONFIG_NET_SCH_TAPRIO=m
++CONFIG_NET_SCH_MQPRIO=m
++CONFIG_NET_SCH_INGRESS=m
++CONFIG_NET_CLS_BASIC=m
++CONFIG_NET_CLS_CGROUP=m
++CONFIG_NET_CLS_FLOWER=m
++CONFIG_NET_CLS_ACT=y
++CONFIG_NET_ACT_GACT=m
++CONFIG_NET_ACT_MIRRED=m
++CONFIG_NET_ACT_GATE=m
++CONFIG_QRTR=y
++CONFIG_QRTR_SMD=y
++CONFIG_QRTR_TUN=y
++CONFIG_CGROUP_NET_PRIO=y
++CONFIG_CAN=m
++CONFIG_BT=m
++CONFIG_BT_RFCOMM=m
++CONFIG_BT_RFCOMM_TTY=y
++CONFIG_BT_BNEP=m
++CONFIG_BT_HIDP=m
++# CONFIG_BT_LE is not set
++CONFIG_BT_LEDS=y
++# CONFIG_BT_DEBUGFS is not set
++CONFIG_BT_HCIBTUSB=m
++CONFIG_BT_HCIUART=m
++CONFIG_BT_HCIUART_LL=y
++CONFIG_BT_HCIUART_BCM=y
++CONFIG_BT_HCIUART_QCA=y
++CONFIG_BT_HCIUART_MRVL=y
++CONFIG_BT_MRVL=m
++CONFIG_BT_MRVL_SDIO=m
++CONFIG_BT_QCOMSMD=m
++CONFIG_CFG80211=m
++CONFIG_MAC80211=m
++CONFIG_MAC80211_LEDS=y
++CONFIG_RFKILL=m
++CONFIG_NET_9P=y
++CONFIG_NET_9P_VIRTIO=y
++CONFIG_NFC=m
++CONFIG_NFC_NCI=m
++CONFIG_NFC_S3FWRN5_I2C=m
++CONFIG_PCI=y
++CONFIG_PCIEPORTBUS=y
++CONFIG_PCIEAER=y
++CONFIG_PCI_IOV=y
++CONFIG_PCI_PASID=y
++CONFIG_HOTPLUG_PCI=y
++CONFIG_PCI_HOST_GENERIC=y
++CONFIG_PCI_XGENE=y
++CONFIG_PCIE_ALTERA=y
++CONFIG_PCIE_ALTERA_MSI=y
++CONFIG_PCI_HOST_THUNDER_PEM=y
++CONFIG_PCI_HOST_THUNDER_ECAM=y
++CONFIG_PCI_HISI=y
++CONFIG_PCIE_QCOM=y
++CONFIG_PCIE_KIRIN=y
++CONFIG_PCI_ENDPOINT=y
++CONFIG_PCI_ENDPOINT_CONFIGFS=y
++CONFIG_PCI_EPF_TEST=m
++CONFIG_DEVTMPFS=y
++CONFIG_DEVTMPFS_MOUNT=y
++CONFIG_FW_LOADER_USER_HELPER=y
++CONFIG_ARM_SCMI_PROTOCOL=y
++CONFIG_ARM_SCPI_PROTOCOL=y
++CONFIG_GOOGLE_FIRMWARE=y
++CONFIG_GOOGLE_COREBOOT_TABLE=y
++CONFIG_GOOGLE_MEMCONSOLE_COREBOOT=y
++CONFIG_GOOGLE_VPD=y
++CONFIG_EFI_CAPSULE_LOADER=y
++CONFIG_GNSS=m
++CONFIG_GNSS_MTK_SERIAL=m
++CONFIG_MTD=y
++CONFIG_MTD_BLOCK=y
++CONFIG_MTD_CFI=y
++CONFIG_MTD_CFI_ADV_OPTIONS=y
++CONFIG_MTD_CFI_INTELEXT=y
++CONFIG_MTD_CFI_AMDSTD=y
++CONFIG_MTD_CFI_STAA=y
++CONFIG_MTD_PHYSMAP=y
++CONFIG_MTD_PHYSMAP_OF=y
++CONFIG_MTD_DATAFLASH=y
++CONFIG_MTD_SST25L=y
++CONFIG_MTD_RAW_NAND=y
++CONFIG_MTD_NAND_DENALI_DT=y
++CONFIG_MTD_NAND_BRCMNAND=m
++CONFIG_MTD_NAND_QCOM=y
++CONFIG_MTD_SPI_NOR=y
++CONFIG_BLK_DEV_LOOP=y
++CONFIG_BLK_DEV_NBD=m
++CONFIG_VIRTIO_BLK=y
++CONFIG_BLK_DEV_NVME=m
++CONFIG_QCOM_COINCELL=m
++CONFIG_QCOM_FASTRPC=m
++CONFIG_SRAM=y
++CONFIG_PCI_ENDPOINT_TEST=m
++CONFIG_EEPROM_AT24=m
++CONFIG_EEPROM_AT25=m
++CONFIG_UACCE=m
++# CONFIG_SCSI_PROC_FS is not set
++CONFIG_BLK_DEV_SD=y
++CONFIG_SCSI_SAS_ATA=y
++CONFIG_SCSI_HISI_SAS=y
++CONFIG_MEGARAID_SAS=y
++CONFIG_SCSI_MPT3SAS=m
++CONFIG_ATA=y
++CONFIG_SATA_AHCI=y
++CONFIG_SATA_AHCI_PLATFORM=y
++CONFIG_AHCI_CEVA=y
++CONFIG_AHCI_XGENE=y
++CONFIG_AHCI_QORIQ=y
++CONFIG_SATA_SIL24=y
++CONFIG_PATA_OF_PLATFORM=y
++CONFIG_MD=y
++CONFIG_BLK_DEV_MD=m
++CONFIG_BLK_DEV_DM=y
++CONFIG_DM_CRYPT=y
++CONFIG_DM_THIN_PROVISIONING=m
++CONFIG_DM_MIRROR=m
++CONFIG_DM_ZERO=m
++CONFIG_NETDEVICES=y
++CONFIG_DUMMY=m
++CONFIG_WIREGUARD=m
++CONFIG_MACVLAN=m
++CONFIG_MACVTAP=m
++CONFIG_IPVLAN=m
++CONFIG_VXLAN=m
++CONFIG_TUN=m
++CONFIG_VETH=m
++CONFIG_VIRTIO_NET=y
++CONFIG_NET_DSA_BCM_SF2=m
++# CONFIG_NET_VENDOR_3COM is not set
++# CONFIG_NET_VENDOR_ADAPTEC is not set
++# CONFIG_NET_VENDOR_AGERE is not set
++# CONFIG_NET_VENDOR_ALACRITECH is not set
++# CONFIG_NET_VENDOR_ALTEON is not set
++# CONFIG_NET_VENDOR_AMAZON is not set
++# CONFIG_NET_VENDOR_AMD is not set
++# CONFIG_NET_VENDOR_AQUANTIA is not set
++# CONFIG_NET_VENDOR_ARC is not set
++CONFIG_ATL1C=m
++# CONFIG_NET_VENDOR_BROADCOM is not set
++# CONFIG_NET_VENDOR_CADENCE is not set
++# CONFIG_NET_VENDOR_CAVIUM is not set
++# CONFIG_NET_VENDOR_CHELSIO is not set
++# CONFIG_NET_VENDOR_CISCO is not set
++# CONFIG_NET_VENDOR_CORTINA is not set
++# CONFIG_NET_VENDOR_DEC is not set
++# CONFIG_NET_VENDOR_DLINK is not set
++# CONFIG_NET_VENDOR_EMULEX is not set
++# CONFIG_NET_VENDOR_EZCHIP is not set
++# CONFIG_NET_VENDOR_GOOGLE is not set
++# CONFIG_NET_VENDOR_HISILICON is not set
++# CONFIG_NET_VENDOR_HUAWEI is not set
++# CONFIG_NET_VENDOR_INTEL is not set
++# CONFIG_NET_VENDOR_MARVELL is not set
++# CONFIG_NET_VENDOR_MELLANOX is not set
++# CONFIG_NET_VENDOR_MICREL is not set
++# CONFIG_NET_VENDOR_MICROCHIP is not set
++# CONFIG_NET_VENDOR_MICROSEMI is not set
++# CONFIG_NET_VENDOR_MYRI is not set
++# CONFIG_NET_VENDOR_NI is not set
++# CONFIG_NET_VENDOR_NATSEMI is not set
++# CONFIG_NET_VENDOR_NETERION is not set
++# CONFIG_NET_VENDOR_NETRONOME is not set
++# CONFIG_NET_VENDOR_NVIDIA is not set
++# CONFIG_NET_VENDOR_OKI is not set
++# CONFIG_NET_VENDOR_PACKET_ENGINES is not set
++# CONFIG_NET_VENDOR_PENSANDO is not set
++# CONFIG_NET_VENDOR_QLOGIC is not set
++# CONFIG_NET_VENDOR_BROCADE is not set
++CONFIG_QCOM_EMAC=m
++CONFIG_RMNET=y
++# CONFIG_NET_VENDOR_RDC is not set
++CONFIG_R8169=m
++# CONFIG_NET_VENDOR_RENESAS is not set
++# CONFIG_NET_VENDOR_ROCKER is not set
++# CONFIG_NET_VENDOR_SAMSUNG is not set
++# CONFIG_NET_VENDOR_SEEQ is not set
++# CONFIG_NET_VENDOR_SILAN is not set
++# CONFIG_NET_VENDOR_SIS is not set
++# CONFIG_NET_VENDOR_SOLARFLARE is not set
++# CONFIG_NET_VENDOR_SMSC is not set
++# CONFIG_NET_VENDOR_SOCIONEXT is not set
++# CONFIG_NET_VENDOR_STMICRO is not set
++# CONFIG_NET_VENDOR_SUN is not set
++# CONFIG_NET_VENDOR_SYNOPSYS is not set
++# CONFIG_NET_VENDOR_TEHUTI is not set
++# CONFIG_NET_VENDOR_TI is not set
++# CONFIG_NET_VENDOR_VIA is not set
++# CONFIG_NET_VENDOR_WIZNET is not set
++# CONFIG_NET_VENDOR_XILINX is not set
++CONFIG_QCOM_IPA=y
++CONFIG_AQUANTIA_PHY=m
++CONFIG_BCM54140_PHY=m
++CONFIG_MARVELL_PHY=m
++CONFIG_MARVELL_10G_PHY=m
++CONFIG_MICREL_PHY=m
++CONFIG_MICROSEMI_PHY=m
++CONFIG_AT803X_PHY=m
++CONFIG_ROCKCHIP_PHY=m
++CONFIG_DP83867_PHY=m
++CONFIG_VITESSE_PHY=m
++CONFIG_CAN_FLEXCAN=m
++CONFIG_CAN_MCP251XFD=m
++CONFIG_MDIO_BUS_MUX_MULTIPLEXER=m
++CONFIG_MDIO_BUS_MUX_MMIOREG=m
++CONFIG_USB_PEGASUS=m
++CONFIG_USB_RTL8150=m
++CONFIG_USB_RTL8152=m
++CONFIG_USB_LAN78XX=m
++CONFIG_USB_USBNET=m
++CONFIG_USB_NET_DM9601=m
++CONFIG_USB_NET_SR9800=m
++CONFIG_USB_NET_SMSC75XX=m
++CONFIG_USB_NET_SMSC95XX=m
++CONFIG_USB_NET_PLUSB=m
++CONFIG_USB_NET_MCS7830=m
++CONFIG_USB_NET_RNDIS_HOST=m
++CONFIG_ATH10K=m
++CONFIG_ATH10K_PCI=m
++CONFIG_ATH10K_SNOC=m
++CONFIG_WCN36XX=m
++CONFIG_ATH11K=m
++CONFIG_ATH11K_AHB=m
++CONFIG_ATH11K_PCI=m
++CONFIG_BRCMFMAC=m
++CONFIG_MWIFIEX=m
++CONFIG_MWIFIEX_SDIO=m
++CONFIG_MWIFIEX_PCIE=m
++CONFIG_MT7601U=m
++CONFIG_MT76x0U=m
++CONFIG_MT76x2U=m
++CONFIG_MT7663U=m
++CONFIG_RT2X00=m
++CONFIG_RT2400PCI=m
++CONFIG_RT2500PCI=m
++CONFIG_RT61PCI=m
++CONFIG_RT2800PCI=m
++CONFIG_RT2500USB=m
++CONFIG_RT73USB=m
++CONFIG_RT2800USB=m
++CONFIG_RT2800USB_RT3573=y
++CONFIG_RT2800USB_RT53XX=y
++CONFIG_RT2800USB_RT55XX=y
++CONFIG_RT2800USB_UNKNOWN=y
++CONFIG_RTL8187=m
++CONFIG_WL18XX=m
++CONFIG_WLCORE_SDIO=m
++CONFIG_INPUT_EVDEV=y
++CONFIG_KEYBOARD_ADC=m
++CONFIG_KEYBOARD_GPIO=y
++CONFIG_KEYBOARD_CROS_EC=y
++CONFIG_MOUSE_ELAN_I2C=m
++CONFIG_INPUT_TOUCHSCREEN=y
++CONFIG_TOUCHSCREEN_ATMEL_MXT=m
++CONFIG_TOUCHSCREEN_ATMEL_MXT_T37=y
++CONFIG_TOUCHSCREEN_GOODIX=m
++CONFIG_TOUCHSCREEN_ELAN=m
++CONFIG_TOUCHSCREEN_EDT_FT5X06=m
++CONFIG_INPUT_MISC=y
++CONFIG_INPUT_PM8941_PWRKEY=y
++CONFIG_INPUT_PM8XXX_VIBRATOR=m
++CONFIG_INPUT_UINPUT=m
++CONFIG_INPUT_PWM_BEEPER=m
++CONFIG_INPUT_PWM_VIBRA=m
++# CONFIG_SERIO_SERPORT is not set
++CONFIG_SERIO_AMBAKMI=y
++CONFIG_LEGACY_PTY_COUNT=16
++CONFIG_SERIAL_8250=y
++CONFIG_SERIAL_8250_CONSOLE=y
++CONFIG_SERIAL_8250_EXTENDED=y
++CONFIG_SERIAL_8250_SHARE_IRQ=y
++CONFIG_SERIAL_8250_DW=y
++CONFIG_SERIAL_OF_PLATFORM=y
++CONFIG_SERIAL_AMBA_PL010=y
++CONFIG_SERIAL_AMBA_PL010_CONSOLE=y
++CONFIG_SERIAL_AMBA_PL011=y
++CONFIG_SERIAL_AMBA_PL011_CONSOLE=y
++CONFIG_SERIAL_MSM=y
++CONFIG_SERIAL_MSM_CONSOLE=y
++CONFIG_SERIAL_QCOM_GENI=y
++CONFIG_SERIAL_QCOM_GENI_CONSOLE=y
++CONFIG_SERIAL_XILINX_PS_UART=y
++CONFIG_SERIAL_XILINX_PS_UART_CONSOLE=y
++CONFIG_SERIAL_FSL_LPUART=y
++CONFIG_SERIAL_FSL_LPUART_CONSOLE=y
++CONFIG_SERIAL_FSL_LINFLEXUART=y
++CONFIG_SERIAL_FSL_LINFLEXUART_CONSOLE=y
++CONFIG_SERIAL_DEV_BUS=y
++CONFIG_VIRTIO_CONSOLE=y
++CONFIG_IPMI_HANDLER=m
++CONFIG_IPMI_DEVICE_INTERFACE=m
++CONFIG_IPMI_SI=m
++CONFIG_HW_RANDOM=y
++CONFIG_TCG_TPM=y
++CONFIG_TCG_TIS_I2C_INFINEON=y
++CONFIG_I2C_CHARDEV=y
++CONFIG_I2C_MUX=y
++CONFIG_I2C_MUX_PCA954x=y
++CONFIG_I2C_CADENCE=m
++CONFIG_I2C_DESIGNWARE_PLATFORM=y
++CONFIG_I2C_GPIO=m
++CONFIG_I2C_QCOM_CCI=m
++CONFIG_I2C_QCOM_GENI=y
++CONFIG_I2C_QUP=y
++CONFIG_I2C_RK3X=y
++CONFIG_I2C_CROS_EC_TUNNEL=y
++CONFIG_SPI=y
++CONFIG_SPI_CADENCE_QUADSPI=y
++CONFIG_SPI_DESIGNWARE=m
++CONFIG_SPI_DW_DMA=y
++CONFIG_SPI_DW_MMIO=m
++CONFIG_SPI_NXP_FLEXSPI=y
++CONFIG_SPI_PL022=y
++CONFIG_SPI_ROCKCHIP=y
++CONFIG_SPI_QCOM_QSPI=y
++CONFIG_SPI_QUP=y
++CONFIG_SPI_QCOM_GENI=y
++CONFIG_SPI_SPIDEV=m
++CONFIG_SPMI=y
++CONFIG_PINCTRL_MAX77620=y
++CONFIG_PINCTRL_SINGLE=y
++CONFIG_PINCTRL_MSM=y
++CONFIG_PINCTRL_IPQ8074=y
++CONFIG_PINCTRL_IPQ6018=y
++CONFIG_PINCTRL_MSM8916=y
++CONFIG_PINCTRL_MSM8994=y
++CONFIG_PINCTRL_MSM8996=y
++CONFIG_PINCTRL_MSM8998=y
++CONFIG_PINCTRL_QCS404=y
++CONFIG_PINCTRL_QCOM_SPMI_PMIC=y
++CONFIG_PINCTRL_SC7180=y
++CONFIG_PINCTRL_SC7280=y
++CONFIG_PINCTRL_SC8280XP=y
++CONFIG_PINCTRL_SDM845=y
++CONFIG_PINCTRL_SM8150=y
++CONFIG_PINCTRL_SM8250=y
++CONFIG_PINCTRL_SM8350=y
++CONFIG_PINCTRL_SM8450=y
++CONFIG_PINCTRL_LPASS_LPI=m
++CONFIG_GPIO_ALTERA=m
++CONFIG_GPIO_DWAPB=y
++CONFIG_GPIO_MB86S7X=y
++CONFIG_GPIO_PL061=y
++CONFIG_GPIO_WCD934X=m
++CONFIG_GPIO_XGENE=y
++CONFIG_GPIO_MAX732X=y
++CONFIG_GPIO_PCA953X=y
++CONFIG_GPIO_PCA953X_IRQ=y
++CONFIG_GPIO_BD9571MWV=m
++CONFIG_GPIO_MAX77620=y
++CONFIG_POWER_RESET_MSM=y
++CONFIG_POWER_RESET_QCOM_PON=m
++CONFIG_POWER_RESET_XGENE=y
++CONFIG_POWER_RESET_SYSCON=y
++CONFIG_SYSCON_REBOOT_MODE=y
++CONFIG_BATTERY_SBS=m
++CONFIG_BATTERY_BQ27XXX=y
++CONFIG_BATTERY_MAX17042=m
++CONFIG_CHARGER_MT6360=m
++CONFIG_CHARGER_BQ25890=m
++CONFIG_CHARGER_BQ25980=m
++CONFIG_CHARGER_CROS_USBPD=m
++CONFIG_SENSORS_ARM_SCMI=y
++CONFIG_SENSORS_ARM_SCPI=y
++CONFIG_SENSORS_GPIO_FAN=m
++CONFIG_SENSORS_JC42=m
++CONFIG_SENSORS_LM75=m
++CONFIG_SENSORS_LM90=m
++CONFIG_SENSORS_PWM_FAN=m
++CONFIG_SENSORS_INA2XX=m
++CONFIG_SENSORS_INA3221=m
++CONFIG_THERMAL=y
++CONFIG_THERMAL_WRITABLE_TRIPS=y
++CONFIG_THERMAL_DEFAULT_GOV_POWER_ALLOCATOR=y
++CONFIG_THERMAL_GOV_USER_SPACE=y
++CONFIG_THERMAL_GOV_POWER_ALLOCATOR=y
++CONFIG_CPU_THERMAL=y
++CONFIG_DEVFREQ_THERMAL=y
++CONFIG_THERMAL_EMULATION=y
++CONFIG_GENERIC_ADC_THERMAL=y
++CONFIG_QCOM_TSENS=m
++CONFIG_QCOM_SPMI_ADC_TM5=m
++CONFIG_QCOM_SPMI_TEMP_ALARM=m
++CONFIG_WATCHDOG=y
++CONFIG_ARM_SP805_WATCHDOG=y
++CONFIG_ARM_SBSA_WATCHDOG=y
++CONFIG_DW_WATCHDOG=y
++CONFIG_QCOM_WDT=y
++CONFIG_ARM_SMC_WATCHDOG=y
++CONFIG_PM8916_WATCHDOG=m
++CONFIG_MFD_BD9571MWV=y
++CONFIG_MFD_AXP20X_I2C=y
++CONFIG_MFD_MAX77620=y
++CONFIG_MFD_MT6360=y
++CONFIG_MFD_MT6397=y
++CONFIG_MFD_SPMI_PMIC=y
++CONFIG_MFD_RK808=y
++CONFIG_MFD_SEC_CORE=y
++CONFIG_MFD_ROHM_BD718XX=y
++CONFIG_MFD_WCD934X=m
++CONFIG_REGULATOR_FIXED_VOLTAGE=y
++CONFIG_REGULATOR_AXP20X=y
++CONFIG_REGULATOR_BD718XX=y
++CONFIG_REGULATOR_BD9571MWV=y
++CONFIG_REGULATOR_DA9211=y
++CONFIG_REGULATOR_FAN53555=y
++CONFIG_REGULATOR_GPIO=y
++CONFIG_REGULATOR_MAX77620=y
++CONFIG_REGULATOR_MAX8973=y
++CONFIG_REGULATOR_MP8859=y
++CONFIG_REGULATOR_MT6358=y
++CONFIG_REGULATOR_MT6359=y
++CONFIG_REGULATOR_MT6360=y
++CONFIG_REGULATOR_MT6397=y
++CONFIG_REGULATOR_PCA9450=y
++CONFIG_REGULATOR_PF8X00=y
++CONFIG_REGULATOR_PFUZE100=y
++CONFIG_REGULATOR_PWM=y
++CONFIG_REGULATOR_QCOM_RPMH=y
++CONFIG_REGULATOR_QCOM_SMD_RPM=y
++CONFIG_REGULATOR_RK808=y
++CONFIG_REGULATOR_S2MPS11=y
++CONFIG_REGULATOR_TPS65132=m
++CONFIG_REGULATOR_VCTRL=m
++CONFIG_RC_CORE=m
++CONFIG_RC_DECODERS=y
++CONFIG_RC_DEVICES=y
++CONFIG_MEDIA_SUPPORT=m
++CONFIG_MEDIA_CAMERA_SUPPORT=y
++CONFIG_MEDIA_ANALOG_TV_SUPPORT=y
++CONFIG_MEDIA_DIGITAL_TV_SUPPORT=y
++CONFIG_MEDIA_SDR_SUPPORT=y
++CONFIG_MEDIA_PLATFORM_SUPPORT=y
++# CONFIG_DVB_NET is not set
++CONFIG_MEDIA_USB_SUPPORT=y
++CONFIG_USB_VIDEO_CLASS=m
++CONFIG_V4L_PLATFORM_DRIVERS=y
++CONFIG_SDR_PLATFORM_DRIVERS=y
++CONFIG_V4L_MEM2MEM_DRIVERS=y
++CONFIG_VIDEO_QCOM_CAMSS=m
++CONFIG_VIDEO_QCOM_VENUS=m
++CONFIG_VIDEO_IMX219=m
++CONFIG_VIDEO_OV5640=m
++CONFIG_VIDEO_OV5645=m
++CONFIG_DRM=y
++CONFIG_DRM_LOAD_EDID_FIRMWARE=y
++CONFIG_DRM_DP_AUX_CHARDEV=y
++CONFIG_DRM_I2C_NXP_TDA998X=m
++CONFIG_DRM_HDLCD=m
++CONFIG_DRM_MALI_DISPLAY=m
++CONFIG_DRM_KOMEDA=m
++CONFIG_DRM_UDL=m
++CONFIG_DRM_VIRTIO_GPU=m
++CONFIG_DRM_MSM=y
++CONFIG_DRM_PANEL_BOE_TV101WUM_NL6=m
++CONFIG_DRM_PANEL_LVDS=m
++CONFIG_DRM_PANEL_SIMPLE=y
++CONFIG_DRM_PANEL_EDP=y
++CONFIG_DRM_PANEL_INNOLUX_P079ZCA=m
++CONFIG_DRM_PANEL_KINGDISPLAY_KD097D04=m
++CONFIG_DRM_PANEL_MANTIX_MLAF057WE51=m
++CONFIG_DRM_PANEL_RAYDIUM_RM67191=m
++CONFIG_DRM_PANEL_SAMSUNG_ATNA33XC20=y
++CONFIG_DRM_PANEL_SITRONIX_ST7703=m
++CONFIG_DRM_PANEL_TRULY_NT35597_WQXGA=m
++CONFIG_DRM_PANEL_VISIONOX_RM69299=y
++CONFIG_DRM_LONTIUM_LT8912B=m
++CONFIG_DRM_LONTIUM_LT9611=m
++CONFIG_DRM_LONTIUM_LT9611UXC=m
++CONFIG_DRM_NWL_MIPI_DSI=m
++CONFIG_DRM_PARADE_PS8640=y
++CONFIG_DRM_SII902X=m
++CONFIG_DRM_SIMPLE_BRIDGE=m
++CONFIG_DRM_THINE_THC63LVD1024=m
++CONFIG_DRM_TI_SN65DSI86=y
++CONFIG_DRM_I2C_ADV7511=m
++CONFIG_DRM_I2C_ADV7511_AUDIO=y
++CONFIG_DRM_CDNS_MHDP8546=m
++CONFIG_DRM_HISI_HIBMC=m
++CONFIG_DRM_HISI_KIRIN=m
++CONFIG_DRM_PL111=m
++CONFIG_DRM_TIDSS=m
++CONFIG_FB=y
++CONFIG_FB_EFI=y
++CONFIG_FB_UDL=m
++CONFIG_FB_SIMPLE=y
++CONFIG_BACKLIGHT_CLASS_DEVICE=y
++CONFIG_BACKLIGHT_PWM=y
++CONFIG_BACKLIGHT_LP855X=m
++CONFIG_BACKLIGHT_GPIO=y
++CONFIG_LOGO=y
++CONFIG_SOUND=y
++CONFIG_SND=y
++CONFIG_SND_HRTIMER=m
++CONFIG_SND_SEQUENCER=m
++CONFIG_SND_SEQ_DUMMY=m
++CONFIG_SND_ALOOP=m
++CONFIG_SND_VIRMIDI=m
++CONFIG_SND_USB_AUDIO=m
++CONFIG_SND_SOC=y
++CONFIG_SND_SOC_FSL_ASRC=m
++CONFIG_SND_SOC_FSL_MICFIL=m
++CONFIG_SND_SOC_FSL_EASRC=m
++CONFIG_SND_SOC_QCOM=y
++CONFIG_SND_SOC_APQ8016_SBC=m
++CONFIG_SND_SOC_MSM8996=m
++CONFIG_SND_SOC_SDM845=m
++CONFIG_SND_SOC_SM8250=m
++CONFIG_SND_SOC_SC7180=m
++CONFIG_SND_SOC_SC7280=m
++CONFIG_SND_SOC_AK4613=m
++CONFIG_SND_SOC_ES7134=m
++CONFIG_SND_SOC_ES7241=m
++CONFIG_SND_SOC_GTM601=m
++CONFIG_SND_SOC_MSM8916_WCD_ANALOG=m
++CONFIG_SND_SOC_MSM8916_WCD_DIGITAL=m
++CONFIG_SND_SOC_PCM3168A_I2C=m
++CONFIG_SND_SOC_RT5659=m
++CONFIG_SND_SOC_SIMPLE_AMPLIFIER=m
++CONFIG_SND_SOC_SIMPLE_MUX=m
++CONFIG_SND_SOC_TAS571X=m
++CONFIG_SND_SOC_TLV320AIC32X4_I2C=m
++CONFIG_SND_SOC_WCD9335=m
++CONFIG_SND_SOC_WCD934X=m
++CONFIG_SND_SOC_WM8524=m
++CONFIG_SND_SOC_WM8904=m
++CONFIG_SND_SOC_WM8960=m
++CONFIG_SND_SOC_WM8962=m
++CONFIG_SND_SOC_WM8978=m
++CONFIG_SND_SOC_WSA881X=m
++CONFIG_SND_SOC_NAU8822=m
++CONFIG_SND_SOC_LPASS_WSA_MACRO=m
++CONFIG_SND_SOC_LPASS_VA_MACRO=m
++CONFIG_SND_SIMPLE_CARD=y
++CONFIG_SND_AUDIO_GRAPH_CARD=m
++CONFIG_SND_AUDIO_GRAPH_CARD2=m
++CONFIG_SND_VIRTIO=m
++CONFIG_UHID=m
++CONFIG_HID_GOOGLE_HAMMER=y
++CONFIG_HID_MULTITOUCH=m
++CONFIG_HID_RMI=m
++CONFIG_I2C_HID_OF=m
++CONFIG_USB=y
++CONFIG_USB_OTG=y
++CONFIG_USB_XHCI_HCD=y
++CONFIG_USB_XHCI_PCI_RENESAS=m
++CONFIG_USB_EHCI_HCD=y
++CONFIG_USB_EHCI_HCD_PLATFORM=y
++CONFIG_USB_OHCI_HCD=y
++CONFIG_USB_OHCI_HCD_PLATFORM=y
++CONFIG_USB_ACM=m
++CONFIG_USB_STORAGE=y
++CONFIG_USB_CDNS_SUPPORT=m
++CONFIG_USB_CDNS3=m
++CONFIG_USB_CDNS3_GADGET=y
++CONFIG_USB_CDNS3_HOST=y
++CONFIG_USB_MUSB_HDRC=y
++CONFIG_USB_DWC3=y
++CONFIG_USB_DWC2=y
++CONFIG_USB_CHIPIDEA=y
++CONFIG_USB_CHIPIDEA_UDC=y
++CONFIG_USB_CHIPIDEA_HOST=y
++CONFIG_USB_ISP1760=y
++CONFIG_USB_SERIAL=m
++CONFIG_USB_SERIAL_CH341=m
++CONFIG_USB_SERIAL_CP210X=m
++CONFIG_USB_SERIAL_FTDI_SIO=m
++CONFIG_USB_SERIAL_PL2303=m
++CONFIG_USB_SERIAL_OPTION=m
++CONFIG_USB_HSIC_USB3503=y
++CONFIG_USB_ONBOARD_HUB=y
++CONFIG_NOP_USB_XCEIV=y
++CONFIG_USB_GADGET=y
++CONFIG_USB_CONFIGFS=m
++CONFIG_USB_CONFIGFS_SERIAL=y
++CONFIG_USB_CONFIGFS_ACM=y
++CONFIG_USB_CONFIGFS_OBEX=y
++CONFIG_USB_CONFIGFS_NCM=y
++CONFIG_USB_CONFIGFS_ECM=y
++CONFIG_USB_CONFIGFS_ECM_SUBSET=y
++CONFIG_USB_CONFIGFS_RNDIS=y
++CONFIG_USB_CONFIGFS_EEM=y
++CONFIG_USB_CONFIGFS_MASS_STORAGE=y
++CONFIG_USB_CONFIGFS_F_FS=y
++CONFIG_USB_ETH=m
++CONFIG_TYPEC=y
++CONFIG_TYPEC_TCPM=m
++CONFIG_TYPEC_TCPCI=m
++CONFIG_TYPEC_FUSB302=m
++CONFIG_TYPEC_UCSI=y
++CONFIG_TYPEC_TPS6598X=m
++CONFIG_TYPEC_HD3SS3220=m
++CONFIG_MMC=y
++CONFIG_MMC_BLOCK_MINORS=32
++CONFIG_MMC_ARMMMCI=y
++CONFIG_MMC_SDHCI=y
++CONFIG_MMC_SDHCI_PLTFM=y
++CONFIG_MMC_SDHCI_OF_ARASAN=y
++CONFIG_MMC_SDHCI_OF_DWCMSHC=y
++CONFIG_MMC_SDHCI_CADENCE=y
++CONFIG_MMC_SDHCI_F_SDH30=y
++CONFIG_MMC_SDHCI_MSM=y
++CONFIG_MMC_SPI=y
++CONFIG_MMC_DW=y
++CONFIG_MMC_DW_EXYNOS=y
++CONFIG_MMC_DW_HI3798CV200=y
++CONFIG_MMC_DW_K3=y
++CONFIG_MMC_MTK=y
++CONFIG_MMC_SDHCI_XENON=y
++CONFIG_MMC_SDHCI_AM654=y
++CONFIG_SCSI_UFSHCD=y
++CONFIG_SCSI_UFSHCD_PLATFORM=y
++CONFIG_SCSI_UFS_QCOM=y
++CONFIG_NEW_LEDS=y
++CONFIG_LEDS_CLASS=y
++CONFIG_LEDS_CLASS_MULTICOLOR=y
++CONFIG_LEDS_LM3692X=m
++CONFIG_LEDS_PCA9532=m
++CONFIG_LEDS_GPIO=y
++CONFIG_LEDS_PWM=y
++CONFIG_LEDS_SYSCON=y
++CONFIG_LEDS_QCOM_LPG=m
++CONFIG_LEDS_TRIGGER_TIMER=y
++CONFIG_LEDS_TRIGGER_DISK=y
++CONFIG_LEDS_TRIGGER_HEARTBEAT=y
++CONFIG_LEDS_TRIGGER_CPU=y
++CONFIG_LEDS_TRIGGER_DEFAULT_ON=y
++CONFIG_LEDS_TRIGGER_PANIC=y
++CONFIG_EDAC=y
++CONFIG_EDAC_QCOM=y
++CONFIG_RTC_CLASS=y
++CONFIG_RTC_DRV_DS1307=m
++CONFIG_RTC_DRV_HYM8563=m
++CONFIG_RTC_DRV_MAX77686=y
++CONFIG_RTC_DRV_RK808=m
++CONFIG_RTC_DRV_PCF85063=m
++CONFIG_RTC_DRV_PCF85363=m
++CONFIG_RTC_DRV_M41T80=m
++CONFIG_RTC_DRV_RX8581=m
++CONFIG_RTC_DRV_RV3028=m
++CONFIG_RTC_DRV_RV8803=m
++CONFIG_RTC_DRV_S5M=y
++CONFIG_RTC_DRV_DS3232=y
++CONFIG_RTC_DRV_PCF2127=m
++CONFIG_RTC_DRV_EFI=y
++CONFIG_RTC_DRV_CROS_EC=y
++CONFIG_RTC_DRV_PL031=y
++CONFIG_RTC_DRV_PM8XXX=m
++CONFIG_RTC_DRV_MT6397=m
++CONFIG_DMADEVICES=y
++CONFIG_FSL_EDMA=y
++CONFIG_MV_XOR_V2=y
++CONFIG_PL330_DMA=y
++CONFIG_QCOM_BAM_DMA=y
++CONFIG_QCOM_GPI_DMA=m
++CONFIG_QCOM_HIDMA_MGMT=y
++CONFIG_QCOM_HIDMA=y
++CONFIG_VFIO=y
++CONFIG_VFIO_PCI=y
++CONFIG_VIRTIO_PCI=y
++CONFIG_VIRTIO_BALLOON=y
++CONFIG_VIRTIO_INPUT=m
++CONFIG_VIRTIO_MMIO=y
++CONFIG_VIRTIO_MMIO_CMDLINE_DEVICES=y
++CONFIG_XEN_GNTDEV=y
++CONFIG_XEN_GRANT_DEV_ALLOC=y
++CONFIG_STAGING=y
++CONFIG_RTL8192U=m
++CONFIG_RTL8723BS=m
++CONFIG_R8712U=m
++CONFIG_STAGING_MEDIA=y
++CONFIG_VIDEO_MAX96712=m
++CONFIG_CHROME_PLATFORMS=y
++CONFIG_CROS_EC=y
++CONFIG_CROS_EC_I2C=y
++CONFIG_CROS_EC_RPMSG=y
++CONFIG_CROS_EC_SPI=y
++CONFIG_CROS_EC_CHARDEV=m
++CONFIG_COMMON_CLK_RK808=y
++CONFIG_COMMON_CLK_SCMI=y
++CONFIG_COMMON_CLK_SCPI=y
++CONFIG_COMMON_CLK_CS2000_CP=y
++CONFIG_COMMON_CLK_S2MPS11=y
++CONFIG_COMMON_CLK_PWM=y
++CONFIG_COMMON_CLK_VC5=y
++CONFIG_COMMON_CLK_BD718XX=m
++CONFIG_COMMON_CLK_QCOM=y
++CONFIG_QCOM_A53PLL=y
++CONFIG_QCOM_CLK_APCS_MSM8916=y
++CONFIG_QCOM_CLK_APCC_MSM8996=y
++CONFIG_QCOM_CLK_SMD_RPM=y
++CONFIG_QCOM_CLK_RPMH=y
++CONFIG_IPQ_GCC_6018=y
++CONFIG_IPQ_GCC_8074=y
++CONFIG_MSM_GCC_8916=y
++CONFIG_MSM_GCC_8994=y
++CONFIG_MSM_MMCC_8996=y
++CONFIG_MSM_GCC_8998=y
++CONFIG_QCS_GCC_404=y
++CONFIG_SC_CAMCC_7180=y
++CONFIG_SC_DISPCC_7180=y
++CONFIG_SC_GCC_7280=y
++CONFIG_SC_GCC_8280XP=y
++CONFIG_SC_GPUCC_7180=y
++CONFIG_SC_LPASS_CORECC_7180=y
++CONFIG_SC_MSS_7180=m
++CONFIG_SC_VIDEOCC_7180=y
++CONFIG_SDM_CAMCC_845=m
++CONFIG_SDM_GPUCC_845=y
++CONFIG_SDM_VIDEOCC_845=y
++CONFIG_SDM_DISPCC_845=y
++CONFIG_SDM_LPASSCC_845=y
++CONFIG_SM_GCC_8350=y
++CONFIG_SM_GCC_8450=y
++CONFIG_SM_GPUCC_8250=y
++CONFIG_SM_VIDEOCC_8250=y
++CONFIG_QCOM_HFPLL=y
++CONFIG_CLK_GFM_LPASS_SM8250=m
++CONFIG_HWSPINLOCK=y
++CONFIG_HWSPINLOCK_QCOM=y
++CONFIG_MAILBOX=y
++CONFIG_ARM_MHU=y
++CONFIG_PLATFORM_MHU=y
++CONFIG_QCOM_APCS_IPC=y
++CONFIG_QCOM_IPCC=y
++CONFIG_ARM_SMMU=y
++CONFIG_ARM_SMMU_V3=y
++CONFIG_QCOM_IOMMU=y
++CONFIG_REMOTEPROC=y
++CONFIG_QCOM_Q6V5_ADSP=m
++CONFIG_QCOM_Q6V5_MSS=y
++CONFIG_QCOM_Q6V5_PAS=m
++CONFIG_QCOM_SYSMON=y
++CONFIG_QCOM_WCNSS_PIL=m
++CONFIG_RPMSG_CHAR=y
++CONFIG_RPMSG_CTRL=m
++CONFIG_RPMSG_QCOM_GLINK_RPM=y
++CONFIG_RPMSG_QCOM_GLINK_SMEM=y
++CONFIG_RPMSG_QCOM_SMD=y
++CONFIG_SOUNDWIRE=m
++CONFIG_SOUNDWIRE_QCOM=m
++CONFIG_FSL_RCPM=y
++CONFIG_QCOM_AOSS_QMP=y
++CONFIG_QCOM_COMMAND_DB=y
++CONFIG_QCOM_CPR=y
++CONFIG_QCOM_GENI_SE=y
++CONFIG_QCOM_LLCC=y
++CONFIG_QCOM_OCMEM=y
++CONFIG_QCOM_RMTFS_MEM=y
++CONFIG_QCOM_RPMH=y
++CONFIG_QCOM_RPMHPD=y
++CONFIG_QCOM_RPMPD=y
++CONFIG_QCOM_SMEM=y
++CONFIG_QCOM_SMD_RPM=y
++CONFIG_QCOM_SMP2P=y
++CONFIG_QCOM_SMSM=y
++CONFIG_QCOM_SOCINFO=y
++CONFIG_QCOM_SPM=m
++CONFIG_QCOM_STATS=m
++CONFIG_QCOM_WCNSS_CTRL=m
++CONFIG_QCOM_APR=m
++CONFIG_QCOM_ICC_BWMON=m
++CONFIG_DEVFREQ_GOV_PERFORMANCE=m
++CONFIG_DEVFREQ_GOV_USERSPACE=m
++CONFIG_PM_DEVFREQ_EVENT=y
++CONFIG_EXTCON_PTN5150=m
++CONFIG_EXTCON_USB_GPIO=y
++CONFIG_EXTCON_USBC_CROS_EC=y
++CONFIG_IIO=y
++CONFIG_MAX9611=m
++CONFIG_QCOM_SPMI_ADC5=m
++CONFIG_TI_ADS1015=m
++CONFIG_IIO_CROS_EC_SENSORS_CORE=m
++CONFIG_IIO_CROS_EC_SENSORS=m
++CONFIG_IIO_ST_LSM6DSX=m
++CONFIG_APDS9960=m
++CONFIG_IIO_CROS_EC_LIGHT_PROX=m
++CONFIG_SENSORS_ISL29018=m
++CONFIG_SENSORS_TSL2563=m
++CONFIG_VCNL4000=m
++CONFIG_IIO_ST_MAGN_3AXIS=m
++CONFIG_IIO_CROS_EC_BARO=m
++CONFIG_MPL3115=m
++CONFIG_PWM=y
++CONFIG_PWM_CROS_EC=y
++CONFIG_QCOM_PDC=y
++CONFIG_RESET_QCOM_AOSS=y
++CONFIG_RESET_QCOM_PDC=y
++CONFIG_PHY_XGENE=y
++CONFIG_PHY_CADENCE_TORRENT=m
++CONFIG_PHY_CADENCE_SIERRA=m
++CONFIG_PHY_QCOM_EDP=m
++CONFIG_PHY_QCOM_PCIE2=m
++CONFIG_PHY_QCOM_QMP=y
++CONFIG_PHY_QCOM_QUSB2=y
++CONFIG_PHY_QCOM_USB_HS=m
++CONFIG_PHY_QCOM_USB_SNPS_FEMTO_V2=y
++CONFIG_PHY_QCOM_USB_HS_28NM=m
++CONFIG_PHY_QCOM_USB_SS=m
++CONFIG_ARM_CCI_PMU=m
++CONFIG_ARM_CCN=m
++CONFIG_ARM_CMN=m
++CONFIG_ARM_DSU_PMU=m
++CONFIG_ARM_SPE_PMU=m
++CONFIG_DAX=y
++CONFIG_NVMEM_QCOM_QFPROM=y
++CONFIG_NVMEM_RMEM=m
++CONFIG_FPGA=y
++CONFIG_FPGA_MGR_ALTERA_CVP=m
++CONFIG_FPGA_BRIDGE=m
++CONFIG_ALTERA_FREEZE_BRIDGE=m
++CONFIG_FPGA_REGION=m
++CONFIG_OF_FPGA_REGION=m
++CONFIG_TEE=y
++CONFIG_OPTEE=y
++CONFIG_MUX_MMIO=m
++CONFIG_SLIM_QCOM_CTRL=m
++CONFIG_SLIM_QCOM_NGD_CTRL=m
++CONFIG_INTERCONNECT=y
++CONFIG_INTERCONNECT_QCOM=y
++CONFIG_INTERCONNECT_QCOM_MSM8916=m
++CONFIG_INTERCONNECT_QCOM_MSM8996=m
++CONFIG_INTERCONNECT_QCOM_OSM_L3=y
++CONFIG_INTERCONNECT_QCOM_QCS404=m
++CONFIG_INTERCONNECT_QCOM_SC7180=y
++CONFIG_INTERCONNECT_QCOM_SC7280=y
++CONFIG_INTERCONNECT_QCOM_SC8280XP=y
++CONFIG_INTERCONNECT_QCOM_SDM845=y
++CONFIG_INTERCONNECT_QCOM_SM8150=m
++CONFIG_INTERCONNECT_QCOM_SM8250=m
++CONFIG_INTERCONNECT_QCOM_SM8350=m
++CONFIG_INTERCONNECT_QCOM_SM8450=m
++CONFIG_EXT3_FS=y
++CONFIG_EXT4_FS_POSIX_ACL=y
++CONFIG_EXT4_FS_SECURITY=y
++CONFIG_BTRFS_FS=y
++CONFIG_BTRFS_FS_POSIX_ACL=y
++CONFIG_FANOTIFY=y
++CONFIG_FANOTIFY_ACCESS_PERMISSIONS=y
++CONFIG_QUOTA=y
++CONFIG_AUTOFS4_FS=y
++CONFIG_FUSE_FS=m
++CONFIG_CUSE=m
++CONFIG_VIRTIO_FS=m
++CONFIG_OVERLAY_FS=m
++CONFIG_ISO9660_FS=m
++CONFIG_UDF_FS=m
++CONFIG_MSDOS_FS=m
++CONFIG_VFAT_FS=y
++CONFIG_EXFAT_FS=m
++CONFIG_NTFS_FS=m
++CONFIG_TMPFS_POSIX_ACL=y
++CONFIG_HUGETLBFS=y
++CONFIG_EFIVAR_FS=y
++CONFIG_HFS_FS=m
++CONFIG_HFSPLUS_FS=m
++CONFIG_SQUASHFS=y
++CONFIG_SQUASHFS_XATTR=y
++CONFIG_SQUASHFS_LZ4=y
++CONFIG_SQUASHFS_LZO=y
++CONFIG_SQUASHFS_XZ=y
++CONFIG_SQUASHFS_ZSTD=y
++CONFIG_SQUASHFS_4K_DEVBLK_SIZE=y
++CONFIG_SQUASHFS_EMBEDDED=y
++CONFIG_NFS_FS=y
++CONFIG_NFS_V4=y
++CONFIG_NFS_V4_1=y
++CONFIG_NFS_V4_2=y
++CONFIG_ROOT_NFS=y
++CONFIG_CIFS=m
++CONFIG_NLS_CODEPAGE_437=y
++CONFIG_NLS_ISO8859_1=y
++CONFIG_SECURITY=y
++CONFIG_SECURITY_APPARMOR=y
++CONFIG_INIT_STACK_NONE=y
++CONFIG_CRYPTO_ADIANTUM=y
++CONFIG_CRYPTO_XTS=y
++CONFIG_CRYPTO_CHACHA20POLY1305=y
++CONFIG_CRYPTO_ECHAINIV=y
++CONFIG_CRYPTO_MD5=y
++CONFIG_CRYPTO_MICHAEL_MIC=m
++CONFIG_CRYPTO_842=y
++CONFIG_CRYPTO_LZ4=y
++CONFIG_CRYPTO_LZ4HC=y
++CONFIG_CRYPTO_ZSTD=y
++CONFIG_CRYPTO_ANSI_CPRNG=y
++CONFIG_CRYPTO_USER_API_HASH=y
++CONFIG_CRYPTO_USER_API_SKCIPHER=y
++CONFIG_CRYPTO_USER_API_RNG=m
++CONFIG_CRYPTO_NHPOLY1305_NEON=y
++CONFIG_CRYPTO_CHACHA20_NEON=y
++CONFIG_CRYPTO_GHASH_ARM64_CE=y
++CONFIG_CRYPTO_SHA1_ARM64_CE=y
++CONFIG_CRYPTO_SHA2_ARM64_CE=y
++CONFIG_CRYPTO_SHA512_ARM64_CE=m
++CONFIG_CRYPTO_SHA3_ARM64=m
++CONFIG_CRYPTO_SM3_ARM64_CE=m
++CONFIG_CRYPTO_AES_ARM64_CE_BLK=y
++CONFIG_CRYPTO_AES_ARM64_BS=y
++CONFIG_CRYPTO_AES_ARM64_CE_CCM=y
++CONFIG_CRYPTO_CRCT10DIF_ARM64_CE=y
++CONFIG_CRYPTO_DEV_QCOM_RNG=m
++CONFIG_CRYPTO_DEV_CCREE=m
++CONFIG_PKCS8_PRIVATE_KEY_PARSER=m
++CONFIG_PRINTK_TIME=y
++CONFIG_DEBUG_KERNEL=y
++CONFIG_MAGIC_SYSRQ=y
++CONFIG_MAGIC_SYSRQ_DEFAULT_ENABLE=0x0
++CONFIG_DEBUG_FS=y
++# CONFIG_SCHED_DEBUG is not set
++# CONFIG_FTRACE is not set
++CONFIG_CORESIGHT=m
++CONFIG_CORESIGHT_LINK_AND_SINK_TMC=m
++CONFIG_CORESIGHT_CATU=m
++CONFIG_CORESIGHT_SINK_TPIU=m
++CONFIG_CORESIGHT_SINK_ETBV10=m
++CONFIG_CORESIGHT_STM=m
++CONFIG_CORESIGHT_CPU_DEBUG=m
++CONFIG_CORESIGHT_CTI=m
++# CONFIG_RUNTIME_TESTING_MENU is not set
++CONFIG_MEMTEST=y
+diff --git a/arch/arm64/configs/sc7180_defconfig b/arch/arm64/configs/sc7180_defconfig
+new file mode 100644
+index 00000000000000..930e1f199f0380
+--- /dev/null
++++ b/arch/arm64/configs/sc7180_defconfig
+@@ -0,0 +1,966 @@
++# CONFIG_LOCALVERSION_AUTO is not set
++CONFIG_SYSVIPC=y
++CONFIG_POSIX_MQUEUE=y
++CONFIG_NO_HZ_IDLE=y
++CONFIG_HIGH_RES_TIMERS=y
++CONFIG_BPF_SYSCALL=y
++CONFIG_BPF_JIT=y
++CONFIG_PREEMPT=y
++CONFIG_IRQ_TIME_ACCOUNTING=y
++CONFIG_BSD_PROCESS_ACCT=y
++CONFIG_BSD_PROCESS_ACCT_V3=y
++CONFIG_TASKSTATS=y
++CONFIG_TASK_DELAY_ACCT=y
++CONFIG_TASK_XACCT=y
++CONFIG_TASK_IO_ACCOUNTING=y
++CONFIG_IKCONFIG=m
++CONFIG_IKCONFIG_PROC=y
++CONFIG_NUMA_BALANCING=y
++CONFIG_MEMCG=y
++CONFIG_BLK_CGROUP=y
++CONFIG_CFS_BANDWIDTH=y
++CONFIG_RT_GROUP_SCHED=y
++CONFIG_CGROUP_PIDS=y
++CONFIG_CGROUP_FREEZER=y
++CONFIG_CGROUP_HUGETLB=y
++CONFIG_CPUSETS=y
++CONFIG_CGROUP_DEVICE=y
++CONFIG_CGROUP_CPUACCT=y
++CONFIG_CGROUP_PERF=y
++CONFIG_CGROUP_BPF=y
++CONFIG_USER_NS=y
++CONFIG_SCHED_AUTOGROUP=y
++CONFIG_BLK_DEV_INITRD=y
++CONFIG_KALLSYMS_ALL=y
++CONFIG_PROFILING=y
++CONFIG_ARCH_QCOM=y
++CONFIG_ARM64_VA_BITS_48=y
++CONFIG_SCHED_MC=y
++CONFIG_SCHED_SMT=y
++CONFIG_NUMA=y
++CONFIG_KEXEC=y
++CONFIG_KEXEC_FILE=y
++CONFIG_CRASH_DUMP=y
++CONFIG_XEN=y
++CONFIG_COMPAT=y
++CONFIG_RANDOMIZE_BASE=y
++CONFIG_HIBERNATION=y
++CONFIG_WQ_POWER_EFFICIENT_DEFAULT=y
++CONFIG_ENERGY_MODEL=y
++CONFIG_CPU_IDLE=y
++CONFIG_CPU_IDLE_GOV_LADDER=y
++CONFIG_ARM_PSCI_CPUIDLE=y
++CONFIG_CPU_FREQ=y
++CONFIG_CPU_FREQ_STAT=y
++CONFIG_CPU_FREQ_GOV_POWERSAVE=m
++CONFIG_CPU_FREQ_GOV_USERSPACE=y
++CONFIG_CPU_FREQ_GOV_ONDEMAND=y
++CONFIG_CPU_FREQ_GOV_CONSERVATIVE=m
++CONFIG_CPUFREQ_DT=y
++CONFIG_ARM_QCOM_CPUFREQ_NVMEM=y
++CONFIG_ARM_QCOM_CPUFREQ_HW=y
++CONFIG_ARM_SCMI_CPUFREQ=y
++CONFIG_VIRTUALIZATION=y
++CONFIG_KVM=y
++CONFIG_JUMP_LABEL=y
++CONFIG_MODULES=y
++CONFIG_MODULE_UNLOAD=y
++CONFIG_BLK_DEV_THROTTLING=y
++# CONFIG_IOSCHED_BFQ is not set
++# CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
++CONFIG_ZSWAP=y
++CONFIG_Z3FOLD=y
++CONFIG_ZSMALLOC=y
++# CONFIG_COMPAT_BRK is not set
++CONFIG_MEMORY_HOTPLUG=y
++CONFIG_MEMORY_HOTREMOVE=y
++CONFIG_KSM=y
++CONFIG_MEMORY_FAILURE=y
++CONFIG_TRANSPARENT_HUGEPAGE=y
++CONFIG_LRU_GEN=y
++CONFIG_LRU_GEN_ENABLED=y
++CONFIG_NET=y
++CONFIG_PACKET=y
++CONFIG_UNIX=y
++CONFIG_XFRM_USER=m
++CONFIG_INET=y
++CONFIG_IP_MULTICAST=y
++CONFIG_IP_ADVANCED_ROUTER=y
++CONFIG_IP_MULTIPLE_TABLES=y
++CONFIG_IP_PNP=y
++CONFIG_IP_PNP_DHCP=y
++CONFIG_IP_PNP_BOOTP=y
++CONFIG_INET_ESP=m
++CONFIG_IPV6=m
++CONFIG_IPV6_MULTIPLE_TABLES=y
++CONFIG_NETFILTER=y
++CONFIG_BRIDGE_NETFILTER=m
++CONFIG_NF_CONNTRACK=m
++CONFIG_NF_CONNTRACK_EVENTS=y
++CONFIG_NF_CONNTRACK_FTP=m
++CONFIG_NF_CONNTRACK_TFTP=m
++CONFIG_NETFILTER_XT_MARK=m
++CONFIG_NETFILTER_XT_TARGET_CHECKSUM=m
++CONFIG_NETFILTER_XT_TARGET_LOG=m
++CONFIG_NETFILTER_XT_MATCH_ADDRTYPE=m
++CONFIG_NETFILTER_XT_MATCH_CONNTRACK=m
++CONFIG_NETFILTER_XT_MATCH_IPVS=m
++CONFIG_IP_VS=m
++CONFIG_IP_VS_RR=m
++CONFIG_IP_VS_NFCT=y
++CONFIG_IP_NF_IPTABLES=m
++CONFIG_IP_NF_FILTER=m
++CONFIG_IP_NF_TARGET_REJECT=m
++CONFIG_IP_NF_NAT=m
++CONFIG_IP_NF_TARGET_MASQUERADE=m
++CONFIG_IP_NF_MANGLE=m
++CONFIG_IP6_NF_IPTABLES=m
++CONFIG_IP6_NF_FILTER=m
++CONFIG_IP6_NF_TARGET_REJECT=m
++CONFIG_IP6_NF_MANGLE=m
++CONFIG_IP6_NF_NAT=m
++CONFIG_IP6_NF_TARGET_MASQUERADE=m
++CONFIG_BRIDGE=m
++CONFIG_BRIDGE_VLAN_FILTERING=y
++CONFIG_NET_DSA=m
++CONFIG_VLAN_8021Q=m
++CONFIG_VLAN_8021Q_GVRP=y
++CONFIG_VLAN_8021Q_MVRP=y
++CONFIG_NET_SCHED=y
++CONFIG_NET_SCH_CBS=m
++CONFIG_NET_SCH_ETF=m
++CONFIG_NET_SCH_TAPRIO=m
++CONFIG_NET_SCH_MQPRIO=m
++CONFIG_NET_SCH_INGRESS=m
++CONFIG_NET_CLS_BASIC=m
++CONFIG_NET_CLS_CGROUP=m
++CONFIG_NET_CLS_FLOWER=m
++CONFIG_NET_CLS_ACT=y
++CONFIG_NET_ACT_GACT=m
++CONFIG_NET_ACT_MIRRED=m
++CONFIG_NET_ACT_GATE=m
++CONFIG_QRTR=y
++CONFIG_QRTR_SMD=y
++CONFIG_QRTR_TUN=y
++CONFIG_QRTR_MHI=m
++CONFIG_CGROUP_NET_PRIO=y
++CONFIG_CAN=m
++CONFIG_BT=m
++CONFIG_BT_RFCOMM=m
++CONFIG_BT_RFCOMM_TTY=y
++CONFIG_BT_BNEP=m
++CONFIG_BT_HIDP=m
++# CONFIG_BT_LE is not set
++CONFIG_BT_LEDS=y
++# CONFIG_BT_DEBUGFS is not set
++CONFIG_BT_HCIBTUSB=m
++CONFIG_BT_HCIUART=m
++CONFIG_BT_HCIUART_LL=y
++CONFIG_BT_HCIUART_BCM=y
++CONFIG_BT_HCIUART_QCA=y
++CONFIG_BT_HCIUART_MRVL=y
++CONFIG_BT_MRVL=m
++CONFIG_BT_MRVL_SDIO=m
++CONFIG_BT_QCOMSMD=m
++CONFIG_CFG80211=m
++CONFIG_MAC80211=m
++CONFIG_MAC80211_LEDS=y
++CONFIG_RFKILL=m
++CONFIG_NET_9P=y
++CONFIG_NET_9P_VIRTIO=y
++CONFIG_NFC=m
++CONFIG_NFC_NCI=m
++CONFIG_NFC_S3FWRN5_I2C=m
++CONFIG_DEVTMPFS=y
++CONFIG_DEVTMPFS_MOUNT=y
++CONFIG_FW_LOADER_USER_HELPER=y
++CONFIG_MHI_BUS=m
++CONFIG_ARM_SCMI_PROTOCOL=y
++CONFIG_ARM_SCPI_PROTOCOL=y
++CONFIG_GOOGLE_FIRMWARE=y
++CONFIG_GOOGLE_COREBOOT_TABLE=y
++CONFIG_GOOGLE_MEMCONSOLE_COREBOOT=y
++CONFIG_GOOGLE_VPD=y
++CONFIG_EFI_CAPSULE_LOADER=y
++CONFIG_GNSS=m
++CONFIG_GNSS_MTK_SERIAL=m
++CONFIG_MTD=y
++CONFIG_MTD_BLOCK=y
++CONFIG_MTD_CFI=y
++CONFIG_MTD_CFI_ADV_OPTIONS=y
++CONFIG_MTD_CFI_INTELEXT=y
++CONFIG_MTD_CFI_AMDSTD=y
++CONFIG_MTD_CFI_STAA=y
++CONFIG_MTD_PHYSMAP=y
++CONFIG_MTD_PHYSMAP_OF=y
++CONFIG_MTD_DATAFLASH=y
++CONFIG_MTD_SST25L=y
++CONFIG_MTD_RAW_NAND=y
++CONFIG_MTD_NAND_DENALI_DT=y
++CONFIG_MTD_NAND_BRCMNAND=m
++CONFIG_MTD_NAND_QCOM=y
++CONFIG_MTD_SPI_NOR=y
++CONFIG_BLK_DEV_LOOP=y
++CONFIG_BLK_DEV_NBD=m
++CONFIG_VIRTIO_BLK=y
++CONFIG_QCOM_COINCELL=m
++CONFIG_QCOM_FASTRPC=m
++CONFIG_SRAM=y
++CONFIG_EEPROM_AT24=m
++CONFIG_EEPROM_AT25=m
++CONFIG_UACCE=m
++CONFIG_RAID_ATTRS=m
++# CONFIG_SCSI_PROC_FS is not set
++CONFIG_BLK_DEV_SD=y
++CONFIG_SCSI_SAS_ATA=y
++CONFIG_SCSI_HISI_SAS=y
++CONFIG_ATA=y
++CONFIG_SATA_AHCI_PLATFORM=y
++CONFIG_AHCI_CEVA=y
++CONFIG_AHCI_XGENE=y
++CONFIG_AHCI_QORIQ=y
++CONFIG_PATA_OF_PLATFORM=y
++CONFIG_MD=y
++CONFIG_BLK_DEV_MD=m
++CONFIG_BLK_DEV_DM=y
++CONFIG_DM_CRYPT=y
++CONFIG_DM_THIN_PROVISIONING=m
++CONFIG_DM_MIRROR=m
++CONFIG_DM_ZERO=m
++CONFIG_NETDEVICES=y
++CONFIG_DUMMY=m
++CONFIG_WIREGUARD=m
++CONFIG_MACVLAN=m
++CONFIG_MACVTAP=m
++CONFIG_IPVLAN=m
++CONFIG_VXLAN=m
++CONFIG_TUN=m
++CONFIG_VETH=m
++CONFIG_VIRTIO_NET=y
++CONFIG_NET_DSA_BCM_SF2=m
++# CONFIG_NET_VENDOR_ALACRITECH is not set
++# CONFIG_NET_VENDOR_AMAZON is not set
++# CONFIG_NET_VENDOR_AMD is not set
++# CONFIG_NET_VENDOR_AQUANTIA is not set
++# CONFIG_NET_VENDOR_ARC is not set
++# CONFIG_NET_VENDOR_BROADCOM is not set
++# CONFIG_NET_VENDOR_CADENCE is not set
++# CONFIG_NET_VENDOR_CAVIUM is not set
++# CONFIG_NET_VENDOR_CORTINA is not set
++# CONFIG_NET_VENDOR_EZCHIP is not set
++# CONFIG_NET_VENDOR_GOOGLE is not set
++# CONFIG_NET_VENDOR_HISILICON is not set
++# CONFIG_NET_VENDOR_HUAWEI is not set
++# CONFIG_NET_VENDOR_INTEL is not set
++# CONFIG_NET_VENDOR_MARVELL is not set
++# CONFIG_NET_VENDOR_MELLANOX is not set
++# CONFIG_NET_VENDOR_MICREL is not set
++# CONFIG_NET_VENDOR_MICROCHIP is not set
++# CONFIG_NET_VENDOR_MICROSEMI is not set
++# CONFIG_NET_VENDOR_NI is not set
++# CONFIG_NET_VENDOR_NATSEMI is not set
++# CONFIG_NET_VENDOR_NETRONOME is not set
++# CONFIG_NET_VENDOR_PENSANDO is not set
++CONFIG_QCOM_EMAC=m
++CONFIG_RMNET=y
++# CONFIG_NET_VENDOR_RENESAS is not set
++# CONFIG_NET_VENDOR_ROCKER is not set
++# CONFIG_NET_VENDOR_SAMSUNG is not set
++# CONFIG_NET_VENDOR_SEEQ is not set
++# CONFIG_NET_VENDOR_SOLARFLARE is not set
++# CONFIG_NET_VENDOR_SMSC is not set
++# CONFIG_NET_VENDOR_SOCIONEXT is not set
++# CONFIG_NET_VENDOR_STMICRO is not set
++# CONFIG_NET_VENDOR_SYNOPSYS is not set
++# CONFIG_NET_VENDOR_VIA is not set
++# CONFIG_NET_VENDOR_WIZNET is not set
++# CONFIG_NET_VENDOR_XILINX is not set
++CONFIG_QCOM_IPA=y
++CONFIG_AQUANTIA_PHY=m
++CONFIG_BCM54140_PHY=m
++CONFIG_MARVELL_PHY=m
++CONFIG_MARVELL_10G_PHY=m
++CONFIG_MICREL_PHY=m
++CONFIG_MICROSEMI_PHY=m
++CONFIG_AT803X_PHY=m
++CONFIG_REALTEK_PHY=m
++CONFIG_ROCKCHIP_PHY=m
++CONFIG_DP83867_PHY=m
++CONFIG_VITESSE_PHY=m
++CONFIG_CAN_FLEXCAN=m
++CONFIG_CAN_MCP251XFD=m
++CONFIG_MDIO_BUS_MUX_MULTIPLEXER=m
++CONFIG_MDIO_BUS_MUX_MMIOREG=m
++CONFIG_USB_PEGASUS=m
++CONFIG_USB_RTL8150=m
++CONFIG_USB_RTL8152=m
++CONFIG_USB_LAN78XX=m
++CONFIG_USB_USBNET=m
++CONFIG_USB_NET_DM9601=m
++CONFIG_USB_NET_SR9800=m
++CONFIG_USB_NET_SMSC75XX=m
++CONFIG_USB_NET_SMSC95XX=m
++CONFIG_USB_NET_PLUSB=m
++CONFIG_USB_NET_MCS7830=m
++CONFIG_USB_NET_RNDIS_HOST=m
++CONFIG_ATH10K=m
++CONFIG_ATH10K_SNOC=m
++CONFIG_WCN36XX=m
++CONFIG_ATH11K=m
++CONFIG_ATH11K_AHB=m
++CONFIG_BRCMFMAC=m
++CONFIG_MWIFIEX=m
++CONFIG_MWIFIEX_SDIO=m
++CONFIG_MT7601U=m
++CONFIG_MT76x0U=m
++CONFIG_MT76x2U=m
++CONFIG_MT7663U=m
++CONFIG_RT2X00=m
++CONFIG_RT2500USB=m
++CONFIG_RT73USB=m
++CONFIG_RT2800USB=m
++CONFIG_RT2800USB_RT3573=y
++CONFIG_RT2800USB_RT53XX=y
++CONFIG_RT2800USB_RT55XX=y
++CONFIG_RT2800USB_UNKNOWN=y
++CONFIG_RTL8187=m
++CONFIG_WL18XX=m
++CONFIG_WLCORE_SDIO=m
++CONFIG_INPUT_EVDEV=y
++CONFIG_KEYBOARD_ADC=m
++CONFIG_KEYBOARD_GPIO=y
++CONFIG_KEYBOARD_CROS_EC=y
++CONFIG_MOUSE_ELAN_I2C=m
++CONFIG_INPUT_TOUCHSCREEN=y
++CONFIG_TOUCHSCREEN_ATMEL_MXT=m
++CONFIG_TOUCHSCREEN_ATMEL_MXT_T37=y
++CONFIG_TOUCHSCREEN_GOODIX=m
++CONFIG_TOUCHSCREEN_ELAN=m
++CONFIG_TOUCHSCREEN_EDT_FT5X06=m
++CONFIG_INPUT_MISC=y
++CONFIG_INPUT_PM8941_PWRKEY=y
++CONFIG_INPUT_PM8XXX_VIBRATOR=m
++CONFIG_INPUT_UINPUT=m
++CONFIG_INPUT_PWM_BEEPER=m
++CONFIG_INPUT_PWM_VIBRA=m
++# CONFIG_SERIO_SERPORT is not set
++CONFIG_SERIO_AMBAKMI=y
++CONFIG_LEGACY_PTY_COUNT=16
++CONFIG_SERIAL_8250=y
++CONFIG_SERIAL_8250_CONSOLE=y
++CONFIG_SERIAL_8250_EXTENDED=y
++CONFIG_SERIAL_8250_SHARE_IRQ=y
++CONFIG_SERIAL_8250_DW=y
++CONFIG_SERIAL_OF_PLATFORM=y
++CONFIG_SERIAL_AMBA_PL010=y
++CONFIG_SERIAL_AMBA_PL010_CONSOLE=y
++CONFIG_SERIAL_AMBA_PL011=y
++CONFIG_SERIAL_AMBA_PL011_CONSOLE=y
++CONFIG_SERIAL_MSM=y
++CONFIG_SERIAL_MSM_CONSOLE=y
++CONFIG_SERIAL_QCOM_GENI=y
++CONFIG_SERIAL_QCOM_GENI_CONSOLE=y
++CONFIG_SERIAL_XILINX_PS_UART=y
++CONFIG_SERIAL_XILINX_PS_UART_CONSOLE=y
++CONFIG_SERIAL_FSL_LPUART=y
++CONFIG_SERIAL_FSL_LPUART_CONSOLE=y
++CONFIG_SERIAL_FSL_LINFLEXUART=y
++CONFIG_SERIAL_FSL_LINFLEXUART_CONSOLE=y
++CONFIG_SERIAL_DEV_BUS=y
++CONFIG_VIRTIO_CONSOLE=y
++CONFIG_IPMI_HANDLER=m
++CONFIG_IPMI_DEVICE_INTERFACE=m
++CONFIG_IPMI_SI=m
++CONFIG_HW_RANDOM=y
++CONFIG_TCG_TPM=y
++CONFIG_TCG_TIS_I2C_INFINEON=y
++CONFIG_I2C_CHARDEV=y
++CONFIG_I2C_MUX=y
++CONFIG_I2C_MUX_PCA954x=y
++CONFIG_I2C_CADENCE=m
++CONFIG_I2C_DESIGNWARE_PLATFORM=y
++CONFIG_I2C_GPIO=m
++CONFIG_I2C_QCOM_CCI=m
++CONFIG_I2C_QCOM_GENI=y
++CONFIG_I2C_QUP=y
++CONFIG_I2C_RK3X=y
++CONFIG_I2C_CROS_EC_TUNNEL=y
++CONFIG_SPI=y
++CONFIG_SPI_CADENCE_QUADSPI=y
++CONFIG_SPI_DESIGNWARE=m
++CONFIG_SPI_DW_DMA=y
++CONFIG_SPI_DW_MMIO=m
++CONFIG_SPI_NXP_FLEXSPI=y
++CONFIG_SPI_PL022=y
++CONFIG_SPI_ROCKCHIP=y
++CONFIG_SPI_QCOM_QSPI=y
++CONFIG_SPI_QUP=y
++CONFIG_SPI_QCOM_GENI=y
++CONFIG_SPI_SPIDEV=m
++CONFIG_SPMI=y
++CONFIG_PINCTRL_MAX77620=y
++CONFIG_PINCTRL_SINGLE=y
++CONFIG_PINCTRL_MSM=y
++CONFIG_PINCTRL_QCOM_SPMI_PMIC=y
++CONFIG_PINCTRL_SC7180=y
++CONFIG_PINCTRL_LPASS_LPI=m
++CONFIG_GPIO_ALTERA=m
++CONFIG_GPIO_DWAPB=y
++CONFIG_GPIO_MB86S7X=y
++CONFIG_GPIO_PL061=y
++CONFIG_GPIO_WCD934X=m
++CONFIG_GPIO_XGENE=y
++CONFIG_GPIO_MAX732X=y
++CONFIG_GPIO_PCA953X=y
++CONFIG_GPIO_PCA953X_IRQ=y
++CONFIG_GPIO_BD9571MWV=m
++CONFIG_GPIO_MAX77620=y
++CONFIG_POWER_RESET_MSM=y
++CONFIG_POWER_RESET_QCOM_PON=m
++CONFIG_POWER_RESET_XGENE=y
++CONFIG_POWER_RESET_SYSCON=y
++CONFIG_SYSCON_REBOOT_MODE=y
++CONFIG_BATTERY_SBS=m
++CONFIG_BATTERY_BQ27XXX=y
++CONFIG_BATTERY_MAX17042=m
++CONFIG_CHARGER_MT6360=m
++CONFIG_CHARGER_BQ25890=m
++CONFIG_CHARGER_BQ25980=m
++CONFIG_CHARGER_CROS_USBPD=m
++CONFIG_ACER_ASPIRE_BATTERY=y
++CONFIG_SENSORS_ARM_SCMI=y
++CONFIG_SENSORS_ARM_SCPI=y
++CONFIG_SENSORS_GPIO_FAN=m
++CONFIG_SENSORS_JC42=m
++CONFIG_SENSORS_LM75=m
++CONFIG_SENSORS_LM90=m
++CONFIG_SENSORS_PWM_FAN=m
++CONFIG_SENSORS_INA2XX=m
++CONFIG_SENSORS_INA3221=m
++CONFIG_THERMAL=y
++CONFIG_THERMAL_WRITABLE_TRIPS=y
++CONFIG_THERMAL_DEFAULT_GOV_POWER_ALLOCATOR=y
++CONFIG_THERMAL_GOV_USER_SPACE=y
++CONFIG_THERMAL_GOV_POWER_ALLOCATOR=y
++CONFIG_CPU_THERMAL=y
++CONFIG_DEVFREQ_THERMAL=y
++CONFIG_THERMAL_EMULATION=y
++CONFIG_GENERIC_ADC_THERMAL=y
++CONFIG_QCOM_TSENS=m
++CONFIG_QCOM_SPMI_ADC_TM5=m
++CONFIG_QCOM_SPMI_TEMP_ALARM=m
++CONFIG_QCOM_LMH=m
++CONFIG_WATCHDOG=y
++CONFIG_ARM_SP805_WATCHDOG=y
++CONFIG_ARM_SBSA_WATCHDOG=y
++CONFIG_DW_WATCHDOG=y
++CONFIG_QCOM_WDT=y
++CONFIG_ARM_SMC_WATCHDOG=y
++CONFIG_PM8916_WATCHDOG=m
++CONFIG_MFD_BD9571MWV=y
++CONFIG_MFD_AXP20X_I2C=y
++CONFIG_MFD_MAX77620=y
++CONFIG_MFD_MT6360=y
++CONFIG_MFD_MT6397=y
++CONFIG_MFD_SPMI_PMIC=y
++CONFIG_MFD_RK808=y
++CONFIG_MFD_SEC_CORE=y
++CONFIG_MFD_ROHM_BD718XX=y
++CONFIG_MFD_WCD934X=m
++CONFIG_REGULATOR_FIXED_VOLTAGE=y
++CONFIG_REGULATOR_AXP20X=y
++CONFIG_REGULATOR_BD718XX=y
++CONFIG_REGULATOR_BD9571MWV=y
++CONFIG_REGULATOR_DA9211=y
++CONFIG_REGULATOR_FAN53555=y
++CONFIG_REGULATOR_GPIO=y
++CONFIG_REGULATOR_MAX77620=y
++CONFIG_REGULATOR_MAX8973=y
++CONFIG_REGULATOR_MP8859=y
++CONFIG_REGULATOR_MT6358=y
++CONFIG_REGULATOR_MT6359=y
++CONFIG_REGULATOR_MT6360=y
++CONFIG_REGULATOR_MT6397=y
++CONFIG_REGULATOR_PCA9450=y
++CONFIG_REGULATOR_PF8X00=y
++CONFIG_REGULATOR_PFUZE100=y
++CONFIG_REGULATOR_PWM=y
++CONFIG_REGULATOR_QCOM_RPMH=y
++CONFIG_REGULATOR_QCOM_SMD_RPM=y
++CONFIG_REGULATOR_RK808=y
++CONFIG_REGULATOR_S2MPS11=y
++CONFIG_REGULATOR_TPS65132=m
++CONFIG_REGULATOR_VCTRL=m
++CONFIG_RC_CORE=m
++CONFIG_RC_DECODERS=y
++CONFIG_RC_DEVICES=y
++CONFIG_MEDIA_SUPPORT=m
++CONFIG_MEDIA_CAMERA_SUPPORT=y
++CONFIG_MEDIA_ANALOG_TV_SUPPORT=y
++CONFIG_MEDIA_DIGITAL_TV_SUPPORT=y
++CONFIG_MEDIA_SDR_SUPPORT=y
++CONFIG_MEDIA_PLATFORM_SUPPORT=y
++# CONFIG_DVB_NET is not set
++CONFIG_MEDIA_USB_SUPPORT=y
++CONFIG_USB_VIDEO_CLASS=m
++CONFIG_V4L_PLATFORM_DRIVERS=y
++CONFIG_SDR_PLATFORM_DRIVERS=y
++CONFIG_V4L_MEM2MEM_DRIVERS=y
++CONFIG_VIDEO_QCOM_CAMSS=m
++CONFIG_VIDEO_QCOM_VENUS=m
++CONFIG_VIDEO_IMX219=m
++CONFIG_VIDEO_OV5640=m
++CONFIG_VIDEO_OV5645=m
++CONFIG_DRM=y
++CONFIG_DRM_LOAD_EDID_FIRMWARE=y
++CONFIG_DRM_DP_AUX_CHARDEV=y
++CONFIG_DRM_I2C_NXP_TDA998X=m
++CONFIG_DRM_UDL=m
++CONFIG_DRM_MSM=m
++# CONFIG_DRM_MSM_MDP4 is not set
++# CONFIG_DRM_MSM_MDP5 is not set
++# CONFIG_DRM_MSM_DSI_28NM_PHY is not set
++# CONFIG_DRM_MSM_DSI_20NM_PHY is not set
++# CONFIG_DRM_MSM_DSI_28NM_8960_PHY is not set
++# CONFIG_DRM_MSM_DSI_14NM_PHY is not set
++# CONFIG_DRM_MSM_DSI_7NM_PHY is not set
++CONFIG_DRM_PANEL_BOE_TV101WUM_NL6=m
++CONFIG_DRM_PANEL_LVDS=m
++CONFIG_DRM_PANEL_SIMPLE=y
++CONFIG_DRM_PANEL_EDP=y
++CONFIG_DRM_PANEL_INNOLUX_P079ZCA=m
++CONFIG_DRM_PANEL_KINGDISPLAY_KD097D04=m
++CONFIG_DRM_PANEL_MANTIX_MLAF057WE51=m
++CONFIG_DRM_PANEL_RAYDIUM_RM67191=m
++CONFIG_DRM_PANEL_SAMSUNG_ATNA33XC20=y
++CONFIG_DRM_PANEL_SITRONIX_ST7703=m
++CONFIG_DRM_PANEL_TRULY_NT35597_WQXGA=m
++CONFIG_DRM_PANEL_VISIONOX_RM69299=y
++CONFIG_DRM_LONTIUM_LT8912B=m
++CONFIG_DRM_LONTIUM_LT9611=m
++CONFIG_DRM_LONTIUM_LT9611UXC=m
++CONFIG_DRM_NWL_MIPI_DSI=m
++CONFIG_DRM_PARADE_PS8640=y
++CONFIG_DRM_SII902X=m
++CONFIG_DRM_SIMPLE_BRIDGE=m
++CONFIG_DRM_THINE_THC63LVD1024=m
++CONFIG_DRM_TI_SN65DSI86=y
++CONFIG_DRM_I2C_ADV7511=m
++CONFIG_DRM_I2C_ADV7511_AUDIO=y
++CONFIG_DRM_CDNS_MHDP8546=m
++CONFIG_DRM_GUD=m
++CONFIG_FB=y
++CONFIG_FB_EFI=y
++CONFIG_FB_UDL=m
++# CONFIG_XEN_FBDEV_FRONTEND is not set
++CONFIG_FB_SIMPLE=y
++CONFIG_BACKLIGHT_CLASS_DEVICE=y
++CONFIG_BACKLIGHT_PWM=y
++CONFIG_BACKLIGHT_LP855X=m
++CONFIG_BACKLIGHT_GPIO=y
++CONFIG_LOGO=y
++# CONFIG_LOGO_LINUX_MONO is not set
++# CONFIG_LOGO_LINUX_VGA16 is not set
++CONFIG_SOUND=y
++CONFIG_SND=y
++CONFIG_SND_HRTIMER=m
++CONFIG_SND_SEQUENCER=m
++CONFIG_SND_SEQ_DUMMY=m
++CONFIG_SND_ALOOP=m
++CONFIG_SND_VIRMIDI=m
++CONFIG_SND_USB_AUDIO=m
++CONFIG_SND_SOC=y
++CONFIG_SND_SOC_FSL_ASRC=m
++CONFIG_SND_SOC_FSL_MICFIL=m
++CONFIG_SND_SOC_FSL_EASRC=m
++CONFIG_SND_SOC_QCOM=y
++CONFIG_SND_SOC_SM8250=m
++CONFIG_SND_SOC_SC7180=m
++CONFIG_SND_SOC_AK4613=m
++CONFIG_SND_SOC_CROS_EC_CODEC=m
++CONFIG_SND_SOC_ES7134=m
++CONFIG_SND_SOC_ES7241=m
++CONFIG_SND_SOC_GTM601=m
++CONFIG_SND_SOC_MAX98927=m
++CONFIG_SND_SOC_MSM8916_WCD_ANALOG=m
++CONFIG_SND_SOC_MSM8916_WCD_DIGITAL=m
++CONFIG_SND_SOC_PCM3168A_I2C=m
++CONFIG_SND_SOC_RT5659=m
++CONFIG_SND_SOC_SIMPLE_AMPLIFIER=m
++CONFIG_SND_SOC_SIMPLE_MUX=m
++CONFIG_SND_SOC_TAS571X=m
++CONFIG_SND_SOC_TLV320AIC32X4_I2C=m
++CONFIG_SND_SOC_WCD9335=m
++CONFIG_SND_SOC_WCD934X=m
++CONFIG_SND_SOC_WCD938X_SDW=m
++CONFIG_SND_SOC_WM8524=m
++CONFIG_SND_SOC_WM8904=m
++CONFIG_SND_SOC_WM8960=m
++CONFIG_SND_SOC_WM8962=m
++CONFIG_SND_SOC_WM8978=m
++CONFIG_SND_SOC_WSA881X=m
++CONFIG_SND_SOC_NAU8822=m
++CONFIG_SND_SOC_LPASS_WSA_MACRO=m
++CONFIG_SND_SOC_LPASS_VA_MACRO=m
++CONFIG_SND_SOC_LPASS_RX_MACRO=m
++CONFIG_SND_SOC_LPASS_TX_MACRO=m
++CONFIG_SND_SIMPLE_CARD=y
++CONFIG_SND_AUDIO_GRAPH_CARD=m
++CONFIG_SND_AUDIO_GRAPH_CARD2=m
++CONFIG_SND_VIRTIO=m
++CONFIG_HID_BATTERY_STRENGTH=y
++CONFIG_UHID=m
++CONFIG_HID_GOOGLE_HAMMER=y
++CONFIG_HID_MULTITOUCH=m
++CONFIG_HID_RMI=m
++CONFIG_I2C_HID_OF=y
++CONFIG_USB=y
++CONFIG_USB_OTG=y
++CONFIG_USB_XHCI_HCD=y
++CONFIG_USB_XHCI_PCI_RENESAS=m
++CONFIG_USB_EHCI_HCD=y
++CONFIG_USB_EHCI_HCD_PLATFORM=y
++CONFIG_USB_OHCI_HCD=y
++CONFIG_USB_OHCI_HCD_PLATFORM=y
++CONFIG_USB_ACM=m
++CONFIG_USB_STORAGE=y
++CONFIG_USB_STORAGE_REALTEK=m
++CONFIG_USB_CDNS_SUPPORT=m
++CONFIG_USB_CDNS3=m
++CONFIG_USB_CDNS3_GADGET=y
++CONFIG_USB_CDNS3_HOST=y
++CONFIG_USB_MUSB_HDRC=y
++CONFIG_USB_DWC3=y
++CONFIG_USB_DWC2=y
++CONFIG_USB_CHIPIDEA=y
++CONFIG_USB_CHIPIDEA_UDC=y
++CONFIG_USB_CHIPIDEA_HOST=y
++CONFIG_USB_ISP1760=y
++CONFIG_USB_SERIAL=m
++CONFIG_USB_SERIAL_CH341=m
++CONFIG_USB_SERIAL_CP210X=m
++CONFIG_USB_SERIAL_FTDI_SIO=m
++CONFIG_USB_SERIAL_PL2303=m
++CONFIG_USB_SERIAL_OPTION=m
++CONFIG_USB_HSIC_USB3503=y
++CONFIG_USB_ONBOARD_HUB=y
++CONFIG_NOP_USB_XCEIV=y
++CONFIG_USB_GADGET=y
++CONFIG_USB_CONFIGFS=m
++CONFIG_USB_CONFIGFS_SERIAL=y
++CONFIG_USB_CONFIGFS_ACM=y
++CONFIG_USB_CONFIGFS_OBEX=y
++CONFIG_USB_CONFIGFS_NCM=y
++CONFIG_USB_CONFIGFS_ECM=y
++CONFIG_USB_CONFIGFS_ECM_SUBSET=y
++CONFIG_USB_CONFIGFS_RNDIS=y
++CONFIG_USB_CONFIGFS_EEM=y
++CONFIG_USB_CONFIGFS_MASS_STORAGE=y
++CONFIG_USB_CONFIGFS_F_FS=y
++CONFIG_USB_ETH=m
++CONFIG_TYPEC=y
++CONFIG_TYPEC_TCPM=m
++CONFIG_TYPEC_TCPCI=m
++CONFIG_TYPEC_FUSB302=m
++CONFIG_TYPEC_UCSI=y
++CONFIG_TYPEC_TPS6598X=m
++CONFIG_TYPEC_HD3SS3220=m
++CONFIG_MMC=y
++CONFIG_MMC_BLOCK_MINORS=32
++CONFIG_MMC_ARMMMCI=y
++CONFIG_MMC_SDHCI=y
++CONFIG_MMC_SDHCI_PLTFM=y
++CONFIG_MMC_SDHCI_OF_ARASAN=y
++CONFIG_MMC_SDHCI_OF_DWCMSHC=y
++CONFIG_MMC_SDHCI_CADENCE=y
++CONFIG_MMC_SDHCI_F_SDH30=y
++CONFIG_MMC_SDHCI_MSM=y
++CONFIG_MMC_SPI=y
++CONFIG_MMC_DW=y
++CONFIG_MMC_DW_EXYNOS=y
++CONFIG_MMC_DW_HI3798CV200=y
++CONFIG_MMC_DW_K3=y
++CONFIG_MMC_MTK=y
++CONFIG_MMC_SDHCI_XENON=y
++CONFIG_MMC_SDHCI_AM654=y
++CONFIG_SCSI_UFSHCD=y
++CONFIG_SCSI_UFSHCD_PLATFORM=y
++CONFIG_SCSI_UFS_QCOM=y
++CONFIG_NEW_LEDS=y
++CONFIG_LEDS_CLASS=y
++CONFIG_LEDS_CLASS_MULTICOLOR=y
++CONFIG_LEDS_LM3692X=m
++CONFIG_LEDS_PCA9532=m
++CONFIG_LEDS_GPIO=y
++CONFIG_LEDS_PWM=y
++CONFIG_LEDS_SYSCON=y
++CONFIG_LEDS_QCOM_LPG=m
++CONFIG_LEDS_TRIGGER_TIMER=y
++CONFIG_LEDS_TRIGGER_DISK=y
++CONFIG_LEDS_TRIGGER_MTD=y
++CONFIG_LEDS_TRIGGER_HEARTBEAT=y
++CONFIG_LEDS_TRIGGER_BACKLIGHT=m
++CONFIG_LEDS_TRIGGER_CPU=y
++CONFIG_LEDS_TRIGGER_ACTIVITY=m
++CONFIG_LEDS_TRIGGER_GPIO=m
++CONFIG_LEDS_TRIGGER_DEFAULT_ON=y
++CONFIG_LEDS_TRIGGER_TRANSIENT=m
++CONFIG_LEDS_TRIGGER_CAMERA=m
++CONFIG_LEDS_TRIGGER_PANIC=y
++CONFIG_LEDS_TRIGGER_NETDEV=m
++CONFIG_LEDS_TRIGGER_PATTERN=m
++CONFIG_LEDS_TRIGGER_AUDIO=m
++CONFIG_LEDS_TRIGGER_TTY=m
++CONFIG_EDAC=y
++CONFIG_EDAC_QCOM=y
++CONFIG_RTC_CLASS=y
++CONFIG_RTC_DRV_DS1307=m
++CONFIG_RTC_DRV_HYM8563=m
++CONFIG_RTC_DRV_MAX77686=y
++CONFIG_RTC_DRV_RK808=m
++CONFIG_RTC_DRV_PCF85063=m
++CONFIG_RTC_DRV_PCF85363=m
++CONFIG_RTC_DRV_M41T80=m
++CONFIG_RTC_DRV_RX8581=m
++CONFIG_RTC_DRV_RV3028=m
++CONFIG_RTC_DRV_RV8803=m
++CONFIG_RTC_DRV_S5M=y
++CONFIG_RTC_DRV_DS3232=y
++CONFIG_RTC_DRV_PCF2127=m
++CONFIG_RTC_DRV_EFI=y
++CONFIG_RTC_DRV_CROS_EC=y
++CONFIG_RTC_DRV_PL031=y
++CONFIG_RTC_DRV_PM8XXX=m
++CONFIG_RTC_DRV_MT6397=m
++CONFIG_DMADEVICES=y
++CONFIG_FSL_EDMA=y
++CONFIG_MV_XOR_V2=y
++CONFIG_PL330_DMA=y
++CONFIG_QCOM_BAM_DMA=y
++CONFIG_QCOM_GPI_DMA=m
++CONFIG_QCOM_HIDMA_MGMT=y
++CONFIG_QCOM_HIDMA=y
++CONFIG_VFIO=y
++CONFIG_VIRTIO_BALLOON=y
++CONFIG_VIRTIO_INPUT=m
++CONFIG_VIRTIO_MMIO=y
++CONFIG_VIRTIO_MMIO_CMDLINE_DEVICES=y
++CONFIG_XEN_GNTDEV=y
++CONFIG_XEN_GRANT_DEV_ALLOC=y
++CONFIG_STAGING=y
++CONFIG_RTL8723BS=m
++CONFIG_R8712U=m
++CONFIG_STAGING_MEDIA=y
++CONFIG_VIDEO_MAX96712=m
++CONFIG_CHROME_PLATFORMS=y
++CONFIG_CROS_EC=y
++CONFIG_CROS_EC_I2C=y
++CONFIG_CROS_EC_RPMSG=y
++CONFIG_CROS_EC_SPI=y
++CONFIG_CROS_EC_CHARDEV=m
++CONFIG_COMMON_CLK_PWM=y
++CONFIG_COMMON_CLK_BD718XX=m
++CONFIG_COMMON_CLK_QCOM=y
++CONFIG_QCOM_CLK_RPMH=y
++CONFIG_SC_CAMCC_7180=y
++CONFIG_SC_DISPCC_7180=y
++CONFIG_SC_GPUCC_7180=y
++CONFIG_SC_LPASS_CORECC_7180=y
++CONFIG_SC_MSS_7180=y
++CONFIG_SC_VIDEOCC_7180=y
++CONFIG_QCOM_HFPLL=y
++CONFIG_CLK_GFM_LPASS_SM8250=m
++CONFIG_HWSPINLOCK=y
++CONFIG_HWSPINLOCK_QCOM=y
++CONFIG_MAILBOX=y
++CONFIG_ARM_MHU=y
++CONFIG_PLATFORM_MHU=y
++CONFIG_QCOM_APCS_IPC=y
++CONFIG_QCOM_IPCC=y
++CONFIG_ARM_SMMU=y
++CONFIG_ARM_SMMU_V3=y
++CONFIG_QCOM_IOMMU=y
++CONFIG_REMOTEPROC=y
++CONFIG_QCOM_Q6V5_ADSP=m
++CONFIG_QCOM_Q6V5_MSS=y
++CONFIG_QCOM_Q6V5_PAS=m
++CONFIG_QCOM_SYSMON=y
++CONFIG_QCOM_WCNSS_PIL=m
++CONFIG_RPMSG_CHAR=y
++CONFIG_RPMSG_CTRL=m
++CONFIG_RPMSG_QCOM_GLINK_RPM=y
++CONFIG_RPMSG_QCOM_GLINK_SMEM=y
++CONFIG_RPMSG_QCOM_SMD=y
++CONFIG_SOUNDWIRE=m
++CONFIG_SOUNDWIRE_QCOM=m
++CONFIG_FSL_RCPM=y
++CONFIG_QCOM_AOSS_QMP=y
++CONFIG_QCOM_COMMAND_DB=y
++CONFIG_QCOM_CPR=y
++CONFIG_QCOM_GENI_SE=y
++CONFIG_QCOM_LLCC=y
++CONFIG_QCOM_OCMEM=y
++CONFIG_QCOM_RMTFS_MEM=y
++CONFIG_QCOM_RPMH=y
++CONFIG_QCOM_RPMHPD=y
++CONFIG_QCOM_RPMPD=y
++CONFIG_QCOM_SMEM=y
++CONFIG_QCOM_SMD_RPM=y
++CONFIG_QCOM_SMP2P=y
++CONFIG_QCOM_SMSM=y
++CONFIG_QCOM_SOCINFO=y
++CONFIG_QCOM_SPM=m
++CONFIG_QCOM_STATS=m
++CONFIG_QCOM_WCNSS_CTRL=m
++CONFIG_QCOM_APR=m
++CONFIG_QCOM_ICC_BWMON=m
++CONFIG_DEVFREQ_GOV_PERFORMANCE=m
++CONFIG_DEVFREQ_GOV_USERSPACE=m
++CONFIG_PM_DEVFREQ_EVENT=y
++CONFIG_EXTCON_PTN5150=m
++CONFIG_EXTCON_USB_GPIO=y
++CONFIG_EXTCON_USBC_CROS_EC=y
++CONFIG_IIO=y
++CONFIG_MAX9611=m
++CONFIG_QCOM_SPMI_ADC5=m
++CONFIG_TI_ADS1015=m
++CONFIG_IIO_CROS_EC_SENSORS_CORE=m
++CONFIG_IIO_CROS_EC_SENSORS=m
++CONFIG_IIO_ST_LSM6DSX=m
++CONFIG_APDS9960=m
++CONFIG_IIO_CROS_EC_LIGHT_PROX=m
++CONFIG_SENSORS_ISL29018=m
++CONFIG_SENSORS_TSL2563=m
++CONFIG_VCNL4000=m
++CONFIG_IIO_ST_MAGN_3AXIS=m
++CONFIG_IIO_CROS_EC_BARO=m
++CONFIG_MPL3115=m
++CONFIG_PWM=y
++CONFIG_PWM_CROS_EC=y
++CONFIG_QCOM_PDC=y
++CONFIG_RESET_QCOM_AOSS=y
++CONFIG_RESET_QCOM_PDC=y
++CONFIG_PHY_XGENE=y
++CONFIG_PHY_CADENCE_TORRENT=m
++CONFIG_PHY_CADENCE_SIERRA=m
++CONFIG_PHY_QCOM_EDP=m
++CONFIG_PHY_QCOM_PCIE2=m
++CONFIG_PHY_QCOM_QMP=y
++CONFIG_PHY_QCOM_QUSB2=y
++CONFIG_PHY_QCOM_USB_HS=m
++CONFIG_PHY_QCOM_USB_SNPS_FEMTO_V2=y
++CONFIG_PHY_QCOM_USB_HS_28NM=m
++CONFIG_PHY_QCOM_USB_SS=m
++CONFIG_ARM_CCI_PMU=m
++CONFIG_ARM_CCN=m
++CONFIG_ARM_CMN=m
++CONFIG_ARM_DSU_PMU=m
++CONFIG_ARM_SPE_PMU=m
++CONFIG_DAX=y
++CONFIG_NVMEM_QCOM_QFPROM=y
++CONFIG_NVMEM_RMEM=m
++CONFIG_FPGA=y
++CONFIG_FPGA_BRIDGE=m
++CONFIG_ALTERA_FREEZE_BRIDGE=m
++CONFIG_FPGA_REGION=m
++CONFIG_OF_FPGA_REGION=m
++CONFIG_TEE=y
++CONFIG_OPTEE=y
++CONFIG_MUX_MMIO=m
++CONFIG_SLIM_QCOM_CTRL=m
++CONFIG_SLIM_QCOM_NGD_CTRL=m
++CONFIG_INTERCONNECT=y
++CONFIG_INTERCONNECT_QCOM=y
++CONFIG_INTERCONNECT_QCOM_OSM_L3=y
++CONFIG_INTERCONNECT_QCOM_SC7180=y
++CONFIG_EXT3_FS=y
++CONFIG_EXT4_FS_POSIX_ACL=y
++CONFIG_EXT4_FS_SECURITY=y
++CONFIG_BTRFS_FS=y
++CONFIG_BTRFS_FS_POSIX_ACL=y
++CONFIG_FANOTIFY=y
++CONFIG_FANOTIFY_ACCESS_PERMISSIONS=y
++CONFIG_QUOTA=y
++CONFIG_AUTOFS4_FS=y
++CONFIG_FUSE_FS=m
++CONFIG_CUSE=m
++CONFIG_VIRTIO_FS=m
++CONFIG_OVERLAY_FS=m
++CONFIG_ISO9660_FS=m
++CONFIG_UDF_FS=m
++CONFIG_MSDOS_FS=m
++CONFIG_VFAT_FS=y
++CONFIG_EXFAT_FS=m
++CONFIG_NTFS_FS=m
++CONFIG_TMPFS_POSIX_ACL=y
++CONFIG_HUGETLBFS=y
++CONFIG_CONFIGFS_FS=y
++CONFIG_EFIVAR_FS=y
++CONFIG_HFS_FS=m
++CONFIG_HFSPLUS_FS=m
++CONFIG_SQUASHFS=y
++CONFIG_SQUASHFS_XATTR=y
++CONFIG_SQUASHFS_LZ4=y
++CONFIG_SQUASHFS_LZO=y
++CONFIG_SQUASHFS_XZ=y
++CONFIG_SQUASHFS_ZSTD=y
++CONFIG_SQUASHFS_4K_DEVBLK_SIZE=y
++CONFIG_SQUASHFS_EMBEDDED=y
++CONFIG_NFS_FS=y
++CONFIG_NFS_V4=y
++CONFIG_NFS_V4_1=y
++CONFIG_NFS_V4_2=y
++CONFIG_ROOT_NFS=y
++CONFIG_CIFS=m
++CONFIG_NLS_CODEPAGE_437=y
++CONFIG_NLS_ISO8859_1=y
++CONFIG_SECURITY=y
++CONFIG_SECURITY_APPARMOR=y
++CONFIG_INIT_STACK_NONE=y
++CONFIG_CRYPTO_ADIANTUM=y
++CONFIG_CRYPTO_XTS=y
++CONFIG_CRYPTO_CHACHA20POLY1305=y
++CONFIG_CRYPTO_ECHAINIV=y
++CONFIG_CRYPTO_MD5=y
++CONFIG_CRYPTO_MICHAEL_MIC=m
++CONFIG_CRYPTO_842=y
++CONFIG_CRYPTO_LZ4=y
++CONFIG_CRYPTO_LZ4HC=y
++CONFIG_CRYPTO_ZSTD=y
++CONFIG_CRYPTO_ANSI_CPRNG=y
++CONFIG_CRYPTO_USER_API_HASH=y
++CONFIG_CRYPTO_USER_API_SKCIPHER=y
++CONFIG_CRYPTO_USER_API_RNG=m
++CONFIG_CRYPTO_NHPOLY1305_NEON=y
++CONFIG_CRYPTO_CHACHA20_NEON=y
++CONFIG_CRYPTO_GHASH_ARM64_CE=y
++CONFIG_CRYPTO_SHA1_ARM64_CE=y
++CONFIG_CRYPTO_SHA2_ARM64_CE=y
++CONFIG_CRYPTO_SHA512_ARM64_CE=m
++CONFIG_CRYPTO_SHA3_ARM64=m
++CONFIG_CRYPTO_SM3_ARM64_CE=m
++CONFIG_CRYPTO_AES_ARM64_CE_BLK=y
++CONFIG_CRYPTO_AES_ARM64_BS=y
++CONFIG_CRYPTO_AES_ARM64_CE_CCM=y
++CONFIG_CRYPTO_CRCT10DIF_ARM64_CE=y
++CONFIG_CRYPTO_DEV_QCOM_RNG=m
++CONFIG_CRYPTO_DEV_CCREE=m
++CONFIG_PKCS8_PRIVATE_KEY_PARSER=m
++CONFIG_IRQ_POLL=y
++CONFIG_PRINTK_TIME=y
++CONFIG_DEBUG_KERNEL=y
++CONFIG_MAGIC_SYSRQ=y
++CONFIG_MAGIC_SYSRQ_DEFAULT_ENABLE=0x01b6
++CONFIG_DEBUG_FS=y
++# CONFIG_SCHED_DEBUG is not set
++# CONFIG_FTRACE is not set
++CONFIG_CORESIGHT=m
++CONFIG_CORESIGHT_LINK_AND_SINK_TMC=m
++CONFIG_CORESIGHT_CATU=m
++CONFIG_CORESIGHT_SINK_TPIU=m
++CONFIG_CORESIGHT_SINK_ETBV10=m
++CONFIG_CORESIGHT_STM=m
++CONFIG_CORESIGHT_CPU_DEBUG=m
++CONFIG_CORESIGHT_CTI=m
++# CONFIG_RUNTIME_TESTING_MENU is not set
++CONFIG_MEMTEST=y
+diff --git a/drivers/gpu/drm/bridge/ti-sn65dsi86.c b/drivers/gpu/drm/bridge/ti-sn65dsi86.c
+index 1e26fa63845a25..3cfae6d7a8e7f4 100644
+--- a/drivers/gpu/drm/bridge/ti-sn65dsi86.c
++++ b/drivers/gpu/drm/bridge/ti-sn65dsi86.c
+@@ -618,6 +618,24 @@ static ssize_t ti_sn_aux_transfer(struct drm_dp_aux *aux,
+ 	return len;
+ }
+ 
++static int ti_sn_aux_wait_hpd_asserted(struct drm_dp_aux *aux, unsigned long wait_us)
++{
++	/*
++	 * The HPD in this chip is a bit useless (See comment in
++	 * ti_sn65dsi86_enable_comms) so if our driver is expected to wait
++	 * for HPD, we just assume it's asserted after the wait_us delay.
++	 *
++	 * In case we are asked to wait forever (wait_us=0) take conservative
++	 * 500ms delay.
++	 */
++	if (wait_us == 0)
++		wait_us = 500000;
++
++	usleep_range(wait_us, wait_us + 1000);
++
++	return 0;
++}
++
+ static int ti_sn_aux_probe(struct auxiliary_device *adev,
+ 			   const struct auxiliary_device_id *id)
+ {
+@@ -627,6 +645,7 @@ static int ti_sn_aux_probe(struct auxiliary_device *adev,
+ 	pdata->aux.name = "ti-sn65dsi86-aux";
+ 	pdata->aux.dev = &adev->dev;
+ 	pdata->aux.transfer = ti_sn_aux_transfer;
++	pdata->aux.wait_hpd_asserted = ti_sn_aux_wait_hpd_asserted;
+ 	drm_dp_aux_init(&pdata->aux);
+ 
+ 	ret = devm_of_dp_aux_populate_ep_devices(&pdata->aux);
+diff --git a/drivers/gpu/drm/msm/disp/dpu1/dpu_kms.c b/drivers/gpu/drm/msm/disp/dpu1/dpu_kms.c
+index a683bd9b5a04b9..e748510ebdd694 100644
+--- a/drivers/gpu/drm/msm/disp/dpu1/dpu_kms.c
++++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_kms.c
+@@ -726,6 +726,8 @@ static int _dpu_kms_drm_obj_init(struct dpu_kms *dpu_kms)
+ 	struct drm_crtc *crtc;
+ 	struct drm_encoder *encoder;
+ 	unsigned int num_encoders;
++	unsigned primary_idx = 0;
++	unsigned cursor_idx = 0;
+ 
+ 	struct msm_drm_private *priv;
+ 	const struct dpu_mdss_cfg *catalog;
+@@ -753,21 +755,28 @@ static int _dpu_kms_drm_obj_init(struct dpu_kms *dpu_kms)
+ 	/* Create the planes, keeping track of one primary/cursor per crtc */
+ 	for (i = 0; i < catalog->sspp_count; i++) {
+ 		enum drm_plane_type type;
++		unsigned possible_crtcs;
+ 
+ 		if ((catalog->sspp[i].features & BIT(DPU_SSPP_CURSOR))
+-			&& cursor_planes_idx < max_crtc_count)
++			&& cursor_planes_idx < max_crtc_count) {
+ 			type = DRM_PLANE_TYPE_CURSOR;
+-		else if (primary_planes_idx < max_crtc_count)
++			possible_crtcs = BIT(cursor_idx);
++			cursor_idx++;
++		} else if (primary_planes_idx < max_crtc_count) {
+ 			type = DRM_PLANE_TYPE_PRIMARY;
+-		else
++			possible_crtcs = BIT(primary_idx);
++			primary_idx++;
++		} else {
+ 			type = DRM_PLANE_TYPE_OVERLAY;
++			possible_crtcs = (1UL << max_crtc_count) - 1;
++		}
+ 
+ 		DPU_DEBUG("Create plane type %d with features %lx (cur %lx)\n",
+ 			  type, catalog->sspp[i].features,
+ 			  catalog->sspp[i].features & BIT(DPU_SSPP_CURSOR));
+ 
+ 		plane = dpu_plane_init(dev, catalog->sspp[i].id, type,
+-				       (1UL << max_crtc_count) - 1);
++				       possible_crtcs);
+ 		if (IS_ERR(plane)) {
+ 			DPU_ERROR("dpu_plane_init failed\n");
+ 			ret = PTR_ERR(plane);
+diff --git a/drivers/gpu/drm/msm/disp/dpu1/dpu_plane.c b/drivers/gpu/drm/msm/disp/dpu1/dpu_plane.c
+index bfd5be89e8b8dc..1baa21b6c92ef5 100644
+--- a/drivers/gpu/drm/msm/disp/dpu1/dpu_plane.c
++++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_plane.c
+@@ -1495,7 +1495,7 @@ struct drm_plane *dpu_plane_init(struct drm_device *dev,
+ 	format_list = pdpu->pipe_hw->cap->sblk->format_list;
+ 	num_formats = pdpu->pipe_hw->cap->sblk->num_formats;
+ 
+-	ret = drm_universal_plane_init(dev, plane, 0xff, &dpu_plane_funcs,
++	ret = drm_universal_plane_init(dev, plane, possible_crtcs, &dpu_plane_funcs,
+ 				format_list, num_formats,
+ 				supported_format_modifiers, type, NULL);
+ 	if (ret)
+diff --git a/drivers/gpu/drm/panel/panel-edp.c b/drivers/gpu/drm/panel/panel-edp.c
+index 01bfe078330472..6e1553b13a8fb3 100644
+--- a/drivers/gpu/drm/panel/panel-edp.c
++++ b/drivers/gpu/drm/panel/panel-edp.c
+@@ -1889,6 +1889,7 @@ static const struct edp_panel_entry edp_panels[] = {
+ 	EDP_PANEL_ENTRY('C', 'M', 'N', 0x1153, &delay_200_500_e80_d50, "N116BGE-EA2"),
+ 	EDP_PANEL_ENTRY('C', 'M', 'N', 0x1154, &delay_200_500_e80_d50, "N116BCA-EA2"),
+ 	EDP_PANEL_ENTRY('C', 'M', 'N', 0x1247, &delay_200_500_e80_d50, "N120ACA-EA1"),
++	EDP_PANEL_ENTRY('C', 'M', 'N', 0x14d4, &delay_200_500_e80_d50, "N140HCA-EAC"),
+ 
+ 	EDP_PANEL_ENTRY('I', 'V', 'O', 0x057d, &delay_200_500_e200, "R140NWF5 RH"),
+ 	EDP_PANEL_ENTRY('I', 'V', 'O', 0x854a, &delay_200_500_p2e100, "M133NW4J"),
+diff --git a/drivers/power/supply/Kconfig b/drivers/power/supply/Kconfig
+index c78be9f322e6c6..ba09c2a73936b2 100644
+--- a/drivers/power/supply/Kconfig
++++ b/drivers/power/supply/Kconfig
+@@ -934,4 +934,11 @@ config BATTERY_UG3105
+ 	  device is off or suspended, the functionality of this driver is
+ 	  limited to reporting capacity only.
+ 
++config ACER_ASPIRE_BATTERY
++	tristate "Aspire1 Battery Fuel Gauge"
++	depends on I2C
++	depends on DRM
++	help
++	  Of course!
++
+ endif # POWER_SUPPLY
+diff --git a/drivers/power/supply/Makefile b/drivers/power/supply/Makefile
+index 4adbfba02d054a..d0ebeb4ab09b34 100644
+--- a/drivers/power/supply/Makefile
++++ b/drivers/power/supply/Makefile
+@@ -109,3 +109,4 @@ obj-$(CONFIG_BATTERY_ACER_A500)	+= acer_a500_battery.o
+ obj-$(CONFIG_BATTERY_SURFACE)	+= surface_battery.o
+ obj-$(CONFIG_CHARGER_SURFACE)	+= surface_charger.o
+ obj-$(CONFIG_BATTERY_UG3105)	+= ug3105_battery.o
++obj-$(CONFIG_ACER_ASPIRE_BATTERY) += aspire-ec-battery.o
+diff --git a/drivers/power/supply/aspire-ec-battery.c b/drivers/power/supply/aspire-ec-battery.c
+new file mode 100644
+index 00000000000000..a67d9c72c2acd4
+--- /dev/null
++++ b/drivers/power/supply/aspire-ec-battery.c
+@@ -0,0 +1,395 @@
++// SPDX-License-Identifier: GPL-2.0-only
++
++#include <linux/module.h>
++#include <linux/platform_device.h>
++#include <linux/power_supply.h>
++#include <linux/i2c.h>
++#include <linux/input.h>
++
++#include <linux/usb/typec_mux.h>
++#include <drm/drm_bridge.h>
++
++#define ACER_FG_STATIC  0x08
++#define ACER_FG_DYNAMIC 0x07
++
++#define ACER_FG_FLAG_PRESENT		BIT(0)
++#define ACER_FG_FLAG_FULL		BIT(1)
++#define ACER_FG_FLAG_DISCHARGING	BIT(2)
++#define ACER_FG_FLAG_CHARGING		BIT(3)
++
++struct aspire_battery {
++	struct i2c_client	*client;
++	struct power_supply	*psy;
++	//struct input_dev	*idev;
++
++	bool bridge_configured;
++	struct drm_bridge bridge;
++};
++
++struct fg_static_data {
++	u8 unk1;
++	u8 flags;
++	__le16 unk2;
++	__le16 voltage_design;
++	__le16 capacity_full;
++	__le16 unk3;
++	__le16 serial;
++	u8 model_id;
++	u8 vendor_id;
++};
++
++struct fg_dynamic_data {
++	u8 unk1;
++	u8 flags;
++	u8 unk2;
++	__be16 capacity_now;
++	__be16 voltage_now;
++	__be16 current_now;
++	__be16 unk3;
++	__be16 unk4;
++};
++
++static int acpi_gsb_i2c_read_bytes(struct i2c_client *client,
++		u8 cmd, u8 *data, u8 data_len)
++{
++
++	struct i2c_msg msgs[2];
++	int ret;
++	u8 *buffer;
++
++	buffer = kzalloc(data_len, GFP_KERNEL);
++	if (!buffer)
++		return -ENOMEM;
++
++	msgs[0].addr = client->addr;
++	msgs[0].flags = client->flags;
++	msgs[0].len = 1;
++	msgs[0].buf = &cmd;
++
++	msgs[1].addr = client->addr;
++	msgs[1].flags = client->flags | I2C_M_RD;
++	msgs[1].len = data_len;
++	msgs[1].buf = buffer;
++
++	ret = i2c_transfer(client->adapter, msgs, ARRAY_SIZE(msgs));
++	if (ret < 0)
++		dev_err(&client->adapter->dev, "i2c read failed\n");
++	else
++		memcpy(data, buffer, data_len);
++
++	kfree(buffer);
++	return ret;
++}
++
++static int acpi_gsb_i2c_write_bytes(struct i2c_client *client,
++		u8 cmd, u8 *data, u8 data_len)
++{
++
++	struct i2c_msg msgs[1];
++	u8 *buffer;
++	int ret = AE_OK;
++
++	buffer = kzalloc(data_len + 1, GFP_KERNEL);
++	if (!buffer)
++		return AE_NO_MEMORY;
++
++	buffer[0] = cmd;
++	memcpy(buffer + 1, data, data_len);
++
++	msgs[0].addr = client->addr;
++	msgs[0].flags = client->flags;
++	msgs[0].len = data_len + 1;
++	msgs[0].buf = buffer;
++
++	ret = i2c_transfer(client->adapter, msgs, ARRAY_SIZE(msgs));
++
++	kfree(buffer);
++
++	if (ret < 0) {
++		dev_err(&client->adapter->dev, "i2c write failed: %d\n", ret);
++		return ret;
++	}
++
++	/* 1 transfer must have completed successfully */
++	return (ret == 1) ? 0 : -EIO;
++}
++
++static int aspire_battery_get_property(struct power_supply *psy,
++		enum power_supply_property psp,
++		union power_supply_propval *val)
++{
++	struct aspire_battery *battery = power_supply_get_drvdata(psy);
++	struct fg_static_data sdat = {};
++	struct fg_dynamic_data ddat = {};
++
++	acpi_gsb_i2c_read_bytes(battery->client, ACER_FG_STATIC, (u8*)&sdat, sizeof(sdat));
++	acpi_gsb_i2c_read_bytes(battery->client, ACER_FG_DYNAMIC, (u8*)&ddat, sizeof(ddat));
++
++	switch (psp) {
++	case POWER_SUPPLY_PROP_STATUS:
++		val->intval = POWER_SUPPLY_STATUS_UNKNOWN;
++		if (ddat.flags & ACER_FG_FLAG_CHARGING)
++			val->intval = POWER_SUPPLY_STATUS_CHARGING;
++		else if (ddat.flags & ACER_FG_FLAG_DISCHARGING)
++			val->intval = POWER_SUPPLY_STATUS_DISCHARGING;
++		else if (ddat.flags & ACER_FG_FLAG_FULL)
++			val->intval = POWER_SUPPLY_STATUS_FULL;
++		break;
++
++	case POWER_SUPPLY_PROP_VOLTAGE_NOW:
++		val->intval = be16_to_cpu(ddat.voltage_now) * 1000;
++		break;
++
++	case POWER_SUPPLY_PROP_VOLTAGE_MAX_DESIGN:
++		val->intval = le16_to_cpu(sdat.voltage_design) * 1000;
++		break;
++
++	case POWER_SUPPLY_PROP_CHARGE_NOW:
++		val->intval = be16_to_cpu(ddat.capacity_now) * 1000;
++		break;
++
++	case POWER_SUPPLY_PROP_CHARGE_FULL:
++		val->intval = le16_to_cpu(sdat.capacity_full) * 1000;
++		break;
++
++	case POWER_SUPPLY_PROP_CAPACITY:
++		val->intval = be16_to_cpu(ddat.capacity_now) * 100 / le16_to_cpu(sdat.capacity_full);
++		break;
++	case POWER_SUPPLY_PROP_PRESENT:
++		val->intval = 1;
++		break;
++
++	default:
++		return -EINVAL;
++	}
++	return 0;
++}
++
++static enum power_supply_property aspire_battery_props[] = {
++	POWER_SUPPLY_PROP_STATUS,
++	POWER_SUPPLY_PROP_VOLTAGE_NOW,
++	POWER_SUPPLY_PROP_VOLTAGE_MAX_DESIGN,
++	POWER_SUPPLY_PROP_CHARGE_NOW,
++	POWER_SUPPLY_PROP_CHARGE_FULL,
++	POWER_SUPPLY_PROP_CAPACITY,
++	POWER_SUPPLY_PROP_PRESENT,
++};
++
++static const struct power_supply_desc aspire_battery_desc = {
++	.name		= "aspire-battery",
++	.type		= POWER_SUPPLY_TYPE_BATTERY,
++	.get_property	= aspire_battery_get_property,
++	.properties	= aspire_battery_props,
++	.num_properties	= ARRAY_SIZE(aspire_battery_props),
++};
++
++static int aspire_battery_ram_read(struct i2c_client *client,
++		u8 off, u8 *data, u8 data_len)
++{
++	u8 tmp[1] = {off};
++	/* set addr */
++	acpi_gsb_i2c_write_bytes(client, 0x20, tmp, sizeof(tmp));
++	/* read bytes out */
++	acpi_gsb_i2c_read_bytes(client, 0x20, data, data_len);
++	return 0;
++}
++
++static int aspire_battery_ram_write(struct i2c_client *client,
++		u8 off, u8 data)
++{
++	u8 tmp[2] = {off, data};
++	/* set addr */
++	acpi_gsb_i2c_write_bytes(client, 0x21, tmp, sizeof(tmp));
++	return 0;
++}
++
++static irqreturn_t aspire_battery_irq_handler(int irq, void *aspire_handler)
++{
++	struct aspire_battery *battery = aspire_handler;
++	u8 status = 0;
++
++	acpi_gsb_i2c_read_bytes(battery->client, 0x05, &status, sizeof(status));
++
++	switch (status) {
++		case 0x0:
++			break;
++		case 0x20:
++			/*
++			 * here acpi responds to the event and clears some bit or smh
++			 * Notify (\_SB.I2C3.BAT1, 0x81) // Information Change
++			 * Notify (\_SB.I2C3.ADP1, 0x80) // Status Change
++			 */
++			/*
++			aspire_battery_ram_read(battery->client, 0x19, &status, sizeof(status));
++			dev_info(&battery->client->dev, "charger irq id=0x20 val=0x%x\n", status);
++			aspire_battery_ram_write(battery->client, 0x19, status & 0xbf, sizeof(status));
++			power_supply_changed(battery->psy);
++			*/
++			break;
++		case 0x9b: /* close */
++			/* Notify (\_SB.LID0, 0x80) // Status Change */
++			//input_report_switch(battery->idev, SW_LID, 1);
++			//input_sync(battery->idev);
++			//dev_info(&battery->client->dev, "lid cl irq id=0x%x\n", status);
++			break;
++		case 0x9c: /* open */
++			/* Notify (\_SB.LID0, 0x80) // Status Change */
++			//input_report_switch(battery->idev, SW_LID, 0);
++			//input_sync(battery->idev);
++			//pm_wakeup_event(&battery->client->dev, 0);
++			//dev_info(&battery->client->dev, "lid op irq id=0x%x\n", status);
++			break;
++		case 0x85:
++			/* Notify (\_SB.I2C3.BAT1, 0x81) // Information Change */
++		case 0xc6:
++			/* Notify (\_SB.I2C3.BAT1, 0x80) // Status Change */
++			//dev_info(&battery->client->dev, "bat irq id=0x%x\n", status);
++			power_supply_changed(battery->psy);
++			break;
++		case 0xa3:
++			dev_info(&battery->client->dev, "hpd dis irq id=0x%x\n", status);
++			if (battery->bridge_configured)
++				drm_bridge_hpd_notify(&battery->bridge, connector_status_disconnected);
++			break;
++		case 0xa4:
++			dev_info(&battery->client->dev, "hpd con irq id=0x%x\n", status);
++			if (battery->bridge_configured)
++				drm_bridge_hpd_notify(&battery->bridge, connector_status_connected);
++			break;
++		default:
++			dev_warn(&battery->client->dev, "unknown irq id=0x%x\n", status);
++	}
++
++	return IRQ_HANDLED;
++}
++
++static int yoga_c630_ec_attach(struct drm_bridge *bridge,
++			    enum drm_bridge_attach_flags flags)
++{
++	return flags & DRM_BRIDGE_ATTACH_NO_CONNECTOR ? 0 : -EINVAL;
++}
++
++static const struct drm_bridge_funcs yoga_c630_ec_bridge_funcs = {
++	.attach = yoga_c630_ec_attach,
++};
++
++static int aspire_battery_probe(struct i2c_client *client)
++{
++	struct power_supply_config psy_cfg = {};
++	struct device *dev = &client->dev;
++	struct aspire_battery *battery;
++	struct fwnode_handle *fwnode;
++	u8 tmp;
++	u32 port;
++	int ret;
++
++	battery = devm_kzalloc(&client->dev, sizeof(*battery), GFP_KERNEL);
++	if (!battery)
++		return -ENOMEM;
++
++	battery->client = client;
++
++	i2c_set_clientdata(client, battery);
++	psy_cfg.drv_data = battery;
++
++	/* batery status reports */
++	battery->psy = power_supply_register(&client->dev,
++					     &aspire_battery_desc, &psy_cfg);
++	if (IS_ERR(battery->psy)) {
++		dev_err(&client->dev, "Failed to register power supply\n");
++		return PTR_ERR(battery->psy);
++	}
++
++	/* Lid switch */
++	//battery->idev = devm_input_allocate_device(&client->dev);
++	//if (!battery->idev)
++	//	return -ENOMEM;
++
++	//battery->idev->name = "aspire-ec";
++	//battery->idev->phys = "aspire-ec/input0";
++	//input_set_capability(battery->idev, EV_SW, SW_LID);
++
++	//ret = input_register_device(battery->idev);
++	//if (ret) {
++	//	dev_err(&client->dev, "Input register failed: %d\n", ret);
++	//	return ret;
++	//}
++
++	//device_init_wakeup(&client->dev, true);
++
++	/* Also enable the keyboard fn keys */
++	aspire_battery_ram_write(client, 0x43, 0x61);
++
++	/* Prepare for external display attach reports */
++	device_for_each_child_node(dev, fwnode) {
++		ret = fwnode_property_read_u32(fwnode, "reg", &port);
++		if (ret < 0)
++			continue;
++
++		if (port != 0)
++			continue;
++
++		battery->bridge.funcs = &yoga_c630_ec_bridge_funcs;
++		battery->bridge.of_node = to_of_node(fwnode);
++		battery->bridge.ops = DRM_BRIDGE_OP_HPD;
++		battery->bridge.type = DRM_MODE_CONNECTOR_USB;
++
++		/*ret = devm_*/drm_bridge_add(/*dev, */&battery->bridge);
++		if (ret) {
++			dev_err(dev, "failed to register drm bridge\n");
++			fwnode_handle_put(fwnode);
++			return ret;
++		}
++
++		battery->bridge_configured = true;
++
++		/* Report initial state */
++		ret = aspire_battery_ram_read(client, 0xf4, &tmp, sizeof(tmp));
++		if (tmp == 0x03)
++			drm_bridge_hpd_notify(&battery->bridge, connector_status_connected);
++	}
++
++	ret = devm_request_threaded_irq(&client->dev, client->irq, NULL,
++					aspire_battery_irq_handler, IRQF_ONESHOT,
++					dev_name(&client->dev), battery);
++	if (ret) {
++		dev_err(&client->dev, "Failed to request irq: %d\n", ret);
++	}
++
++	return 0;
++}
++
++static void aspire_battery_remove(struct i2c_client *client)
++{
++	struct aspire_battery *battery = i2c_get_clientdata(client);
++
++	drm_bridge_remove(&battery->bridge);
++	power_supply_unregister(battery->psy);
++}
++
++static const struct i2c_device_id aspire_battery_id[] = {
++	{ "aspire1-battery", },
++	{ }
++};
++MODULE_DEVICE_TABLE(i2c, aspire_battery_id);
++
++static const struct of_device_id aspire_battery_of_match[] = {
++	{ .compatible = "acer,aspire1-battery", },
++	{ }
++};
++MODULE_DEVICE_TABLE(of, aspire_battery_of_match);
++
++static struct i2c_driver aspire_battery_driver = {
++	.driver = {
++		.name = "aspire-battery",
++		.of_match_table = aspire_battery_of_match,
++	},
++	.probe = aspire_battery_probe,
++	.remove = aspire_battery_remove,
++	.id_table = aspire_battery_id,
++};
++module_i2c_driver(aspire_battery_driver);
++
++MODULE_DESCRIPTION("Some other fuel gauge driver");
++MODULE_AUTHOR("Nikita Travkin <nikita@trvn.ru>");
++MODULE_LICENSE("GPL");
+diff --git a/drivers/remoteproc/qcom_q6v5_pas.c b/drivers/remoteproc/qcom_q6v5_pas.c
+index 0871108fb4dc5e..7954996c2870a7 100644
+--- a/drivers/remoteproc/qcom_q6v5_pas.c
++++ b/drivers/remoteproc/qcom_q6v5_pas.c
+@@ -1190,6 +1190,7 @@ static const struct of_device_id adsp_of_match[] = {
+ 	{ .compatible = "qcom,qcs404-adsp-pas", .data = &adsp_resource_init },
+ 	{ .compatible = "qcom,qcs404-cdsp-pas", .data = &cdsp_resource_init },
+ 	{ .compatible = "qcom,qcs404-wcss-pas", .data = &wcss_resource_init },
++	{ .compatible = "qcom,sc7180-adsp-pas", .data = &sm8250_adsp_resource},
+ 	{ .compatible = "qcom,sc7180-mpss-pas", .data = &mpss_resource_init},
+ 	{ .compatible = "qcom,sc7280-mpss-pas", .data = &mpss_resource_init},
+ 	{ .compatible = "qcom,sc8180x-adsp-pas", .data = &sm8150_adsp_resource},
+diff --git a/kernel/configs/pmos.config b/kernel/configs/pmos.config
+new file mode 100644
+index 00000000000000..83f7e9dee3708e
+--- /dev/null
++++ b/kernel/configs/pmos.config
+@@ -0,0 +1,212 @@
++# CONFIG_LOCALVERSION_AUTO is not set
++
++CONFIG_BLK_DEV_DM=y
++CONFIG_BLK_DEV_INITRD=y
++CONFIG_CGROUPS=y
++CONFIG_CRYPTO_AES=y
++CONFIG_CRYPTO_XTS=y
++CONFIG_DEVTMPFS=y
++CONFIG_DM_CRYPT=m
++CONFIG_EXT4_FS=y
++CONFIG_INPUT_EVDEV=y
++CONFIG_MD=y
++CONFIG_SYSVIPC=y
++CONFIG_TMPFS_POSIX_ACL=y
++CONFIG_UEVENT_HELPER=y
++CONFIG_USB_CONFIGFS=y
++CONFIG_USB_CONFIGFS_RNDIS=y
++CONFIG_USER_NS=y
++CONFIG_VT=y
++
++# Anbox / Waydroid
++CONFIG_ANDROID=y
++CONFIG_ANDROID_BINDER_IPC=y
++# CONFIG_ANDROID_BINDERFS is not set
++CONFIG_BLK_DEV_LOOP=y
++CONFIG_BRIDGE=m
++CONFIG_BRIDGE_VLAN_FILTERING=y
++CONFIG_CROSS_MEMORY_ATTACH=y
++CONFIG_FUSE_FS=m
++CONFIG_IP_NF_MANGLE=m
++CONFIG_NETFILTER_XT_MATCH_COMMENT=m
++CONFIG_NETFILTER_XTABLES=m
++CONFIG_PSI=y
++CONFIG_SQUASHFS=m
++CONFIG_SQUASHFS_DECOMP_MULTI_PERCPU=y
++CONFIG_SQUASHFS_FILE_DIRECT=y
++CONFIG_SQUASHFS_XATTR=y
++CONFIG_SQUASHFS_XZ=y
++CONFIG_TMPFS_XATTR=y
++CONFIG_TUN=m
++CONFIG_VETH=m
++CONFIG_VLAN_8021Q=m
++
++# iwd
++CONFIG_ASYMMETRIC_KEY_TYPE=y
++CONFIG_ASYMMETRIC_PUBLIC_KEY_SUBTYPE=y
++#ONFIG_CRYPTO_AES=y
++CONFIG_CRYPTO_CBC=m
++CONFIG_CRYPTO_CMAC=y
++CONFIG_CRYPTO_DES=m
++CONFIG_CRYPTO_ECB=y
++CONFIG_CRYPTO_HMAC=y
++CONFIG_CRYPTO_MD5=m
++CONFIG_CRYPTO_SHA1=y
++CONFIG_CRYPTO_SHA256=y
++CONFIG_CRYPTO_SHA512=y
++CONFIG_CRYPTO_USER_API=m
++CONFIG_CRYPTO_USER_API_HASH=m
++CONFIG_CRYPTO_USER_API_SKCIPHER=m
++CONFIG_KEYS=y
++CONFIG_KEY_DH_OPERATIONS=y
++CONFIG_PKCS7_MESSAGE_PARSER=y
++CONFIG_PKCS8_PRIVATE_KEY_PARSER=m
++CONFIG_X509_CERTIFICATE_PARSER=y
++
++# nftables
++CONFIG_NETFILTER=y
++CONFIG_IP_NF_FILTER=m
++CONFIG_IP_NF_IPTABLES=m
++CONFIG_IP_NF_NAT=m
++CONFIG_IP_NF_TARGET_REJECT=m
++CONFIG_IP6_NF_FILTER=m
++CONFIG_IP6_NF_IPTABLES=m
++CONFIG_IP6_NF_NAT=m
++CONFIG_IP6_NF_TARGET_REJECT=m
++CONFIG_NF_CONNTRACK=m
++CONFIG_NF_REJECT_IPV4=m
++CONFIG_NF_REJECT_IPV6=m
++CONFIG_NF_TABLES=m
++CONFIG_NF_TABLES_INET=y
++CONFIG_NF_TABLES_IPV4=y
++CONFIG_NF_TABLES_IPV6=y
++CONFIG_NFT_CT=m
++CONFIG_NFT_LIMIT=m
++CONFIG_NFT_LOG=m
++CONFIG_NFT_MASQ=m
++CONFIG_NFT_NAT=m
++CONFIG_NFT_REJECT=m
++
++# /usr/share/docker/contrib/check-config.sh (from Gentoo)
++# Missing dependency?
++CONFIG_NET_SCHED=y
++
++# Generally Necessary:
++CONFIG_NAMESPACES=y
++CONFIG_NET_NS=y
++CONFIG_PID_NS=y
++CONFIG_IPC_NS=y
++CONFIG_UTS_NS=y
++#ONFIG_CGROUPS=y
++CONFIG_CGROUP_CPUACCT=y
++CONFIG_CGROUP_DEVICE=y
++CONFIG_CGROUP_FREEZER=y
++CONFIG_CGROUP_SCHED=y
++CONFIG_CPUSETS=y
++#ONFIG_KEYS=y
++#ONFIG_VETH=m
++#ONFIG_BRIDGE=m
++CONFIG_BRIDGE_NETFILTER=m
++#ONFIG_IP_NF_FILTER=m
++CONFIG_IP_NF_TARGET_MASQUERADE=m
++CONFIG_NETFILTER_XT_MATCH_ADDRTYPE=m
++CONFIG_NETFILTER_XT_MATCH_CONNTRACK=m
++CONFIG_NETFILTER_XT_MATCH_IPVS=m
++CONFIG_NETFILTER_XT_MARK=m
++#ONFIG_IP_NF_NAT=m
++CONFIG_NF_NAT=m
++CONFIG_POSIX_MQUEUE=y
++
++# Optional Features:
++#ONFIG_USER_NS=y
++CONFIG_SECCOMP=y
++CONFIG_CGROUP_PIDS=y
++CONFIG_MEMCG_SWAP=y
++CONFIG_BLK_CGROUP=y
++CONFIG_BLK_DEV_THROTTLING=y
++CONFIG_CGROUP_PERF=y
++CONFIG_NET_CLS_CGROUP=m
++CONFIG_CGROUP_NET_PRIO=y
++CONFIG_CFS_BANDWIDTH=y
++CONFIG_FAIR_GROUP_SCHED=y
++CONFIG_RT_GROUP_SCHED=y
++CONFIG_IP_NF_TARGET_REDIRECT=m
++CONFIG_IP_VS=m
++CONFIG_IP_VS_NFCT=y
++CONFIG_IP_VS_PROTO_TCP=y
++CONFIG_IP_VS_PROTO_UDP=y
++CONFIG_IP_VS_RR=m
++#ONFIG_EXT4_FS=y
++CONFIG_EXT4_FS_POSIX_ACL=y
++CONFIG_EXT4_FS_SECURITY=y
++CONFIG_VXLAN=m
++#ONFIG_BRIDGE_VLAN_FILTERING=y
++CONFIG_IPVLAN=m
++CONFIG_MACVLAN=m
++CONFIG_DUMMY=m
++#ONFIG_BLK_DEV_DM=m
++CONFIG_DM_THIN_PROVISIONING=m
++CONFIG_OVERLAY_FS=m
++
++# lxc
++CONFIG_NETFILTER_XT_TARGET_CHECKSUM=m
++CONFIG_CHECKPOINT_RESTORE=y
++CONFIG_IP6_NF_TARGET_MASQUERADE=m
++
++# ZRAM
++CONFIG_ZRAM=m
++CONFIG_CRYPTO_LZ4=m
++CONFIG_SWAP=y
++
++# netboot
++CONFIG_BLK_DEV_NBD=m
++
++# WireGuard
++CONFIG_WIREGUARD=m
++CONFIG_IP_ADVANCED_ROUTER=y
++CONFIG_IP_MULTIPLE_TABLES=y
++CONFIG_IPV6_MULTIPLE_TABLES=y
++#ONFIG_NF_TABLES=m
++#ONFIG_NF_TABLES_IPV4=y
++#ONFIG_NF_TABLES_IPV6=y
++#ONFIG_NFT_CT=m
++CONFIG_NFT_FIB_IPV4=m
++CONFIG_NFT_FIB_IPV6=m
++CONFIG_NF_CONNTRACK_MARK=y
++
++# File systems
++CONFIG_BTRFS_FS=m
++CONFIG_EXFAT_FS=m
++#ONFIG_EXT4_FS=y
++CONFIG_F2FS_FS=m
++CONFIG_F2FS_FS_COMPRESSION=y
++
++# Community
++CONFIG_INPUT_UINPUT=m
++CONFIG_LEDS_TRIGGER_TIMER=y
++CONFIG_NETFILTER_XT_MATCH_TCPMSS=m
++CONFIG_NETFILTER_XT_TARGET_TCPMSS=m
++
++# LED triggers
++CONFIG_LEDS_TRIGGER_ACTIVITY=m
++CONFIG_LEDS_TRIGGER_AUDIO=m
++CONFIG_LEDS_TRIGGER_BACKLIGHT=m
++CONFIG_LEDS_TRIGGER_CAMERA=m
++CONFIG_LEDS_TRIGGER_GPIO=m
++CONFIG_LEDS_TRIGGER_NETDEV=m
++CONFIG_LEDS_TRIGGER_ONESHOT=m
++CONFIG_LEDS_TRIGGER_PATTERN=m
++CONFIG_LEDS_TRIGGER_TRANSIENT=m
++CONFIG_LEDS_TRIGGER_TTY=m
++
++# Bluetooth devices
++CONFIG_UHID=m
++CONFIG_BT_RFCOMM=m
++CONFIG_BT_RFCOMM_TTY=y
++CONFIG_BT_BNEP=m
++CONFIG_BT_BNEP_MC_FILTER=y
++CONFIG_BT_BNEP_PROTO_FILTER=y
++CONFIG_BT_HIDP=m
++
++# Extra
++CONFIG_BINFMT_MISC=m
+diff --git a/sound/soc/qcom/sm8250.c b/sound/soc/qcom/sm8250.c
+index 9626a9ef78c233..273c122a731bc4 100644
+--- a/sound/soc/qcom/sm8250.c
++++ b/sound/soc/qcom/sm8250.c
+@@ -55,6 +55,14 @@ static int sm8250_snd_startup(struct snd_pcm_substream *substream)
+ 	struct snd_soc_dai *codec_dai = asoc_rtd_to_codec(rtd, 0);
+ 
+ 	switch (cpu_dai->id) {
++	case PRIMARY_MI2S_RX:
++		codec_dai_fmt |= SND_SOC_DAIFMT_NB_NF | SND_SOC_DAIFMT_I2S;
++		snd_soc_dai_set_sysclk(cpu_dai,
++			Q6AFE_LPASS_CLK_ID_PRI_MI2S_IBIT,
++			MI2S_BCLK_RATE, SNDRV_PCM_STREAM_PLAYBACK);
++		snd_soc_dai_set_fmt(cpu_dai, fmt);
++		snd_soc_dai_set_fmt(codec_dai, codec_dai_fmt);
++		break;
+ 	case TERTIARY_MI2S_RX:
+ 		codec_dai_fmt |= SND_SOC_DAIFMT_NB_NF | SND_SOC_DAIFMT_I2S;
+ 		snd_soc_dai_set_sysclk(cpu_dai,
