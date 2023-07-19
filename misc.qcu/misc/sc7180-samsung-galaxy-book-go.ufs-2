@@ -199,17 +199,17 @@
 
 &camcc { status = "disabled"; };
 
-&dsi0 {
+&mdss_dsi0 {
 	status = "okay";
 	vdda-supply = <&vreg_l3c_1p2>;
 };
 
-&dsi0_out {
+&mdss_dsi0_out {
 	remote-endpoint = <&sn65dsi86_in>;
 	data-lanes = <0 1 2 3>;
 };
 
-&dsi_phy {
+&mdss_dsi0_phy {
 	status = "okay";
 	vdds-supply = <&vreg_l4a_0p8>;
 };
@@ -262,7 +262,7 @@
 			port@0 {
 				reg = <0>;
 				sn65dsi86_in: endpoint {
-					remote-endpoint = <&dsi0_out>;
+					remote-endpoint = <&mdss_dsi0_out>;
 				};
 			};
 
@@ -471,7 +471,7 @@
 // 			port@0 {
 // 				reg = <0>;
 // 				sn65dsi86_in: endpoint {
-// 					remote-endpoint = <&dsi0_out>;
+// 					remote-endpoint = <&mdss_dsi0_out>;
 // 				};
 // 			};
 // 

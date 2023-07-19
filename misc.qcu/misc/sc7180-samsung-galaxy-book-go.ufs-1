@@ -199,99 +199,104 @@
 
 &camcc { status = "disabled"; };
 
-&dsi0 {
-	status = "okay";
-	vdda-supply = <&vreg_l3c_1p2>;
-};
+// UFSTEST
+// &dsi0 {
+// 	status = "okay";
+// 	vdda-supply = <&vreg_l3c_1p2>;
+// };
 
-&dsi0_out {
-	remote-endpoint = <&sn65dsi86_in>;
-	data-lanes = <0 1 2 3>;
-};
+// UFSTEST
+// &dsi0_out {
+// 	remote-endpoint = <&sn65dsi86_in>;
+// 	data-lanes = <0 1 2 3>;
+// };
 
-&dsi_phy {
-	status = "okay";
-	vdds-supply = <&vreg_l4a_0p8>;
-};
+// UFSTEST
+// &dsi_phy {
+// 	status = "okay";
+// 	vdds-supply = <&vreg_l4a_0p8>;
+// };
 
-&gpu {
-	status = "okay";
-	zap-shader {
-		memory-region = <&zap_mem>;
-		firmware-name = "qcom/sc7180-samsung-galaxy-book-go/qcdxkmsuc7180.mbn";
-	};
-};
+// UFSTEST
+// &gpu {
+// 	status = "okay";
+// 	zap-shader {
+// 		memory-region = <&zap_mem>;
+// 		firmware-name = "qcom/sc7180-samsung-galaxy-book-go/qcdxkmsuc7180.mbn";
+// 	};
+// };
 
 // NEW display bridge - it seems to be on i2c0 (I2C1 in galaxy dsl looks similar to IC11 = i2c10 in acer dsl
 // both acer and galaxy dsl have the same sn65 strings in them, so lets assume that it is using the same display bridge
-&i2c0 {
-	status = "okay";
-	clock-frequency = <400000>;
-
-	sn65dsi86_bridge: bridge@2c {
-		compatible = "ti,sn65dsi86";
-		reg = <0x2c>;
-		pinctrl-names = "default";
-		pinctrl-0 = <&bridge_en_default>,
-			<&edp_bridge_irq_default>,
-			<&bridge_suspend_default>;
-		gpio-controller;
-		#gpio-cells = <2>;
-		#pwm-cells = <1>;
-
-		interrupt-parent = <&tlmm>;
-// TODO
-		interrupts = <11 IRQ_TYPE_LEVEL_HIGH>;
-
-// TODO: acer has TLMGPIO 0x56 and 0x57 - galaxy has 0x22 and 0x23 - how to mape those?
-		enable-gpios = <&tlmm 51 GPIO_ACTIVE_HIGH>;
-		suspend-gpios = <&tlmm 22 GPIO_ACTIVE_LOW>;
-
-		vpll-supply = <&reg_brij_1p8>;
-		vccio-supply = <&reg_brij_1p8>;
-		vcca-supply = <&reg_brij_1p2>;
-		vcc-supply = <&reg_brij_1p2>;
-
-		clocks = <&rpmhcc RPMH_LN_BB_CLK3>;
-		clock-names = "refclk";
-
-		ports {
-			#address-cells = <1>;
-			#size-cells = <0>;
-
-			port@0 {
-				reg = <0>;
-				sn65dsi86_in: endpoint {
-					remote-endpoint = <&dsi0_out>;
-				};
-			};
-
-			port@1 {
-				reg = <1>;
-				sn65dsi86_out: endpoint {
-					data-lanes = <0 1>;
-					remote-endpoint = <&panel_in_edp>;
-				};
-			};
-		};
-
-		aux-bus {
-// INFO - searching for PanelNam (without the e at the end to avoid the line break in the search) gives "eDP dynamic"
-//        in the galaxy dsl where it gives a real panel name in the acer dsl "NV140FHM-N64"
-			panel: panel {
-				compatible = "edp-panel";
-// 				power-supply = <&reg_lcm_3p3>;
-// 				backlight = <&backlight>;
-
-				port {
-					panel_in_edp: endpoint {
-						remote-endpoint = <&sn65dsi86_out>;
-					};
-				};
-			};
-		};
-	};
-};
+// UFSTEST
+// &i2c0 {
+// 	status = "okay";
+// 	clock-frequency = <400000>;
+// 
+// 	sn65dsi86_bridge: bridge@2c {
+// 		compatible = "ti,sn65dsi86";
+// 		reg = <0x2c>;
+// 		pinctrl-names = "default";
+// 		pinctrl-0 = <&bridge_en_default>,
+// 			<&edp_bridge_irq_default>,
+// 			<&bridge_suspend_default>;
+// 		gpio-controller;
+// 		#gpio-cells = <2>;
+// 		#pwm-cells = <1>;
+// 
+// 		interrupt-parent = <&tlmm>;
+/// / TODO
+// 		interrupts = <11 IRQ_TYPE_LEVEL_HIGH>;
+// 
+/// / TODO: acer has TLMGPIO 0x56 and 0x57 - galaxy has 0x22 and 0x23 - how to mape those?
+// 		enable-gpios = <&tlmm 51 GPIO_ACTIVE_HIGH>;
+// 		suspend-gpios = <&tlmm 22 GPIO_ACTIVE_LOW>;
+// 
+// 		vpll-supply = <&reg_brij_1p8>;
+// 		vccio-supply = <&reg_brij_1p8>;
+// 		vcca-supply = <&reg_brij_1p2>;
+// 		vcc-supply = <&reg_brij_1p2>;
+// 
+// 		clocks = <&rpmhcc RPMH_LN_BB_CLK3>;
+// 		clock-names = "refclk";
+// 
+// 		ports {
+// 			#address-cells = <1>;
+// 			#size-cells = <0>;
+// 
+// 			port@0 {
+// 				reg = <0>;
+// 				sn65dsi86_in: endpoint {
+// 					remote-endpoint = <&dsi0_out>;
+// 				};
+// 			};
+// 
+// 			port@1 {
+// 				reg = <1>;
+// 				sn65dsi86_out: endpoint {
+// 					data-lanes = <0 1>;
+// 					remote-endpoint = <&panel_in_edp>;
+// 				};
+// 			};
+// 		};
+// 
+// 		aux-bus {
+// // INFO - searching for PanelNam (without the e at the end to avoid the line break in the search) gives "eDP dynamic"
+// //        in the galaxy dsl where it gives a real panel name in the acer dsl "NV140FHM-N64"
+// 			panel: panel {
+// 				compatible = "edp-panel";
+// // 				power-supply = <&reg_lcm_3p3>;
+// // 				backlight = <&backlight>;
+// 
+// 				port {
+// 					panel_in_edp: endpoint {
+// 						remote-endpoint = <&sn65dsi86_out>;
+// 					};
+// 				};
+// 			};
+// 		};
+// 	};
+// };
 
 // might be the same as I2C3 entry in acer and galaxy dsl look similar
 &i2c2 {

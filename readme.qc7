@@ -3,24 +3,24 @@
 # - /compile/source/linux-stable-qc7 - the kernel sources checked out from gitrepo
 # - /compile/result/stable-qc - the resulting kernel, modules etc. tar.gz files
 # - /compile/doc/kernel-config-options - https://github.com/hexdump0815/kernel-config-options
-# name: stb-qc7 - sc7180 qualcom windows on arm laptops based on the linux-stable v6.1 lts tree for now
+# name: stb-qc7 - sc7180 qualcom windows on arm laptops based on the linux-stable v6.4 tree for now
 
 # INFO: this is not working completely and still very much work in progress
-#       parts are based on commit: 9ead94ec70ce59f7ad03b214316da46be395e8f2
+#       parts are based on commit: 1243f98ae368b67b7111a800aef0c58b677457fb
 #       of the aspire1 branch of https://github.com/TravMurav/linux
-#       see also: https://oftc.irclog.whitequark.org/aarch64-laptops/2023-02-18#31906710
 
 cd /compile/source/linux-stable-qc7
 
 # patches:
-# add changes from the travmurav v6.2.0 aspire 1 tree mentioned above 
-patch -p1 < /compile/doc/stable-qc/misc.qc7/patches/v6.1/travmurav-changes.patch
-# add some more changes from the travmurav v6.2.0 aspire 1 tree which came a bit later
-patch -p1 < /compile/doc/stable-qc/misc.qc7/patches/v6.1/travmurav-changes-later.patch
+# add changes from the travmurav v6.4-rc6 aspire 1 tree mentioned above 
+patch -p1 < /compile/doc/stable-qc/misc.qc7/patches/v6.4/travmurav-changes-v6.4-rc6.patch.org
 # add samsung galaxy book go dts to the dts makefile
 patch -p1 < /compile/doc/stable-qc/misc.qc7/patches/v6.1/add-new-dts-files-to-makefile.patch
 # add panel info for it
 patch -p1 < /compile/doc/stable-qc/misc.qc7/patches/v6.1/add-galaxy-book-go-panel-info.patch
+# add ufs storage support
+patch -p1 < /compile/doc/stable-qc/misc.qc7/patches/v6.4/add-ufs-support.patch
+
 
 # copy the wip samsung galaxy book go dts into the tree
 cp /compile/doc/stable-qc/misc.qc7/misc/sc7180-samsung-galaxy-book-go.wip arch/arm64/boot/dts/qcom/sc7180-samsung-galaxy-book-go.dts
@@ -34,6 +34,9 @@ scripts/kconfig/merge_config.sh -m arch/arm64/configs/defconfig /compile/doc/ker
 make olddefconfig
 make -j 8 Image dtbs modules
 cd tools/perf
+# those are required to not having to install a lot of extra libs
+export NO_JEVENTS=1
+export NO_LIBTRACEEVENT=1
 make
 cd ../power/cpupower
 make
