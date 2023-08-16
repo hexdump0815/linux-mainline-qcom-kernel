@@ -1,0 +1,6081 @@
+created via: https://github.com/map220v/sm7125-mainline/compare/4fe89d07dcc2804c8b562f6c7896a45643d34b2f...678922ff5aa9848d2e6a52e49019d1ca39742c50.diff
+
+diff --git a/arch/arm64/boot/dts/qcom/Makefile b/arch/arm64/boot/dts/qcom/Makefile
+index 1d86a33de528c6..eb3343e80beb50 100644
+--- a/arch/arm64/boot/dts/qcom/Makefile
++++ b/arch/arm64/boot/dts/qcom/Makefile
+@@ -135,6 +135,8 @@ dtb-$(CONFIG_ARCH_QCOM)	+= sdm850-lenovo-yoga-c630.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= sdm850-samsung-w737.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= sm6125-sony-xperia-seine-pdx201.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= sm6350-sony-xperia-lena-pdx213.dtb
++dtb-$(CONFIG_ARCH_QCOM)	+= sm7125-samsung-a52q.dtb
++dtb-$(CONFIG_ARCH_QCOM)	+= sm7125-samsung-a72q.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= sm7225-fairphone-fp4.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= sm8150-hdk.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= sm8150-microsoft-surface-duo.dtb
+diff --git a/arch/arm64/boot/dts/qcom/sm7125-samsung-a52q.dts b/arch/arm64/boot/dts/qcom/sm7125-samsung-a52q.dts
+new file mode 100644
+index 00000000000000..e97ce8cc5a0732
+--- /dev/null
++++ b/arch/arm64/boot/dts/qcom/sm7125-samsung-a52q.dts
+@@ -0,0 +1,860 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * SM7125 Samsung Galaxy A52 (a52q) specific device tree
++ *
++ * Copyright (c) 2021, The Linux Foundation. All rights reserved.
++ */
++
++/dts-v1/;
++
++#include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/regulator/qcom,rpmh-regulator.h>
++#include <dt-bindings/pinctrl/qcom,pmic-gpio.h>
++#include <dt-bindings/sound/qcom,q6asm.h>
++#include "sm7125.dtsi"
++#include "pm6150.dtsi"
++#include "pm6150l.dtsi"
++
++/delete-node/ &rmtfs_mem;
++/delete-node/ &ipa_fw_mem;
++/delete-node/ &tz_mem;
++
++/ {
++	model = "Samsung Galaxy A52";
++	compatible = "samsung,a52q", "qcom,sm7125";
++	chassis-type = "handset";
++	qcom,msm-id = <443 0x0>;
++	qcom,board-id = <0x22 0x6>;
++
++	gpio-keys {
++		compatible = "gpio-keys";
++		label = "Volume key";
++
++		pinctrl-names = "default";
++		pinctrl-0 = <&key_vol_up_default>;
++
++		vol-up {
++			label = "Volume up";
++			linux,code = <KEY_VOLUMEUP>;
++			gpios = <&pm6150l_gpio 8 GPIO_ACTIVE_LOW>;
++			debounce-interval = <15>;
++		};
++	};
++	
++	reserved-memory {
++		#address-cells = <2>;
++		#size-cells = <2>;
++		ranges;
++
++		uh_heap_region@b0400000 {
++			reg = <0x0 0xb0400000 0x0 0x1800000>;
++			no-map;
++		};
++
++		removed_region@80b00000 {
++			reg = <0x0 0x80b00000 0x0 0x7100000>;
++			no-map;
++		};
++
++		camera_region@97a00000 {
++			reg = <0x0 0x97a00000 0x0 0x500000>;
++			no-map;
++		};
++
++		pil_npu_region@97f00000 {
++			reg = <0x0 0x97f00000 0x0 0x500000>;
++			no-map;
++		};
++
++		ipa_gsi_region@93b10000 {
++			reg = <0x0 0x93b10000 0x0 0x5000>;
++			no-map;
++		};
++
++		qseecom_region@9e000000 {
++			reg = <0x0 0x9e000000 0x0 0x2000000>;
++			no-map;
++		};
++
++		cont_splash_region@9c000000 {
++			reg = <0x0 0x9c000000 0x0 0x1700000>;
++			no-map;
++		};
++
++		dfps_data_region@9d700000 {
++			reg = <0x0 0x9d700000 0x0 0x100000>;
++			no-map;
++		};
++
++		ss_plog@b4400000 {
++			reg = <0x0 0xb4400000 0x0 0x200000>;
++			no-map;
++		};
++
++		sec_debug_region@b4700000 {
++			reg = <0x0 0xb4700000 0x0 0x800000>;
++			no-map;
++		};
++
++		sec_debug_autocomment@b4f00000 {
++			reg = <0x0 0xb4f00000 0x0 0x1000>;
++			no-map;
++		};
++
++		kaslr_region@a0001000 {
++			reg = <0x0 0xa0001000 0x0 0x1000>;
++			no-map;
++		};
++
++		rkp_region@b0200000 {
++			reg = <0x0 0xb0200000 0x0 0x200000>;
++			no-map;
++		};
++
++		hdm_region@a1000000 {
++			reg = <0x0 0xa1000000 0x0 0x1000>;
++			no-map;
++		};
++
++		modem_shared_mem_region@B5000000 {
++			no-map;
++			reg = <0x0 0xb5000000 0x0 0x6000000>;
++		};
++		
++		mpss_mem: memory@8b000000 {
++			reg = <0x0 0x8b000000 0x0 0x8900000>;
++			no-map;
++		};
++
++		adsp_mem: memory@93c00000 {
++			reg = <0x0 0x93c00000 0x0 0x3e00000>;
++			no-map;
++		};
++
++		cdsp_mem: memory@98900000 {
++			reg = <0x0 0x98900000 0x0 0x1e00000>;
++			no-map;
++		};
++
++		venus_mem: memory@98400000 {
++			reg = <0 0x98400000 0 0x500000>;
++			no-map;
++		};
++
++		wlan_mem: memory@93900000 {
++			reg = <0x0 0x93900000 0x0 0x200000>;
++			no-map;
++		};
++
++		ipa_fw_mem: memory@93b00000 {
++			reg = <0x0 0x93b00000 0x0 0x10000>;
++			no-map;
++		};
++
++		gpu_mem: memory@93b15000 {
++			reg = <0 0x93b15000 0 0x2000>;
++			no-map;
++		};
++
++		ramoops@b4600000 {
++			compatible = "ramoops";
++			reg = <0x0 0xb4600000 0x0 0x100000>;
++			record-size = <0x40000>;
++			console-size = <0x40000>;
++			ftrace-size = <0x40000>;
++			pmsg-size = <0x40000>;
++		};
++
++		rmtfs_mem: memory@f4f01000 {
++			compatible = "qcom,rmtfs-mem";
++			reg = <0 0xf4f01000 0 0x200000>;
++			no-map;
++
++			qcom,client-id = <1>;
++			qcom,vmid = <15>;
++		};
++	};
++
++	aliases {
++		bluetooth0 = &bluetooth;
++		hsuart0 = &uart3;
++		wifi0 = &wifi;
++		i2c18 = &i2c_18;
++	};
++
++	chosen {
++		#address-cells = <2>;
++		#size-cells = <2>;
++		ranges;
++	};
++};
++
++&pm6150l_gpio {
++	key_vol_up_default: key_vol_up_default {
++		pins = "gpio8";
++		function = "normal";
++		input-enable;
++		bias-pull-up;
++		power-source = <0>;
++	};
++};
++
++&pm6150_pon {
++	pm6150_resin: resin {
++		compatible = "qcom,pm8941-resin";
++		interrupts = <0x0 0x8 1 IRQ_TYPE_EDGE_BOTH>;
++		debounce = <15625>;
++		bias-pull-up;
++		linux,code = <KEY_VOLUMEDOWN>;
++	};
++};
++
++&apps_rsc {
++	pm6150-rpmh-regulators {
++		compatible = "qcom,pm6150-rpmh-regulators";
++		qcom,pmic-id = "a";
++
++		vreg_s1a: smps1 {
++			regulator-min-microvolt = <1128000>;
++			regulator-max-microvolt = <1128000>;
++		};
++
++		vreg_s4a: smps4 {
++			regulator-min-microvolt = <824000>;
++			regulator-max-microvolt = <1120000>;
++		};
++
++		vreg_s5a: smps5 {
++			regulator-min-microvolt = <1744000>;
++			regulator-max-microvolt = <2040000>;
++		};
++
++		vreg_l1a: ldo1 {
++			regulator-min-microvolt = <1178000>;
++			regulator-max-microvolt = <1256000>;
++		};
++
++		vreg_l2a: ldo2 {
++			regulator-min-microvolt = <944000>;
++			regulator-max-microvolt = <1056000>;
++		};
++
++		vreg_l3a: ldo3 {
++			regulator-min-microvolt = <968000>;
++			regulator-max-microvolt = <1064000>;
++		};
++
++		vreg_l4a: ldo4 {
++			regulator-min-microvolt = <824000>;
++			regulator-max-microvolt = <928000>;
++		};
++
++		/*vreg_l5a: ldo5 {
++			regulator-min-microvolt = <3300000>;
++			regulator-max-microvolt = <3300000>;
++			regulator-always-on;
++		};*/
++
++		vreg_l6a: ldo6 {
++			regulator-min-microvolt = <568000>;
++			regulator-max-microvolt = <648000>;
++		};
++
++		vreg_l9a: ldo9 {
++			regulator-min-microvolt = <640000>;
++			regulator-max-microvolt = <640000>;
++		};
++
++		vreg_l10a: ldo10 {
++			regulator-min-microvolt = <1800000>;
++			regulator-max-microvolt = <1800000>;
++		};
++
++		vreg_l11a: ldo11 {
++			regulator-min-microvolt = <1696000>;
++			regulator-max-microvolt = <1904000>;
++		};
++
++		vreg_l12a: ldo12 {
++			regulator-min-microvolt = <1696000>;
++			regulator-max-microvolt = <1950000>;
++		};
++
++		vreg_l13a: ldo13 {
++			regulator-min-microvolt = <1696000>;
++			regulator-max-microvolt = <1904000>;
++		};
++
++		vreg_l14a: ldo14 {
++			regulator-min-microvolt = <1728000>;
++			regulator-max-microvolt = <1832000>;
++		};
++
++		vreg_l15a: ldo15 {
++			regulator-min-microvolt = <1696000>;
++			regulator-max-microvolt = <1904000>;
++		};
++
++		vreg_l16a: ldo16 {
++			regulator-min-microvolt = <2496000>;
++			regulator-max-microvolt = <3304000>;
++		};
++
++		vreg_l17a: ldo17 {
++			regulator-min-microvolt = <2920000>;
++			regulator-max-microvolt = <3232000>;
++		};
++
++		vreg_l18a: ldo18 {
++			regulator-min-microvolt = <2496000>;
++			regulator-max-microvolt = <3304000>;
++		};
++
++		vreg_l19a: ldo19 {
++			regulator-min-microvolt = <2960000>;
++			regulator-max-microvolt = <2960000>;
++		};
++	};
++
++	pm6150l-rpmh-regulators {
++		compatible = "qcom,pm6150l-rpmh-regulators";
++		qcom,pmic-id = "c";
++
++		vreg_s8c: smps8 {
++			regulator-min-microvolt = <1120000>;
++			regulator-max-microvolt = <1408000>;
++		};
++
++		vreg_l1c: ldo1 {
++			regulator-min-microvolt = <1800000>;
++			regulator-max-microvolt = <1800000>;
++		};
++
++		vreg_l2c: ldo2 {
++			regulator-min-microvolt = <1304000>;
++			regulator-max-microvolt = <1304000>;
++		};
++
++		vreg_l3c: ldo3 {
++			regulator-min-microvolt = <1144000>;
++			regulator-max-microvolt = <1304000>;
++		};
++
++		vreg_l4c: ldo4 {
++			regulator-min-microvolt = <1648000>;
++			regulator-max-microvolt = <3304000>;
++		};
++
++		vreg_l5c: ldo5 {
++			regulator-min-microvolt = <1648000>;
++			regulator-max-microvolt = <3304000>;
++		};
++
++		vreg_l6c: ldo6 {
++			regulator-min-microvolt = <1800000>;
++			regulator-max-microvolt = <2950000>;
++		};
++
++		vreg_l7c: ldo7 {
++			regulator-min-microvolt = <3000000>;
++			regulator-max-microvolt = <3000000>;
++		};
++
++		vreg_l8c: ldo8 {
++			regulator-min-microvolt = <1800000>;
++			regulator-max-microvolt = <1800000>;
++		};
++
++		vreg_l9c: ldo9 {
++			regulator-min-microvolt = <2960000>;
++			regulator-max-microvolt = <2960000>;
++		};
++
++		vreg_l10c: ldo10 {
++			regulator-min-microvolt = <3000000>;
++			regulator-max-microvolt = <3312000>;
++		};
++
++		vreg_l11c: ldo11 {
++			regulator-min-microvolt = <3000000>;
++			regulator-max-microvolt = <3312000>;
++		};
++
++		vreg_bob: bob {
++			regulator-min-microvolt = <3008000>;
++			regulator-max-microvolt = <3960000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_AUTO>;
++		};
++	};
++};
++
++&dsi0 {
++	status = "okay";
++
++	panel@0 {
++		compatible = "samsung,s6e3fc3-ams667ym01";
++		reg = <0>;
++
++		reset-gpios = <&tlmm 8 GPIO_ACTIVE_LOW>;
++
++		pinctrl-names = "default";
++		pinctrl-0 = <&panel_reset_pins &panel_te_pin>;
++
++		port {
++			panel_in: endpoint {
++				remote-endpoint = <&dsi0_out>;
++			};
++		};
++	};
++};
++
++&dsi0_out {
++	remote-endpoint = <&panel_in>;
++	data-lanes = <0 1 2 3>;
++};
++
++&dsi_phy {
++	status = "okay";
++};
++
++&mdp {
++	status = "okay";
++};
++
++&mdss {
++	status = "okay";
++};
++
++&gpu {
++	status = "okay";
++
++	zap-shader {
++		memory-region = <&gpu_mem>;
++	};
++};
++
++&tlmm {
++	gpio-reserved-ranges = <59 4>;
++
++	qup_uart3_sleep: qup-uart3-sleep {
++		pinmux {
++			pins = "gpio38", "gpio39",
++			       "gpio40", "gpio41";
++			function = "gpio";
++		};
++
++		pinconf-cts {
++			/*
++			 * Configure a pull-down on CTS to match the pull of
++			 * the Bluetooth module.
++			 */
++			pins = "gpio38";
++			bias-pull-down;
++		};
++
++		pinconf-rts {
++			/*
++			 * Configure pull-down on RTS. As RTS is active low
++			 * signal, pull it low to indicate the BT SoC that it
++			 * can wakeup the system anytime from suspend state by
++			 * pulling RX low (by sending wakeup bytes).
++			 */
++			 pins = "gpio39";
++			 bias-pull-down;
++		};
++
++		pinconf-tx {
++			/*
++			 * Configure pull-up on TX when it isn't actively driven
++			 * to prevent BT SoC from receiving garbage during sleep.
++			 */
++			pins = "gpio40";
++			bias-pull-up;
++		};
++
++		pinconf-rx {
++			/*
++			 * Configure a pull-up on RX. This is needed to avoid
++			 * garbage data when the TX pin of the Bluetooth module
++			 * is floating which may cause spurious wakeups.
++			 */
++			pins = "gpio41";
++			bias-pull-up;
++		};
++	};
++
++	tsp_int: tsp_int {
++		pinmux {
++			pins = "gpio9";
++			function = "gpio";
++		};
++		
++		pinconfig {
++			pins = "gpio9";
++			input-enable;
++			bias-disable;
++		};
++	};
++
++	sdc2_on: sdc2-on {
++		pinconf-clk {
++			pins = "sdc2_clk";
++			bias-disable;
++			drive-strength = <16>;
++		};
++
++		pinconf-cmd {
++			pins = "sdc2_cmd";
++			bias-pull-up;
++			drive-strength = <10>;
++		};
++
++		pinconf-data {
++			pins = "sdc2_data";
++			bias-pull-up;
++			drive-strength = <10>;
++		};
++
++		pinconf-sd-cd {
++			pins = "gpio69";
++			bias-pull-up;
++			drive-strength = <2>;
++		};
++	};
++
++	sdc2_off: sdc2-off {
++		pinconf-clk {
++			pins = "sdc2_clk";
++			bias-disable;
++			drive-strength = <2>;
++		};
++
++		pinconf-cmd {
++			pins = "sdc2_cmd";
++			bias-pull-up;
++			drive-strength = <2>;
++		};
++
++		pinconf-data {
++			pins = "sdc2_data";
++			bias-pull-up;
++			drive-strength = <2>;
++		};
++
++		pinconf-sd-cd {
++			pins = "gpio69";
++			bias-pull-up;
++			drive-strength = <2>;
++		};
++	};
++
++	panel_reset_pins: panel-reset {
++		mux {
++			pins = "gpio8";
++			function = "gpio";
++			drive-strength = <8>;
++			bias-disable = <0>;
++		};
++	};
++
++	panel_te_pin: panel-te {
++		mux {
++			pins = "gpio10";
++			function = "mdp_vsync";
++			drive-strength = <2>;
++			bias-disable;
++		};
++	};
++
++	tas25xx_gpio_default: tas25xx_gpio_default {
++		pinmux {
++			pins = "gpio88", "gpio89", "gpio90", "gpio94";
++			function = "gpio";
++		};
++		pinconfig {
++			pins = "gpio88", "gpio89", "gpio90", "gpio94";
++			bias-disable;
++		};
++	};
++
++	fm_lna_default: fm_lna_default {
++		pinmux {
++			pins = "gpio84";
++			function = "gpio";
++		};
++		pinconfig {
++			pins = "gpio84";
++			bias-disable;
++			output-low;
++		};
++	};
++};
++
++&ipa {
++	status = "okay";
++
++	memory-region = <&ipa_fw_mem>;
++	firmware-name = "qcom/sm7125/a52q/ipa_fws.mdt";
++};
++
++&wifi {
++	status = "okay";
++
++	vdd-0.8-cx-mx-supply = <&vreg_l9a>;
++	vdd-1.8-xo-supply = <&vreg_l1c>;
++	vdd-1.3-rfa-supply = <&vreg_l2c>;
++	vdd-3.3-ch0-supply = <&vreg_l10c>;
++	vdd-3.3-ch1-supply = <&vreg_l11c>;
++};
++
++&qup_i2c4_default {
++	pinconf {
++		pins = "gpio115", "gpio116";
++		drive-strength = <2>;
++
++		/* Has external pullup */
++		bias-disable;
++	};
++};
++
++&qup_i2c7_default {
++	pinconf {
++		pins = "gpio6", "gpio7";
++		drive-strength = <2>;
++
++		/* Has external pullup */
++		bias-disable;
++	};
++};
++
++&remoteproc_mpss {
++	status = "okay";
++	firmware-name = "qcom/sm7125/a52q/modem.mdt";
++};
++
++&remoteproc_adsp {
++	status = "okay";
++	firmware-name = "qcom/sm7125/a52q/adsp.mdt";
++};
++
++&soc {
++	i2c_18: i2c@18 { /* SW I2C */
++		cell-index = <18>;
++		compatible = "i2c-gpio";
++		gpios = <&tlmm 88 0 /* sda */
++				 &tlmm 89 0 /* scl */
++		>;
++		pinctrl-names = "default";
++		pinctrl-0 = <&tas25xx_gpio_default &fm_lna_default>;
++		#i2c-gpio,delay-us = <2>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		tas2562_r: codec@4c {
++			compatible = "ti,tas2562";
++			reg = <0x4c>;
++			#sound-dai-cells = <1>;
++			interrupt-parent = <&tlmm>;
++			interrupts = <90 0>;
++			shutdown-gpios = <&tlmm 94 0>;
++			sound-name-prefix = "Right";
++			ti,vmon-slot-no = <1>;
++			ti,imon-slot-no = <0>;
++		};
++
++		tas2562_l: codec@4d {
++			compatible = "ti,tas2562";
++			reg = <0x4d>;
++			#sound-dai-cells = <1>;
++			interrupt-parent = <&tlmm>;
++			interrupts = <90 0>;
++			shutdown-gpios = <&tlmm 94 0>;
++			sound-name-prefix = "Left";
++			ti,vmon-slot-no = <1>;
++			ti,imon-slot-no = <0>;
++		};
++	};
++};
++
++&sound {
++	compatible = "qcom,sm8250-sndcard";
++	pinctrl-0 = <&i2s1_active>;
++	pinctrl-names = "default";
++	model = "Galaxy A52";
++
++	mm1-dai-link {
++		link-name = "MultiMedia1";
++		cpu {
++			sound-dai = <&q6asmdai MSM_FRONTEND_DAI_MULTIMEDIA1>;
++		};
++	};
++
++	i2s-dai-link {
++		link-name = "I2S Playback";
++		cpu {
++			sound-dai = <&q6afedai QUINARY_MI2S_RX>;
++		};
++
++		platform {
++			sound-dai = <&q6routing>;
++		};
++
++		codec {
++			sound-dai = <&tas2562_r 0>, <&tas2562_l 0>;
++		};
++	};
++};
++
++&q6afedai {
++	qi2s@127 {
++		reg = <QUINARY_MI2S_RX>;
++		qcom,sd-lines = <0>;
++	};
++
++	qi2s@128 {
++		reg = <QUINARY_MI2S_TX>;
++		qcom,sd-lines = <1>;
++	};
++};
++
++&q6asmdai {
++	dai@0 {
++		reg = <0>;
++	};
++};
++
++&remoteproc_cdsp {
++	status = "okay";
++	firmware-name = "qcom/sm7125/a52q/cdsp.mdt";
++};
++
++&venus {
++	firmware-name = "qcom/sm7125/a52q/venus.mdt";
++};
++
++&qupv3_id_0 {
++	status = "okay";
++};
++
++&qupv3_id_1 {
++	status = "okay";
++};
++
++&uart3 {
++	status = "okay";
++
++	/delete-property/interrupts;
++	interrupts-extended = <&intc GIC_SPI 604 IRQ_TYPE_LEVEL_HIGH>,
++				<&tlmm 41 IRQ_TYPE_EDGE_FALLING>;
++
++	pinctrl-names = "default", "sleep";
++	pinctrl-1 = <&qup_uart3_sleep>;
++
++	bluetooth: bluetooth {
++		compatible = "qcom,wcn3990-bt";
++
++		firmware-name = "sm7125/a52q/crnv21.bin";
++
++		vddio-supply = <&vreg_l10a>;
++		vddxo-supply = <&vreg_l1c>;
++		vddrf-supply = <&vreg_l2c>;
++		vddch0-supply = <&vreg_l10c>;
++		max-speed = <3200000>;
++	};
++};
++
++&gpi_dma0 {
++	status = "okay";
++};
++
++&i2c4 {
++	status = "okay";
++
++	sm5714-charger@49 {
++		compatible = "siliconmitus,sm5714-charger";
++		reg = <0x49>;
++
++		siliconmitus,enable-autostop;
++		siliconmitus,input-current-limit = <1300>;
++		siliconmitus,charging-current = <1300>;
++		siliconmitus,topoff-current = <225>;
++	};
++
++	sm5714-fg@71 {
++		compatible = "siliconmitus,sm5714-fg";
++		reg = <0x71>;
++	};
++};
++
++&gpi_dma1 {
++	status = "okay";
++};
++
++&i2c7 {
++	status = "okay";
++	clock-frequency = <400000>;
++
++	tsp_stm: touchscreen@49 {
++		compatible = "st,stmfts_fts5cu56a";
++		reg = <0x49>;
++
++		pinctrl-names = "default";
++		pinctrl-0 = <&tsp_int>;
++
++		interrupt-parent = <&tlmm>;
++		interrupts = <9 0x2008>;
++
++		avdd-supply = <&vreg_l7c>;
++	};
++};
++
++&sdhc_2 {
++	status = "okay";
++
++	pinctrl-names = "default", "sleep";
++	pinctrl-0 = <&sdc2_on>;
++	pinctrl-1 = <&sdc2_off>;
++	vmmc-supply = <&vreg_l9c>;
++	vqmmc-supply = <&vreg_l6c>;
++
++	cd-gpios = <&tlmm 69 GPIO_ACTIVE_LOW>;
++};
++
++&ufs_mem_hc {
++	status = "okay";
++
++	vcc-supply = <&vreg_l19a>;
++	vcc-max-microamp = <600000>;
++	vccq2-supply = <&vreg_l12a>;
++	vccq2-max-microamp = <600000>;
++};
++
++&ufs_mem_phy {
++	status = "okay";
++
++	vdda-phy-supply = <&vreg_l4a>;
++	vdda-pll-supply = <&vreg_l3c>;
++	vdda-phy-max-microamp = <62900>;
++	vdda-pll-max-microamp = <18300>;
++};
++
++&usb_1 {
++	status = "okay";
++};
++
++&usb_1_dwc3 {
++	dr_mode = "peripheral";
++};
++
++&usb_1_hsphy {
++	status = "okay";
++	vdd-supply = <&vreg_l4a>;
++	vdda-pll-supply = <&vreg_l11a>;
++	vdda-phy-dpdm-supply = <&vreg_l17a>;
++};
++
++&usb_1_qmpphy {
++	status = "okay";
++	vdda-phy-supply = <&vreg_l4a>;
++	vdda-pll-supply = <&vreg_l3c>;
++};
+diff --git a/arch/arm64/boot/dts/qcom/sm7125-samsung-a72q.dts b/arch/arm64/boot/dts/qcom/sm7125-samsung-a72q.dts
+new file mode 100644
+index 00000000000000..1989e060c42dc6
+--- /dev/null
++++ b/arch/arm64/boot/dts/qcom/sm7125-samsung-a72q.dts
+@@ -0,0 +1,860 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * SM7125 Samsung Galaxy A72 (a72q) specific device tree
++ *
++ * Copyright (c) 2021, The Linux Foundation. All rights reserved.
++ */
++
++/dts-v1/;
++
++#include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/regulator/qcom,rpmh-regulator.h>
++#include <dt-bindings/pinctrl/qcom,pmic-gpio.h>
++#include <dt-bindings/sound/qcom,q6asm.h>
++#include "sm7125.dtsi"
++#include "pm6150.dtsi"
++#include "pm6150l.dtsi"
++
++/delete-node/ &rmtfs_mem;
++/delete-node/ &ipa_fw_mem;
++/delete-node/ &tz_mem;
++
++/ {
++	model = "Samsung Galaxy A72";
++	compatible = "samsung,a72q", "qcom,sm7125";
++	chassis-type = "handset";
++	qcom,msm-id = <443 0x0>;
++	qcom,board-id = <0x22 0x5>;
++
++	gpio-keys {
++		compatible = "gpio-keys";
++		label = "Volume key";
++
++		pinctrl-names = "default";
++		pinctrl-0 = <&key_vol_up_default>;
++
++		vol-up {
++			label = "Volume up";
++			linux,code = <KEY_VOLUMEUP>;
++			gpios = <&pm6150l_gpio 8 GPIO_ACTIVE_LOW>;
++			debounce-interval = <15>;
++		};
++	};
++	
++	reserved-memory {
++		#address-cells = <2>;
++		#size-cells = <2>;
++		ranges;
++
++		uh_heap_region@b0400000 {
++			reg = <0x0 0xb0400000 0x0 0x1800000>;
++			no-map;
++		};
++
++		removed_region@80b00000 {
++			reg = <0x0 0x80b00000 0x0 0x7100000>;
++			no-map;
++		};
++
++		camera_region@97a00000 {
++			reg = <0x0 0x97a00000 0x0 0x500000>;
++			no-map;
++		};
++
++		pil_npu_region@97f00000 {
++			reg = <0x0 0x97f00000 0x0 0x500000>;
++			no-map;
++		};
++
++		ipa_gsi_region@93b10000 {
++			reg = <0x0 0x93b10000 0x0 0x5000>;
++			no-map;
++		};
++
++		qseecom_region@9e000000 {
++			reg = <0x0 0x9e000000 0x0 0x2000000>;
++			no-map;
++		};
++
++		cont_splash_region@9c000000 {
++			reg = <0x0 0x9c000000 0x0 0x1700000>;
++			no-map;
++		};
++
++		dfps_data_region@9d700000 {
++			reg = <0x0 0x9d700000 0x0 0x100000>;
++			no-map;
++		};
++
++		ss_plog@b4400000 {
++			reg = <0x0 0xb4400000 0x0 0x200000>;
++			no-map;
++		};
++
++		sec_debug_region@b4700000 {
++			reg = <0x0 0xb4700000 0x0 0x800000>;
++			no-map;
++		};
++
++		sec_debug_autocomment@b4f00000 {
++			reg = <0x0 0xb4f00000 0x0 0x1000>;
++			no-map;
++		};
++
++		kaslr_region@a0001000 {
++			reg = <0x0 0xa0001000 0x0 0x1000>;
++			no-map;
++		};
++
++		rkp_region@b0200000 {
++			reg = <0x0 0xb0200000 0x0 0x200000>;
++			no-map;
++		};
++
++		hdm_region@a1000000 {
++			reg = <0x0 0xa1000000 0x0 0x1000>;
++			no-map;
++		};
++
++		modem_shared_mem_region@B5000000 {
++			no-map;
++			reg = <0x0 0xb5000000 0x0 0x6000000>;
++		};
++
++		mpss_mem: memory@8b000000 {
++			reg = <0x0 0x8b000000 0x0 0x8900000>;
++			no-map;
++		};
++
++		adsp_mem: memory@93c00000 {
++			reg = <0x0 0x93c00000 0x0 0x3e00000>;
++			no-map;
++		};
++
++		cdsp_mem: memory@98900000 {
++			reg = <0x0 0x98900000 0x0 0x1e00000>;
++			no-map;
++		};
++
++		venus_mem: memory@98400000 {
++			reg = <0 0x98400000 0 0x500000>;
++			no-map;
++		};
++
++		wlan_mem: memory@93900000 {
++			reg = <0x0 0x93900000 0x0 0x200000>;
++			no-map;
++		};
++
++		ipa_fw_mem: memory@93b00000 {
++			reg = <0x0 0x93b00000 0x0 0x10000>;
++			no-map;
++		};
++
++		gpu_mem: memory@93b15000 {
++			reg = <0 0x93b15000 0 0x2000>;
++			no-map;
++		};
++
++		ramoops@b4600000 {
++			compatible = "ramoops";
++			reg = <0x0 0xb4600000 0x0 0x100000>;
++			record-size = <0x40000>;
++			console-size = <0x40000>;
++			ftrace-size = <0x40000>;
++			pmsg-size = <0x40000>;
++		};
++
++		rmtfs_mem: memory@f3701000 {
++			compatible = "qcom,rmtfs-mem";
++			reg = <0 0xf3701000 0 0x200000>;
++			no-map;
++
++			qcom,client-id = <1>;
++			qcom,vmid = <15>;
++		};
++	};
++
++	aliases {
++		bluetooth0 = &bluetooth;
++		hsuart0 = &uart3;
++		wifi0 = &wifi;
++		i2c18 = &i2c_18;
++	};
++
++	chosen {
++		#address-cells = <2>;
++		#size-cells = <2>;
++		ranges;
++	};
++};
++
++&pm6150l_gpio {
++	key_vol_up_default: key_vol_up_default {
++		pins = "gpio8";
++		function = "normal";
++		input-enable;
++		bias-pull-up;
++		power-source = <0>;
++	};
++};
++
++&pm6150_pon {
++	pm6150_resin: resin {
++		compatible = "qcom,pm8941-resin";
++		interrupts = <0x0 0x8 1 IRQ_TYPE_EDGE_BOTH>;
++		debounce = <15625>;
++		bias-pull-up;
++		linux,code = <KEY_VOLUMEDOWN>;
++	};
++};
++
++&apps_rsc {
++	pm6150-rpmh-regulators {
++		compatible = "qcom,pm6150-rpmh-regulators";
++		qcom,pmic-id = "a";
++
++		vreg_s1a: smps1 {
++			regulator-min-microvolt = <1128000>;
++			regulator-max-microvolt = <1128000>;
++		};
++
++		vreg_s4a: smps4 {
++			regulator-min-microvolt = <824000>;
++			regulator-max-microvolt = <1120000>;
++		};
++
++		vreg_s5a: smps5 {
++			regulator-min-microvolt = <1744000>;
++			regulator-max-microvolt = <2040000>;
++		};
++
++		vreg_l1a: ldo1 {
++			regulator-min-microvolt = <1178000>;
++			regulator-max-microvolt = <1256000>;
++		};
++
++		vreg_l2a: ldo2 {
++			regulator-min-microvolt = <944000>;
++			regulator-max-microvolt = <1056000>;
++		};
++
++		vreg_l3a: ldo3 {
++			regulator-min-microvolt = <968000>;
++			regulator-max-microvolt = <1064000>;
++		};
++
++		vreg_l4a: ldo4 {
++			regulator-min-microvolt = <824000>;
++			regulator-max-microvolt = <928000>;
++		};
++
++		/*vreg_l5a: ldo5 {
++			regulator-min-microvolt = <3300000>;
++			regulator-max-microvolt = <3300000>;
++			regulator-always-on;
++		};*/
++
++		vreg_l6a: ldo6 {
++			regulator-min-microvolt = <568000>;
++			regulator-max-microvolt = <648000>;
++		};
++
++		vreg_l9a: ldo9 {
++			regulator-min-microvolt = <640000>;
++			regulator-max-microvolt = <640000>;
++		};
++
++		vreg_l10a: ldo10 {
++			regulator-min-microvolt = <1800000>;
++			regulator-max-microvolt = <1800000>;
++		};
++
++		vreg_l11a: ldo11 {
++			regulator-min-microvolt = <1696000>;
++			regulator-max-microvolt = <1904000>;
++		};
++
++		vreg_l12a: ldo12 {
++			regulator-min-microvolt = <1696000>;
++			regulator-max-microvolt = <1950000>;
++		};
++
++		vreg_l13a: ldo13 {
++			regulator-min-microvolt = <1696000>;
++			regulator-max-microvolt = <1904000>;
++		};
++
++		vreg_l14a: ldo14 {
++			regulator-min-microvolt = <1728000>;
++			regulator-max-microvolt = <1832000>;
++		};
++
++		vreg_l15a: ldo15 {
++			regulator-min-microvolt = <1696000>;
++			regulator-max-microvolt = <1904000>;
++		};
++
++		vreg_l16a: ldo16 {
++			regulator-min-microvolt = <2496000>;
++			regulator-max-microvolt = <3304000>;
++		};
++
++		vreg_l17a: ldo17 {
++			regulator-min-microvolt = <2920000>;
++			regulator-max-microvolt = <3232000>;
++		};
++
++		vreg_l18a: ldo18 {
++			regulator-min-microvolt = <2496000>;
++			regulator-max-microvolt = <3304000>;
++		};
++
++		vreg_l19a: ldo19 {
++			regulator-min-microvolt = <2960000>;
++			regulator-max-microvolt = <2960000>;
++		};
++	};
++
++	pm6150l-rpmh-regulators {
++		compatible = "qcom,pm6150l-rpmh-regulators";
++		qcom,pmic-id = "c";
++
++		vreg_s8c: smps8 {
++			regulator-min-microvolt = <1120000>;
++			regulator-max-microvolt = <1408000>;
++		};
++
++		vreg_l1c: ldo1 {
++			regulator-min-microvolt = <1800000>;
++			regulator-max-microvolt = <1800000>;
++		};
++
++		vreg_l2c: ldo2 {
++			regulator-min-microvolt = <1304000>;
++			regulator-max-microvolt = <1304000>;
++		};
++
++		vreg_l3c: ldo3 {
++			regulator-min-microvolt = <1144000>;
++			regulator-max-microvolt = <1304000>;
++		};
++
++		vreg_l4c: ldo4 {
++			regulator-min-microvolt = <1648000>;
++			regulator-max-microvolt = <3304000>;
++		};
++
++		vreg_l5c: ldo5 {
++			regulator-min-microvolt = <1648000>;
++			regulator-max-microvolt = <3304000>;
++		};
++
++		vreg_l6c: ldo6 {
++			regulator-min-microvolt = <1800000>;
++			regulator-max-microvolt = <2950000>;
++		};
++
++		vreg_l7c: ldo7 {
++			regulator-min-microvolt = <3000000>;
++			regulator-max-microvolt = <3000000>;
++		};
++
++		vreg_l8c: ldo8 {
++			regulator-min-microvolt = <1800000>;
++			regulator-max-microvolt = <1800000>;
++		};
++
++		vreg_l9c: ldo9 {
++			regulator-min-microvolt = <2960000>;
++			regulator-max-microvolt = <2960000>;
++		};
++
++		vreg_l10c: ldo10 {
++			regulator-min-microvolt = <3000000>;
++			regulator-max-microvolt = <3312000>;
++		};
++
++		vreg_l11c: ldo11 {
++			regulator-min-microvolt = <3000000>;
++			regulator-max-microvolt = <3312000>;
++		};
++
++		vreg_bob: bob {
++			regulator-min-microvolt = <3008000>;
++			regulator-max-microvolt = <3960000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_AUTO>;
++		};
++	};
++};
++
++&dsi0 {
++	status = "okay";
++
++	panel@0 {
++		compatible = "samsung,s6e3fc3-ams667ym01";
++		reg = <0>;
++
++		reset-gpios = <&tlmm 8 GPIO_ACTIVE_LOW>;
++
++		pinctrl-names = "default";
++		pinctrl-0 = <&panel_reset_pins &panel_te_pin>;
++
++		port {
++			panel_in: endpoint {
++				remote-endpoint = <&dsi0_out>;
++			};
++		};
++	};
++};
++
++&dsi0_out {
++	remote-endpoint = <&panel_in>;
++	data-lanes = <0 1 2 3>;
++};
++
++&dsi_phy {
++	status = "okay";
++};
++
++&mdp {
++	status = "okay";
++};
++
++&mdss {
++	status = "okay";
++};
++
++&gpu {
++	status = "okay";
++
++	zap-shader {
++		memory-region = <&gpu_mem>;
++	};
++};
++
++&tlmm {
++	gpio-reserved-ranges = <59 4>;
++
++	qup_uart3_sleep: qup-uart3-sleep {
++		pinmux {
++			pins = "gpio38", "gpio39",
++			       "gpio40", "gpio41";
++			function = "gpio";
++		};
++
++		pinconf-cts {
++			/*
++			 * Configure a pull-down on CTS to match the pull of
++			 * the Bluetooth module.
++			 */
++			pins = "gpio38";
++			bias-pull-down;
++		};
++
++		pinconf-rts {
++			/*
++			 * Configure pull-down on RTS. As RTS is active low
++			 * signal, pull it low to indicate the BT SoC that it
++			 * can wakeup the system anytime from suspend state by
++			 * pulling RX low (by sending wakeup bytes).
++			 */
++			 pins = "gpio39";
++			 bias-pull-down;
++		};
++
++		pinconf-tx {
++			/*
++			 * Configure pull-up on TX when it isn't actively driven
++			 * to prevent BT SoC from receiving garbage during sleep.
++			 */
++			pins = "gpio40";
++			bias-pull-up;
++		};
++
++		pinconf-rx {
++			/*
++			 * Configure a pull-up on RX. This is needed to avoid
++			 * garbage data when the TX pin of the Bluetooth module
++			 * is floating which may cause spurious wakeups.
++			 */
++			pins = "gpio41";
++			bias-pull-up;
++		};
++	};
++
++	tsp_int: tsp_int {
++		pinmux {
++			pins = "gpio9";
++			function = "gpio";
++		};
++		
++		pinconfig {
++			pins = "gpio9";
++			input-enable;
++			bias-disable;
++		};
++	};
++
++	sdc2_on: sdc2-on {
++		pinconf-clk {
++			pins = "sdc2_clk";
++			bias-disable;
++			drive-strength = <16>;
++		};
++
++		pinconf-cmd {
++			pins = "sdc2_cmd";
++			bias-pull-up;
++			drive-strength = <10>;
++		};
++
++		pinconf-data {
++			pins = "sdc2_data";
++			bias-pull-up;
++			drive-strength = <10>;
++		};
++
++		pinconf-sd-cd {
++			pins = "gpio69";
++			bias-pull-up;
++			drive-strength = <2>;
++		};
++	};
++
++	sdc2_off: sdc2-off {
++		pinconf-clk {
++			pins = "sdc2_clk";
++			bias-disable;
++			drive-strength = <2>;
++		};
++
++		pinconf-cmd {
++			pins = "sdc2_cmd";
++			bias-pull-up;
++			drive-strength = <2>;
++		};
++
++		pinconf-data {
++			pins = "sdc2_data";
++			bias-pull-up;
++			drive-strength = <2>;
++		};
++
++		pinconf-sd-cd {
++			pins = "gpio69";
++			bias-pull-up;
++			drive-strength = <2>;
++		};
++	};
++
++	panel_reset_pins: panel-reset {
++		mux {
++			pins = "gpio8";
++			function = "gpio";
++			drive-strength = <8>;
++			bias-disable = <0>;
++		};
++	};
++
++	panel_te_pin: panel-te {
++		mux {
++			pins = "gpio10";
++			function = "mdp_vsync";
++			drive-strength = <2>;
++			bias-disable;
++		};
++	};
++
++	tas25xx_gpio_default: tas25xx_gpio_default {
++		pinmux {
++			pins = "gpio88", "gpio89", "gpio90", "gpio94";
++			function = "gpio";
++		};
++		pinconfig {
++			pins = "gpio88", "gpio89", "gpio90", "gpio94";
++			bias-disable;
++		};
++	};
++
++	fm_lna_default: fm_lna_default {
++		pinmux {
++			pins = "gpio84";
++			function = "gpio";
++		};
++		pinconfig {
++			pins = "gpio84";
++			bias-disable;
++			output-low;
++		};
++	};
++};
++
++&ipa {
++	status = "okay";
++
++	memory-region = <&ipa_fw_mem>;
++	firmware-name = "qcom/sm7125/a72q/ipa_fws.mdt";
++};
++
++&wifi {
++	status = "okay";
++
++	vdd-0.8-cx-mx-supply = <&vreg_l9a>;
++	vdd-1.8-xo-supply = <&vreg_l1c>;
++	vdd-1.3-rfa-supply = <&vreg_l2c>;
++	vdd-3.3-ch0-supply = <&vreg_l10c>;
++	vdd-3.3-ch1-supply = <&vreg_l11c>;
++};
++
++&qup_i2c4_default {
++	pinconf {
++		pins = "gpio115", "gpio116";
++		drive-strength = <2>;
++
++		/* Has external pullup */
++		bias-disable;
++	};
++};
++
++&qup_i2c7_default {
++	pinconf {
++		pins = "gpio6", "gpio7";
++		drive-strength = <2>;
++
++		/* Has external pullup */
++		bias-disable;
++	};
++};
++
++&remoteproc_mpss {
++	status = "okay";
++	firmware-name = "qcom/sm7125/a72q/modem.mdt";
++};
++
++&remoteproc_adsp {
++	status = "okay";
++	firmware-name = "qcom/sm7125/a72q/adsp.mdt";
++};
++
++&soc {
++	i2c_18: i2c@18 { /* SW I2C */
++		cell-index = <18>;
++		compatible = "i2c-gpio";
++		gpios = <&tlmm 88 0 /* sda */
++				 &tlmm 89 0 /* scl */
++		>;
++		pinctrl-names = "default";
++		pinctrl-0 = <&tas25xx_gpio_default &fm_lna_default>;
++		#i2c-gpio,delay-us = <2>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		tas2562_r: codec@4c {
++			compatible = "ti,tas2562";
++			reg = <0x4c>;
++			#sound-dai-cells = <1>;
++			interrupt-parent = <&tlmm>;
++			interrupts = <90 0>;
++			shutdown-gpios = <&tlmm 94 0>;
++			sound-name-prefix = "Right";
++			ti,vmon-slot-no = <1>;
++			ti,imon-slot-no = <0>;
++		};
++
++		tas2562_l: codec@4d {
++			compatible = "ti,tas2562";
++			reg = <0x4d>;
++			#sound-dai-cells = <1>;
++			interrupt-parent = <&tlmm>;
++			interrupts = <90 0>;
++			shutdown-gpios = <&tlmm 94 0>;
++			sound-name-prefix = "Left";
++			ti,vmon-slot-no = <1>;
++			ti,imon-slot-no = <0>;
++		};
++	};
++};
++
++&sound {
++	compatible = "qcom,sm8250-sndcard";
++	pinctrl-0 = <&i2s1_active>;
++	pinctrl-names = "default";
++	model = "Galaxy A72";
++
++	mm1-dai-link {
++		link-name = "MultiMedia1";
++		cpu {
++			sound-dai = <&q6asmdai MSM_FRONTEND_DAI_MULTIMEDIA1>;
++		};
++	};
++
++	i2s-dai-link {
++		link-name = "I2S Playback";
++		cpu {
++			sound-dai = <&q6afedai QUINARY_MI2S_RX>;
++		};
++
++		platform {
++			sound-dai = <&q6routing>;
++		};
++
++		codec {
++			sound-dai = <&tas2562_r 0>, <&tas2562_l 0>;
++		};
++	};
++};
++
++&q6afedai {
++	qi2s@127 {
++		reg = <QUINARY_MI2S_RX>;
++		qcom,sd-lines = <0>;
++	};
++
++	qi2s@128 {
++		reg = <QUINARY_MI2S_TX>;
++		qcom,sd-lines = <1>;
++	};
++};
++
++&q6asmdai {
++	dai@0 {
++		reg = <0>;
++	};
++};
++
++&remoteproc_cdsp {
++	status = "okay";
++	firmware-name = "qcom/sm7125/a72q/cdsp.mdt";
++};
++
++&venus {
++	firmware-name = "qcom/sm7125/a72q/venus.mdt";
++};
++
++&qupv3_id_0 {
++	status = "okay";
++};
++
++&qupv3_id_1 {
++	status = "okay";
++};
++
++&uart3 {
++	status = "okay";
++
++	/delete-property/interrupts;
++	interrupts-extended = <&intc GIC_SPI 604 IRQ_TYPE_LEVEL_HIGH>,
++				<&tlmm 41 IRQ_TYPE_EDGE_FALLING>;
++
++	pinctrl-names = "default", "sleep";
++	pinctrl-1 = <&qup_uart3_sleep>;
++
++	bluetooth: bluetooth {
++		compatible = "qcom,wcn3990-bt";
++
++		firmware-name = "sm7125/a72q/crnv21.bin";
++
++		vddio-supply = <&vreg_l10a>;
++		vddxo-supply = <&vreg_l1c>;
++		vddrf-supply = <&vreg_l2c>;
++		vddch0-supply = <&vreg_l10c>;
++		max-speed = <3200000>;
++	};
++};
++
++&gpi_dma0 {
++	status = "okay";
++};
++
++&i2c4 {
++	status = "okay";
++
++	sm5714-charger@49 {
++		compatible = "siliconmitus,sm5714-charger";
++		reg = <0x49>;
++
++		siliconmitus,enable-autostop;
++		siliconmitus,input-current-limit = <1300>;
++		siliconmitus,charging-current = <1300>;
++		siliconmitus,topoff-current = <250>;
++	};
++
++	sm5714-fg@71 {
++		compatible = "siliconmitus,sm5714-fg";
++		reg = <0x71>;
++	};
++};
++
++&gpi_dma1 {
++	status = "okay";
++};
++
++&i2c7 {
++	status = "okay";
++	clock-frequency = <400000>;
++
++	tsp_stm: touchscreen@49 {
++		compatible = "st,stmfts_fts5cu56a";
++		reg = <0x49>;
++
++		pinctrl-names = "default";
++		pinctrl-0 = <&tsp_int>;
++
++		interrupt-parent = <&tlmm>;
++		interrupts = <9 0x2008>;
++
++		avdd-supply = <&vreg_l7c>;
++	};
++};
++
++&sdhc_2 {
++	status = "okay";
++
++	pinctrl-names = "default", "sleep";
++	pinctrl-0 = <&sdc2_on>;
++	pinctrl-1 = <&sdc2_off>;
++	vmmc-supply = <&vreg_l9c>;
++	vqmmc-supply = <&vreg_l6c>;
++
++	cd-gpios = <&tlmm 69 GPIO_ACTIVE_LOW>;
++};
++
++&ufs_mem_hc {
++	status = "okay";
++
++	vcc-supply = <&vreg_l19a>;
++	vcc-max-microamp = <600000>;
++	vccq2-supply = <&vreg_l12a>;
++	vccq2-max-microamp = <600000>;
++};
++
++&ufs_mem_phy {
++	status = "okay";
++
++	vdda-phy-supply = <&vreg_l4a>;
++	vdda-pll-supply = <&vreg_l3c>;
++	vdda-phy-max-microamp = <62900>;
++	vdda-pll-max-microamp = <18300>;
++};
++
++&usb_1 {
++	status = "okay";
++};
++
++&usb_1_dwc3 {
++	dr_mode = "peripheral";
++};
++
++&usb_1_hsphy {
++	status = "okay";
++	vdd-supply = <&vreg_l4a>;
++	vdda-pll-supply = <&vreg_l11a>;
++	vdda-phy-dpdm-supply = <&vreg_l17a>;
++};
++
++&usb_1_qmpphy {
++	status = "okay";
++	vdda-phy-supply = <&vreg_l4a>;
++	vdda-pll-supply = <&vreg_l3c>;
++};
+diff --git a/arch/arm64/boot/dts/qcom/sm7125.dtsi b/arch/arm64/boot/dts/qcom/sm7125.dtsi
+new file mode 100644
+index 00000000000000..f066f3a5c3b1f8
+--- /dev/null
++++ b/arch/arm64/boot/dts/qcom/sm7125.dtsi
+@@ -0,0 +1,807 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Snapdragon 720G (sm7125) specific device tree
++ *
++ * Copyright (c) 2021, The Linux Foundation. All rights reserved.
++ */
++
++#include <dt-bindings/dma/qcom-gpi.h>
++#include <dt-bindings/soc/qcom,apr.h>
++#include <dt-bindings/sound/qcom,q6afe.h>
++#include <dt-bindings/clock/qcom,sm8250-lpass-aoncc.h>
++#include <dt-bindings/clock/qcom,sm8250-lpass-audiocc.h>
++
++#include "sc7180.dtsi"
++
++/* SM7125 uses Kryo 465 instead of Kryo 468 */
++&CPU0 {
++	compatible = "qcom,kryo465";
++	/delete-property/ operating-points-v2;
++
++	d-cache-size = <0x8000>;
++	i-cache-size = <0x8000>;
++};
++
++&L2_0 {
++	cache-size = <0x10000>;
++	cache-level = <2>;
++};
++
++&L3_0 {
++	cache-size = <0x100000>;
++	cache-level = <3>;
++};
++
++&CPU1 {
++	compatible = "qcom,kryo465";
++	/delete-property/ operating-points-v2;
++
++	d-cache-size = <0x8000>;
++	i-cache-size = <0x8000>;
++};
++
++&L2_100 {
++	cache-size = <0x10000>;
++	cache-level = <2>;
++};
++
++&CPU2 {
++	compatible = "qcom,kryo465";
++	/delete-property/ operating-points-v2;
++
++	d-cache-size = <0x8000>;
++	i-cache-size = <0x8000>;
++};
++
++&L2_200 {
++	cache-size = <0x10000>;
++	cache-level = <2>;
++};
++
++&CPU3 {
++	compatible = "qcom,kryo465";
++	/delete-property/ operating-points-v2;
++
++	d-cache-size = <0x8000>;
++	i-cache-size = <0x8000>;
++};
++
++&L2_300 {
++	cache-size = <0x10000>;
++	cache-level = <2>;
++};
++
++&CPU4 {
++	compatible = "qcom,kryo465";
++	/delete-property/ operating-points-v2;
++
++	d-cache-size = <0x8000>;
++	i-cache-size = <0x8000>;
++};
++
++&L2_400 {
++	cache-size = <0x10000>;
++	cache-level = <2>;
++};
++
++&CPU5 {
++	compatible = "qcom,kryo465";
++	/delete-property/ operating-points-v2;
++
++	d-cache-size = <0x8000>;
++	i-cache-size = <0x8000>;
++};
++
++&L2_500 {
++	cache-size = <0x10000>;
++	cache-level = <2>;
++};
++
++&CPU6 {
++	compatible = "qcom,kryo465";
++	/delete-property/ operating-points-v2;
++
++	d-cache-size = <0x10000>;
++	i-cache-size = <0x10000>;
++};
++
++&L2_600 {
++	cache-size = <0x40000>;
++	cache-level = <2>;
++};
++
++&CPU7 {
++	compatible = "qcom,kryo465";
++	/delete-property/ operating-points-v2;
++
++	d-cache-size = <0x10000>;
++	i-cache-size = <0x10000>;
++};
++
++&L2_700 {
++	cache-size = <0x40000>;
++	cache-level = <2>;
++};
++
++// SC7180 doesn't have UFS yet.
++&soc {
++	ufs_mem_hc: ufshc@1d84000 {
++		compatible = "qcom,sm7125-ufshc", "qcom,ufshc",
++					"jedec,ufs-2.0";
++		reg = <0 0x01d84000 0 0x3000>,
++				<0 0x01d90000 0 0x8000>;
++		reg-names = "std", "ice";
++		interrupts = <GIC_SPI 265 IRQ_TYPE_LEVEL_HIGH>;
++		phys = <&ufs_mem_phy_lanes>;
++		phy-names = "ufsphy";
++		lanes-per-direction = <1>;
++		power-domains = <&gcc UFS_PHY_GDSC>;
++		#reset-cells = <1>;
++		resets = <&gcc GCC_UFS_PHY_BCR>;
++		reset-names = "rst";
++
++		iommus = <&apps_smmu 0xa0 0x0>;
++
++		clock-names =
++			"core_clk",
++			"bus_aggr_clk",
++			"iface_clk",
++			"core_clk_unipro",
++			"ref_clk",
++			"tx_lane0_sync_clk",
++			"rx_lane0_sync_clk",
++			"ice_core_clk";
++		clocks =
++			<&gcc GCC_UFS_PHY_AXI_CLK>,
++			<&gcc GCC_AGGRE_UFS_PHY_AXI_CLK>,
++			<&gcc GCC_UFS_PHY_AHB_CLK>,
++			<&gcc GCC_UFS_PHY_UNIPRO_CORE_CLK>,
++			<&rpmhcc RPMH_CXO_CLK>,
++			<&gcc GCC_UFS_PHY_TX_SYMBOL_0_CLK>,
++			<&gcc GCC_UFS_PHY_RX_SYMBOL_0_CLK>,
++			<&gcc GCC_UFS_PHY_ICE_CORE_CLK>;
++		freq-table-hz =
++			<50000000 200000000>,
++			<0 0>,
++			<0 0>,
++			<37500000 150000000>,
++			<0 0>,
++			<0 0>,
++			<0 0>,
++			<0 300000000>;
++
++		status = "disabled";
++	};
++
++	ufs_mem_phy: phy@1d87000 {
++		compatible = "qcom,sm7125-qmp-ufs-phy";
++		reg = <0 0x01d87000 0 0xddc>;
++		#address-cells = <2>;
++		#size-cells = <2>;
++		ranges;
++		clock-names = "ref",
++					"ref_aux";
++		clocks = <&gcc GCC_UFS_MEM_CLKREF_CLK>,
++				<&gcc GCC_UFS_PHY_PHY_AUX_CLK>;
++
++		resets = <&ufs_mem_hc 0>;
++		reset-names = "ufsphy";
++		status = "disabled";
++
++		ufs_mem_phy_lanes: lanes@1d87400 {
++			reg = <0 0x01d87400 0 0x108>,
++					<0 0x01d87600 0 0x1e0>,
++					<0 0x01d87c00 0 0x1dc>,
++					<0 0x01d87800 0 0x108>,
++					<0 0x01d87a00 0 0x1e0>;
++			#phy-cells = <0>;
++		};
++	};
++
++	remoteproc_adsp: remoteproc@62400000 {
++		compatible = "qcom,sm7125-adsp-pas";
++		reg = <0 0x62400000 0 0x100>;
++
++		interrupts-extended = <&intc GIC_SPI 162 IRQ_TYPE_EDGE_RISING>,
++				    	<&adsp_smp2p_in 0 IRQ_TYPE_EDGE_RISING>,
++				    	<&adsp_smp2p_in 1 IRQ_TYPE_EDGE_RISING>,
++				    	<&adsp_smp2p_in 2 IRQ_TYPE_EDGE_RISING>,
++				    	<&adsp_smp2p_in 3 IRQ_TYPE_EDGE_RISING>;
++		interrupt-names = "wdog", "fatal", "ready",
++					"handover", "stop-ack";
++
++		clocks = <&rpmhcc RPMH_CXO_CLK>;
++		clock-names = "xo";
++
++		power-domains = <&rpmhpd SC7180_LCX>,
++				<&rpmhpd SC7180_LMX>;
++		power-domain-names = "lcx", "lmx";
++
++		memory-region = <&adsp_mem>;
++
++		qcom,qmp = <&aoss_qmp>;
++
++		qcom,smem-states = <&adsp_smp2p_out 0>;
++		qcom,smem-state-names = "stop";
++
++		status = "disabled";
++
++		glink-edge {
++			interrupts = <GIC_SPI 156 IRQ_TYPE_EDGE_RISING>;
++			label = "lpass";
++			qcom,remote-pid = <2>;
++			mboxes = <&apss_shared 8>;
++
++			apr {
++				compatible = "qcom,apr-v2";
++				qcom,glink-channels = "apr_audio_svc";
++				qcom,apr-domain = <APR_DOMAIN_ADSP>;
++				#address-cells = <1>;
++				#size-cells = <0>;
++
++				apr-service@3 {
++					reg = <APR_SVC_ADSP_CORE>;
++					compatible = "qcom,q6core";
++					qcom,protection-domain = "avs/audio", "msm/adsp/audio_pd";
++				};
++
++				q6afe: apr-service@4 {
++					compatible = "qcom,q6afe";
++					reg = <APR_SVC_AFE>;
++					qcom,protection-domain = "avs/audio", "msm/adsp/audio_pd";
++					q6afedai: dais {
++						compatible = "qcom,q6afe-dais";
++						#address-cells = <1>;
++						#size-cells = <0>;
++						#sound-dai-cells = <1>;
++					};
++
++					q6afecc: cc {
++						compatible = "qcom,q6afe-clocks";
++						#clock-cells = <2>;
++					};
++				};
++
++				q6asm: apr-service@7 {
++					compatible = "qcom,q6asm";
++					reg = <APR_SVC_ASM>;
++					qcom,protection-domain = "avs/audio", "msm/adsp/audio_pd";
++					q6asmdai: dais {
++						compatible = "qcom,q6asm-dais";
++						#address-cells = <1>;
++						#size-cells = <0>;
++						#sound-dai-cells = <1>;
++						iommus = <&apps_smmu 0x1001 0x0>;
++					};
++				};
++
++				q6adm: apr-service@8 {
++					compatible = "qcom,q6adm";
++					reg = <APR_SVC_ADM>;
++					qcom,protection-domain = "avs/audio", "msm/adsp/audio_pd";
++					q6routing: routing {
++						compatible = "qcom,q6adm-routing";
++						#sound-dai-cells = <0>;
++					};
++				};
++			};
++
++			fastrpc {
++				compatible = "qcom,fastrpc";
++				qcom,glink-channels = "fastrpcglink-apps-dsp";
++				label = "adsp";
++				#address-cells = <1>;
++				#size-cells = <0>;
++
++				compute-cb@3 {
++					compatible = "qcom,fastrpc-compute-cb";
++					reg = <3>;
++					iommus = <&apps_smmu 0x1003 0x0>;
++				};
++
++				compute-cb@4 {
++					compatible = "qcom,fastrpc-compute-cb";
++					reg = <4>;
++					iommus = <&apps_smmu 0x1004 0x0>;
++				};
++
++				compute-cb@5 {
++					compatible = "qcom,fastrpc-compute-cb";
++					reg = <5>;
++					iommus = <&apps_smmu 0x1005 0x0>;
++					qcom,nsessions = <5>;
++				};
++			};
++		};
++	};
++
++	wsamacro: codec@62640000 {
++		compatible = "qcom,sm8250-lpass-wsa-macro";
++		reg = <0 0x62640000 0 0x1000>;
++		status = "disabled";
++		clocks = <&audiocc LPASS_CDC_WSA_MCLK>,
++				<&audiocc LPASS_CDC_WSA_NPL>,
++				<&q6afecc LPASS_HW_MACRO_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
++				<&q6afecc LPASS_HW_DCODEC_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
++				<&aoncc LPASS_CDC_VA_MCLK>,
++				<&vamacro>;
++
++		clock-names = "mclk", "npl", "macro", "dcodec", "va", "fsgen";
++
++		#clock-cells = <0>;
++		clock-frequency = <19200000>;
++		clock-output-names = "mclk";
++		#sound-dai-cells = <1>;
++
++		pinctrl-names = "default";
++		pinctrl-0 = <&wsa_swr_active>;
++	};
++
++	swr0: soundwire-controller@62650000 {
++		reg = <0 0x62650000 0 0x2000>;
++		compatible = "qcom,soundwire-v1.5.1";
++		status = "disabled";
++		interrupts = <GIC_SPI 295 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&wsamacro>;
++		clock-names = "iface";
++
++		qcom,din-ports = <2>;
++		qcom,dout-ports = <6>;
++
++		qcom,ports-sinterval-low =	/bits/ 8 <0x07 0x1f 0x3f 0x07 0x1f 0x3f 0x0f 0x0f>;
++		qcom,ports-offset1 =		/bits/ 8 <0x01 0x02 0x0c 0x06 0x12 0x0d 0x07 0x0a>;
++		qcom,ports-offset2 =		/bits/ 8 <0xff 0x00 0x1f 0xff 0x00 0x1f 0x00 0x00>;
++		qcom,ports-block-pack-mode =	/bits/ 8 <0x0 0x0 0x1 0x0 0x0 0x1 0x0 0x0>;
++
++		#sound-dai-cells = <1>;
++		#address-cells = <2>;
++		#size-cells = <0>;
++	};
++
++	audiocc: clock-controller@62700000 {
++		compatible = "qcom,sm8250-lpass-audiocc";
++		reg = <0 0x62700000 0 0x30000>;
++		#clock-cells = <1>;
++		clocks = <&q6afecc LPASS_HW_MACRO_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
++			<&q6afecc LPASS_HW_DCODEC_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
++			<&q6afecc LPASS_CLK_ID_TX_CORE_MCLK LPASS_CLK_ATTRIBUTE_COUPLE_NO>;
++		clock-names = "core", "audio", "bus";
++	};
++
++	vamacro: codec@62770000 {
++		compatible = "qcom,sm8250-lpass-va-macro";
++		reg = <0 0x62770000 0 0x1000>;
++		status = "disabled";
++		clocks = <&aoncc 0>,
++			<&q6afecc LPASS_HW_MACRO_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
++			<&q6afecc LPASS_HW_DCODEC_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>;
++
++		clock-names = "mclk", "macro", "dcodec";
++
++		#clock-cells = <0>;
++		clock-frequency = <9600000>;
++		clock-output-names = "fsgen";
++		#sound-dai-cells = <1>;
++	};
++
++	rxmacro: rxmacro@62600000 {
++		pinctrl-names = "default";
++		pinctrl-0 = <&rx_swr_active>;
++		compatible = "qcom,sm8250-lpass-rx-macro";
++		reg = <0 0x62600000 0 0x1000>;
++		status = "disabled";
++
++		clocks = <&q6afecc LPASS_CLK_ID_TX_CORE_MCLK LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
++				 <&q6afecc LPASS_CLK_ID_TX_CORE_NPL_MCLK  LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
++				 <&q6afecc LPASS_HW_MACRO_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
++				 <&q6afecc LPASS_HW_DCODEC_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
++				 <&vamacro>;
++
++		clock-names = "mclk", "npl", "macro", "dcodec", "fsgen";
++
++		#clock-cells = <0>;
++		clock-frequency = <9600000>;
++		clock-output-names = "mclk";
++		#sound-dai-cells = <1>;
++	};
++
++	swr1: soundwire-controller@62610000 {
++		reg = <0 0x62610000 0 0x2000>;
++		compatible = "qcom,soundwire-v1.5.1";
++		status = "disabled";
++		interrupts = <GIC_SPI 297 IRQ_TYPE_LEVEL_HIGH>;
++
++		clocks = <&rxmacro>;
++		clock-names = "iface";
++		label = "RX";
++
++		qcom,din-ports = <0>;
++		qcom,dout-ports = <5>;
++		qcom,ports-sinterval-low =	/bits/ 8 <0x03 0x1F 0x1F 0x07 0x00>;
++		qcom,ports-offset1 =		/bits/ 8 <0x00 0x00 0x0B 0x01 0x00>;
++		qcom,ports-offset2 =		/bits/ 8 <0x00 0x00 0x0B 0x00 0x00>;
++		qcom,ports-hstart =		/bits/ 8 <0xFF 0x03 0xFF 0xFF 0xFF>;
++		qcom,ports-hstop =		/bits/ 8 <0xFF 0x06 0xFF 0xFF 0xFF>;
++		qcom,ports-word-length =	/bits/ 8 <0x01 0x07 0x04 0xFF 0xFF>;
++		qcom,ports-block-pack-mode =	/bits/ 8 <0xFF 0x00 0x01 0xFF 0xFF>;
++		qcom,ports-block-group-count =	/bits/ 8 <0xFF 0xFF 0xFF 0xFF 0x00>;
++		qcom,ports-lane-control =	/bits/ 8 <0x01 0x00 0x00 0x00 0x00>;
++
++		#sound-dai-cells = <1>;
++		#address-cells = <2>;
++		#size-cells = <0>;
++	};
++
++	txmacro: txmacro@62620000 {
++		pinctrl-names = "default";
++		pinctrl-0 = <&tx_swr_active>;
++		compatible = "qcom,sm8250-lpass-tx-macro";
++		reg = <0 0x62620000 0 0x1000>;
++		status = "disabled";
++
++		clocks = <&q6afecc LPASS_CLK_ID_TX_CORE_MCLK LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
++				 <&q6afecc LPASS_CLK_ID_TX_CORE_NPL_MCLK  LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
++				 <&q6afecc LPASS_HW_MACRO_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
++				 <&q6afecc LPASS_HW_DCODEC_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
++				 <&vamacro>;
++
++		clock-names = "mclk", "npl", "macro", "dcodec", "fsgen";
++
++		#clock-cells = <0>;
++		clock-frequency = <9600000>;
++		clock-output-names = "mclk";
++		#address-cells = <2>;
++		#size-cells = <2>;
++		#sound-dai-cells = <1>;
++	};
++
++	swr2: soundwire-controller@3230000 {
++		reg = <0 0x3230000 0 0x2000>;
++		compatible = "qcom,soundwire-v1.5.1";
++		status = "disabled";
++		interrupts = <GIC_SPI 296 IRQ_TYPE_LEVEL_HIGH>;
++
++		clocks = <&txmacro>;
++		clock-names = "iface";
++		label = "TX";
++
++		qcom,din-ports = <5>;
++		qcom,dout-ports = <0>;
++		qcom,ports-sinterval-low =	/bits/ 8 <0xFF 0x01 0x01 0x03 0x03>;
++		qcom,ports-offset1 =		/bits/ 8 <0xFF 0x01 0x00 0x02 0x00>;
++		qcom,ports-offset2 =		/bits/ 8 <0xFF 0x00 0x00 0x00 0x00>;
++		qcom,ports-block-pack-mode =	/bits/ 8 <0xFF 0xFF 0xFF 0xFF 0xFF>;
++		qcom,ports-hstart =		/bits/ 8 <0xFF 0xFF 0xFF 0xFF 0xFF>;
++		qcom,ports-hstop =		/bits/ 8 <0xFF 0xFF 0xFF 0xFF 0xFF>;
++		qcom,ports-word-length =	/bits/ 8 <0xFF 0xFF 0xFF 0xFF 0xFF>;
++		qcom,ports-block-group-count =	/bits/ 8 <0xFF 0xFF 0xFF 0xFF 0xFF>;
++		qcom,ports-lane-control =	/bits/ 8 <0xFF 0x00 0x01 0x00 0x01>;
++		qcom,port-offset = <1>;
++
++		#sound-dai-cells = <1>;
++		#address-cells = <2>;
++		#size-cells = <0>;
++	};
++
++	aoncc: clock-controller@62780000 {
++		compatible = "qcom,sm8250-lpass-aoncc";
++		reg = <0 0x62780000 0 0x40000>;
++		#clock-cells = <1>;
++		clocks = <&q6afecc LPASS_HW_MACRO_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
++			<&q6afecc LPASS_HW_DCODEC_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
++			<&q6afecc LPASS_CLK_ID_TX_CORE_NPL_MCLK LPASS_CLK_ATTRIBUTE_COUPLE_NO>;
++		clock-names = "core", "audio", "bus";
++	};
++
++	lpass_tlmm: pinctrl@627c0000 {
++		compatible = "qcom,sc7280-lpass-lpi-pinctrl";
++		reg = <0 0x627c0000 0x0 0x20000>,
++				<0 0x62950000 0x0 0x10000>;
++		gpio-controller;
++		#gpio-cells = <2>;
++		gpio-ranges = <&lpass_tlmm 0 0 15>;
++
++		clocks = <&q6afecc LPASS_HW_MACRO_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
++			<&q6afecc LPASS_HW_DCODEC_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>;
++		clock-names = "core", "audio";
++
++		i2s1_active: i2s1-active-pins {
++			clk {
++				pins = "gpio6";
++				function = "i2s1_clk";
++				drive-strength = <8>;
++				bias-disable;
++				output-high;
++			};
++			ws {
++				pins = "gpio7";
++				function = "i2s1_ws";
++				drive-strength = <8>;
++				bias-disable;
++				output-high;
++			};
++			data {
++				pins = "gpio8", "gpio9";
++				function = "i2s1_data";
++				drive-strength = <8>;
++				bias-disable;
++				output-high;
++			};
++		};
++
++		wsa_swr_active: wsa-swr-active-pins {
++			clk {
++				pins = "gpio10";
++				function = "wsa_swr_clk";
++				drive-strength = <10>;
++				slew-rate = <3>;
++				bias-disable;
++			};
++
++			data {
++				pins = "gpio11";
++				function = "wsa_swr_data";
++				drive-strength = <10>;
++				slew-rate = <3>;
++				bias-bus-hold;
++
++			};
++		};
++
++		rx_swr_active: rx_swr-active-pins {
++			clk {
++				pins = "gpio3";
++				function = "swr_rx_clk";
++				drive-strength = <10>;
++				slew-rate = <3>;
++				bias-disable;
++			};
++			data {
++				pins = "gpio4", "gpio5";
++				function = "swr_rx_data";
++				drive-strength = <10>;
++				slew-rate = <3>;
++				bias-bus-hold;
++			};
++		};
++
++		tx_swr_active: tx_swr-active-pins {
++			clk {
++				pins = "gpio0";
++				function = "swr_tx_clk";
++				drive-strength = <10>;
++				slew-rate = <3>;
++				bias-disable;
++			};
++			data {
++				pins = "gpio1", "gpio2", "gpio14";
++				function = "swr_tx_data";
++				drive-strength = <10>;
++				slew-rate = <3>;
++				bias-bus-hold;
++			};
++		};
++	};
++
++	sound: sound {
++	};
++
++	remoteproc_cdsp: remoteproc@8300000 {
++		compatible = "qcom,sm7125-cdsp-pas";
++		reg = <0 0x08300000 0 0x10000>;
++
++		interrupts-extended = <&intc GIC_SPI 578 IRQ_TYPE_LEVEL_HIGH>,
++						<&cdsp_smp2p_in 0 IRQ_TYPE_EDGE_RISING>,
++						<&cdsp_smp2p_in 1 IRQ_TYPE_EDGE_RISING>,
++						<&cdsp_smp2p_in 2 IRQ_TYPE_EDGE_RISING>,
++						<&cdsp_smp2p_in 3 IRQ_TYPE_EDGE_RISING>;
++		interrupt-names = "wdog", "fatal", "ready",
++					"handover", "stop-ack";
++
++		clocks = <&rpmhcc RPMH_CXO_CLK>;
++		clock-names = "xo";
++
++		power-domains = <&rpmhpd SC7180_CX>,
++				<&rpmhpd SC7180_MX>;
++		power-domain-names = "cx", "mx";
++
++		memory-region = <&cdsp_mem>;
++
++		qcom,qmp = <&aoss_qmp>;
++
++		qcom,smem-states = <&cdsp_smp2p_out 0>;
++		qcom,smem-state-names = "stop";
++
++		status = "disabled";
++
++		glink-edge {
++			interrupts = <GIC_SPI 574 IRQ_TYPE_EDGE_RISING>;
++			label = "cdsp";
++			qcom,remote-pid = <5>;
++			mboxes = <&apss_shared 4>;
++
++			fastrpc {
++				compatible = "qcom,fastrpc";
++				qcom,glink-channels = "fastrpcglink-apps-dsp";
++				label = "cdsp";
++				#address-cells = <1>;
++				#size-cells = <0>;
++
++				compute-cb@1 {
++					compatible = "qcom,fastrpc-compute-cb";
++					reg = <1>;
++					iommus = <&apps_smmu 0x1401 0x20>;
++				};
++
++				compute-cb@2 {
++					compatible = "qcom,fastrpc-compute-cb";
++					reg = <2>;
++					iommus = <&apps_smmu 0x1402 0x20>;
++				};
++
++				compute-cb@3 {
++					compatible = "qcom,fastrpc-compute-cb";
++					reg = <3>;
++					iommus = <&apps_smmu 0x1403 0x20>;
++				};
++
++				compute-cb@4 {
++					compatible = "qcom,fastrpc-compute-cb";
++					reg = <4>;
++					iommus = <&apps_smmu 0x1404 0x20>;
++				};
++
++				compute-cb@5 {
++					compatible = "qcom,fastrpc-compute-cb";
++					reg = <5>;
++					iommus = <&apps_smmu 0x1405 0x20>;
++				};
++
++				compute-cb@6 {
++					compatible = "qcom,fastrpc-compute-cb";
++					reg = <6>;
++					iommus = <&apps_smmu 0x1406 0x20>;
++				};
++
++				compute-cb@7 {
++					compatible = "qcom,fastrpc-compute-cb";
++					reg = <7>;
++					iommus = <&apps_smmu 0x1407 0x20>;
++				};
++
++				compute-cb@8 {
++					compatible = "qcom,fastrpc-compute-cb";
++					reg = <8>;
++					iommus = <&apps_smmu 0x1408 0x20>;
++				};
++
++				/* note: secure cb9 in downstream */
++			};
++		};
++	};
++
++	gpi_dma0: dma-controller@800000  {
++		compatible = "qcom,sm7125-gpi-dma";
++		reg = <0 0x00800000 0 0x60000>;
++		interrupts = <GIC_SPI 244 IRQ_TYPE_LEVEL_HIGH>,
++					<GIC_SPI 245 IRQ_TYPE_LEVEL_HIGH>,
++					<GIC_SPI 246 IRQ_TYPE_LEVEL_HIGH>,
++					<GIC_SPI 247 IRQ_TYPE_LEVEL_HIGH>,
++					<GIC_SPI 248 IRQ_TYPE_LEVEL_HIGH>,
++					<GIC_SPI 249 IRQ_TYPE_LEVEL_HIGH>,
++					<GIC_SPI 250 IRQ_TYPE_LEVEL_HIGH>,
++					<GIC_SPI 251 IRQ_TYPE_LEVEL_HIGH>,
++					<GIC_SPI 252 IRQ_TYPE_LEVEL_HIGH>,
++					<GIC_SPI 253 IRQ_TYPE_LEVEL_HIGH>;
++		dma-channels = <10>;
++		dma-channel-mask = <0x1f>;
++		iommus = <&apps_smmu 0x56 0x0>;
++		#dma-cells = <3>;
++		status = "disabled";
++	};
++
++	gpi_dma1: dma-controller@a00000 {
++		compatible = "qcom,sm7125-gpi-dma";
++		reg = <0 0x00a00000 0 0x60000>;
++		interrupts = <GIC_SPI 645 IRQ_TYPE_LEVEL_HIGH>,
++					<GIC_SPI 646 IRQ_TYPE_LEVEL_HIGH>,
++					<GIC_SPI 647 IRQ_TYPE_LEVEL_HIGH>,
++					<GIC_SPI 648 IRQ_TYPE_LEVEL_HIGH>,
++					<GIC_SPI 649 IRQ_TYPE_LEVEL_HIGH>,
++					<GIC_SPI 650 IRQ_TYPE_LEVEL_HIGH>,
++					<GIC_SPI 651 IRQ_TYPE_LEVEL_HIGH>,
++					<GIC_SPI 652 IRQ_TYPE_LEVEL_HIGH>,
++					<GIC_SPI 653 IRQ_TYPE_LEVEL_HIGH>,
++					<GIC_SPI 654 IRQ_TYPE_LEVEL_HIGH>;
++		dma-channels = <10>;
++		dma-channel-mask = <0x3f>;
++		iommus = <&apps_smmu 0x4d6 0x0>;
++		#dma-cells = <3>;
++		status = "disabled";
++	};
++};
++/delete-node/ &gpu_opp_table;
++&gpu {
++	gpu_opp_table: opp-table {
++		compatible = "operating-points-v2";
++		
++		opp-750000000 {
++			opp-hz = /bits/ 64 <750000000>;
++			opp-level = <RPMH_REGULATOR_LEVEL_NOM_L1>;
++			opp-peak-kBps = <7216000>;
++			opp-supported-hw = <0x08>;
++		};
++
++		opp-650000000 {
++			opp-hz = /bits/ 64 <650000000>;
++			opp-level = <RPMH_REGULATOR_LEVEL_NOM_L1>;
++			opp-peak-kBps = <7216000>;
++			opp-supported-hw = <0x08>;
++		};
++
++		opp-565000000 {
++			opp-hz = /bits/ 64 <565000000>;
++			opp-level = <RPMH_REGULATOR_LEVEL_NOM>;
++			opp-peak-kBps = <5412000>;
++			opp-supported-hw = <0x08>;
++		};
++
++		opp-430000000 {
++			opp-hz = /bits/ 64 <430000000>;
++			opp-level = <RPMH_REGULATOR_LEVEL_SVS_L1>;
++			opp-peak-kBps = <5412000>;
++			opp-supported-hw = <0x08>;
++		};
++
++		opp-355000000 {
++			opp-hz = /bits/ 64 <355000000>;
++			opp-level = <RPMH_REGULATOR_LEVEL_SVS>;
++			opp-peak-kBps = <3072000>;
++			opp-supported-hw = <0x08>;
++		};
++
++		opp-267000000 {
++			opp-hz = /bits/ 64 <267000000>;
++			opp-level = <RPMH_REGULATOR_LEVEL_LOW_SVS>;
++			opp-peak-kBps = <3072000>;
++			opp-supported-hw = <0x08>;
++		};
++
++		opp-180000000 {
++			opp-hz = /bits/ 64 <180000000>;
++			opp-level = <RPMH_REGULATOR_LEVEL_MIN_SVS>;
++			opp-peak-kBps = <1804000>;
++			opp-supported-hw = <0x08>;
++		};
++	};
++};
++
++&lpasscc {
++	status = "disabled";
++};
++
++&lpass_cpu {
++	status = "disabled";
++};
++
++&lpass_hm {
++	status = "disabled";
++};
++
++&mdp {
++	reg = <0 0x0ae01000 0 0x8f000>,
++		  <0 0x0aeac000 0 0x214>,
++		  <0 0x0aeb0000 0 0x2008>,
++		  <0 0x0aeb8000 0 0x3000>;
++	reg-names = "mdp", "regdma", "vbif", "vbif_nrt";
++};
++
++&venus {
++	compatible = "qcom,sm7125-venus";
++};
++
++&i2c7 {
++	dmas = <&gpi_dma1 0 1 QCOM_GPI_I2C>,
++			<&gpi_dma1 1 1 QCOM_GPI_I2C>;
++	dma-names = "tx", "rx";
++};
+diff --git a/arch/arm64/configs/sm7125.config b/arch/arm64/configs/sm7125.config
+new file mode 100644
+index 00000000000000..5790abb4bfe3a0
+--- /dev/null
++++ b/arch/arm64/configs/sm7125.config
+@@ -0,0 +1,833 @@
++# Qualcomm Snapdragon 720G (SM7125) config fragment
++CONFIG_LOCALVERSION="-sm7125"
++
++# Galaxy A72/A52
++CONFIG_DRM_PANEL_SAMSUNG_S6E3FC3_AMS667YM01=y
++CONFIG_BATTERY_SM5714=m
++CONFIG_CHARGER_SM5714=m
++CONFIG_TOUCHSCREEN_STMFTS_FTS5CU56A=m
++CONFIG_SND_SOC_TAS2562=m
++
++# SOC
++CONFIG_NR_CPUS=8
++CONFIG_SCHED_CLUSTER=y
++CONFIG_SCSI_UFS_QCOM=y
++CONFIG_QCOM_LLCC=y
++CONFIG_QCOM_RMTFS_MEM=y
++CONFIG_QCOM_SOCINFO=y
++CONFIG_QCOM_APR=y
++CONFIG_POWER_RESET_QCOM_PON=y
++CONFIG_QCOM_SPMI_TEMP_ALARM=y
++CONFIG_QCOM_SPMI_ADC_TM5=y
++CONFIG_QCOM_GPI_DMA=y
++
++CONFIG_PINCTRL_SC7180=y
++CONFIG_SC_DISPCC_7180=y
++CONFIG_SC_GCC_7180=y
++CONFIG_SC_GPUCC_7180=y
++CONFIG_SC_VIDEOCC_7180=y
++CONFIG_INTERCONNECT_QCOM_OSM_L3=y
++CONFIG_INTERCONNECT_QCOM_SC7180=y
++
++# Sound
++CONFIG_PINCTRL_SC7280_LPASS_LPI=m
++CONFIG_CLK_GFM_LPASS_SM8250=m
++CONFIG_SND_SOC_WCD938X_SDW=m
++CONFIG_SND_SOC_LPASS_RX_MACRO=m
++CONFIG_SND_SOC_LPASS_TX_MACRO=m
++
++# Remoteproc
++CONFIG_SLIMBUS=y
++CONFIG_SLIM_QCOM_CTRL=y
++CONFIG_SLIM_QCOM_NGD_CTRL=y
++CONFIG_REMOTEPROC_CDEV=y
++
++# Graphics
++CONFIG_DRM=y
++CONFIG_FB_SIMPLE=y
++CONFIG_DRM_MSM=y
++
++# Power management
++CONFIG_PM_AUTOSLEEP=y
++CONFIG_PM_WAKELOCKS=y
++
++# Misc useful things
++CONFIG_SCSI_SCAN_ASYNC=y
++
++# Needed for mounting userdata on android
++CONFIG_QFMT_V2=y
++CONFIG_PSTORE=y
++CONFIG_PSTORE_CONSOLE=y
++CONFIG_PSTORE_RAM=y
++
++# HID/Input
++CONFIG_HID_GENERIC=m
++CONFIG_UHID=m
++CONFIG_USB_HID=m
++CONFIG_INPUT_EVDEV=y
++CONFIG_BT_HIDP=m
++CONFIG_INPUT_JOYDEV=m
++
++# USB
++CONFIG_USB_CONFIGFS=y
++CONFIG_USB_CONFIGFS_F_HID=y
++
++CONFIG_LEDS_TRIGGER_ONESHOT=y
++CONFIG_LEDS_TRIGGER_BACKLIGHT=y
++CONFIG_LEDS_TRIGGER_ACTIVITY=y
++
++CONFIG_RPMSG_CHAR=y
++# Always load RFCOMM and BNEP as modules so they initialize properly
++CONFIG_BT_RFCOMM=m
++CONFIG_BT_RFCOMM_TTY=y
++CONFIG_BT_BNEP=m
++CONFIG_BT_BNEP_MC_FILTER=y
++CONFIG_BT_BNEP_PROTO_FILTER=y
++CONFIG_BT_HS=y
++CONFIG_BT_LE=y
++CONFIG_HID_BATTERY_STRENGTH=y
++CONFIG_HIDRAW=y
++CONFIG_QCOM_FASTRPC=m
++CONFIG_QCOM_SPMI_ADC5=y
++CONFIG_PHY_QCOM_QMP=y
++CONFIG_PHY_QCOM_QUSB2=y
++CONFIG_LEDS_CLASS_FLASH=y
++CONFIG_TCP_CONG_ADVANCED=y
++CONFIG_TCP_CONG_WESTWOOD=y
++CONFIG_DEFAULT_WESTWOOD=y
++CONFIG_BLK_DEV_RAM=y
++CONFIG_BLK_DEV_RAM_SIZE=8192
++CONFIG_F2FS_FS=y
++CONFIG_NLS_UTF8=y
++CONFIG_NLS_DEFAULT="utf8"
++CONFIG_FAT_DEFAULT_UTF8=y
++CONFIG_CPU_FREQ_GOV_POWERSAVE=y
++CONFIG_SYN_COOKIES=y
++CONFIG_UEVENT_HELPER=y
++CONFIG_INPUT_UINPUT=m
++CONFIG_PSTORE_PMSG=y
++CONFIG_U_SERIAL_CONSOLE=y
++CONFIG_USB_ANNOUNCE_NEW_DEVICES=y
++
++# Anbox
++CONFIG_BRIDGE_NETFILTER=y
++CONFIG_CHECKPOINT_RESTORE=y
++CONFIG_PACKET_DIAG=y
++CONFIG_UNIX_DIAG=y
++CONFIG_NETLINK_DIAG=m
++CONFIG_NETFILTER_XT_MATCH_COMMENT=m
++CONFIG_ANDROID=y
++CONFIG_ANDROID_BINDER_IPC=y
++CONFIG_SQUASHFS_XATTR=y
++CONFIG_SQUASHFS_LZ4=y
++CONFIG_SQUASHFS_LZO=y
++CONFIG_SQUASHFS_XZ=y
++
++# Waydroid
++CONFIG_PSI=y
++
++# WLAN debugging
++CONFIG_ATH10K_DEBUG=y
++CONFIG_ATH10K_DEBUGFS=y
++CONFIG_ATH10K_SPECTRAL=y
++
++CONFIG_NET_SCH_HTB=y
++CONFIG_NET_SCH_PRIO=y
++CONFIG_NET_SCH_MULTIQ=y
++
++# Debugging stuff
++CONFIG_STACKTRACE=y
++
++#pmOS Related
++CONFIG_VT=y
++CONFIG_CRYPTO_XTS=y
++CONFIG_TMPFS_XATTR=y
++CONFIG_DM_CRYPT=y
++CONFIG_BINFMT_MISC=m
++
++CONFIG_NF_TABLES=m
++CONFIG_NF_TABLES_INET=y
++CONFIG_NFT_CT=m
++CONFIG_NFT_COUNTER=m
++CONFIG_NFT_LOG=m
++CONFIG_NFT_LIMIT=m
++CONFIG_NFT_MASQ=m
++CONFIG_NFT_NAT=m
++CONFIG_NFT_REJECT=m
++CONFIG_NF_TABLES_IPV4=y
++CONFIG_NF_TABLES_IPV6=y
++
++CONFIG_WIREGUARD=m
++CONFIG_DRM_GUD=m
++
++# pmos containers kconfig
++CONFIG_CGROUP_FREEZER=y
++CONFIG_NETFILTER_XT_MATCH_IPVS=m
++CONFIG_NETFILTER_XT_MARK=m
++CONFIG_DUMMY=m
++CONFIG_BLK_DEV_THROTTLING=y
++CONFIG_NET_CLS_CGROUP=m
++CONFIG_RT_GROUP_SCHED=y
++CONFIG_IP_NF_TARGET_REDIRECT=m
++CONFIG_IP_VS=m
++CONFIG_IP_VS_NFCT=y
++CONFIG_IP_VS_PROTO_TCP=y
++CONFIG_IP_VS_PROTO_UDP=y
++CONFIG_IP_VS_RR=y
++CONFIG_EXT4_FS_SECURITY=y
++CONFIG_CFS_BANDWIDTH=y
++CONFIG_DM_THIN_PROVISIONING=y
++CONFIG_VXLAN=m
++CONFIG_CGROUP_NET_PRIO=y
++CONFIG_IPVLAN=m
++
++# pmOS ZRAM kconfig
++CONFIG_ZSMALLOC=m
++CONFIG_ZSMALLOC_STAT=y
++CONFIG_ZRAM=m
++CONFIG_ZRAM_MEMORY_TRACKING=y
++CONFIG_CRYPTO_LZ4=m
++CONFIG_LZ4_COMPRESS=m
++CONFIG_CRYPTO_LZO=m
++CONFIG_CRYPTO_ZSTD=m
++
++# pmOS iwd kconfig
++CONFIG_CRYPTO_USER_API_HASH=m
++CONFIG_CRYPTO_USER_API_SKCIPHER=m
++CONFIG_KEY_DH_OPERATIONS=y
++CONFIG_CRYPTO_KPP=y
++CONFIG_PKCS8_PRIVATE_KEY_PARSER=y
++
++# LEDs
++CONFIG_NEW_LEDS=y
++CONFIG_LEDS_CLASS=y
++
++#Sony PlayStation controllers
++CONFIG_HID_SONY=m
++CONFIG_SONY_FF=y
++
++# Disable all unrelated stuffs afaik
++CONFIG_ACPI=n
++CONFIG_VIRTUALIZATION=n
++CONFIG_PSTORE_DEFLATE_COMPRESS=n
++CONFIG_HIBERNATION=n
++CONFIG_FW_LOADER_USER_HELPER=n
++CONFIG_FW_LOADER_USER_HELPER_FALLBACK=n
++CONFIG_BLK_DEV_NVME=n
++CONFIG_ATA=n
++CONFIG_MTD=n
++CONFIG_SRAM=n
++CONFIG_MEGARAID_SAS=n
++CONFIG_EEPROM_AT25=n
++CONFIG_SCSI_MPT3SAS=n
++CONFIG_BLK_DEV_MD=n
++CONFIG_DM_MIRROR=n
++CONFIG_DM_ZERO=n
++CONFIG_EXT2_FS=n
++CONFIG_EXT3_FS=n
++CONFIG_BTRFS_FS=n
++CONFIG_USB_DWC2=n
++CONFIG_USB_CHIPIDEA=n
++CONFIG_USB_MUSB_HDRC=n
++CONFIG_USB_ISP1760=n
++CONFIG_USB_HSIC_USB3503=n
++CONFIG_USB_NET_PLUSB=n
++CONFIG_TYPEC_FUSB302=n
++CONFIG_EXTCON_PTN5150=n
++CONFIG_REALTEK_PHY=n
++CONFIG_NET_VENDOR_NI=n
++CONFIG_NET_9P=n
++CONFIG_CAN=n
++CONFIG_BNX2X=n
++CONFIG_MACB=n
++CONFIG_IGB=n
++CONFIG_IGBVF=n
++CONFIG_SMC91X=n
++CONFIG_MLX4_EN=n
++CONFIG_MLX5_CORE=n
++CONFIG_STMMAC_ETH=n
++CONFIG_ATL1C=n
++CONFIG_BRCMFMAC=n
++CONFIG_WL18XX=n
++CONFIG_WLCORE=n
++CONFIG_ATH10K_PCI=n
++CONFIG_NET_SCH_CBS=n
++CONFIG_NET_SCH_ETF=n
++CONFIG_NET_SCH_TAPRIO=n
++CONFIG_NET_SCH_MQPRIO=n
++CONFIG_NET_CLS_BASIC=n
++CONFIG_NET_CLS_FLOWER=n
++CONFIG_NET_CLS_ACT=n
++CONFIG_NET_ACT_GACT=n
++CONFIG_NET_ACT_MIRRED=n
++CONFIG_NET_ACT_GATE=n
++CONFIG_MDIO_BUS_MUX_MMIOREG=n
++CONFIG_MDIO_BUS_MUX_MULTIPLEXER=n
++CONFIG_SND_SOC_ES7134=n
++CONFIG_SND_SOC_ES7241=n
++CONFIG_SND_SOC_TAS571X=n
++CONFIG_SND_SOC_SIMPLE_AMPLIFIER=n
++CONFIG_GPIO_DWAPB=n
++CONFIG_COMMON_CLK_XGENE=n
++CONFIG_SENSORS_ARM_SCPI=n
++CONFIG_TCG_TPM=n
++CONFIG_BATTERY_SBS=n
++CONFIG_REGULATOR_VCTRL=n
++CONFIG_SND_SOC_MAX98357A=n
++CONFIG_SND_SOC_RL6231=n
++CONFIG_THUNDER_NIC_BGX=n
++CONFIG_THUNDER_NIC_RGX=n
++CONFIG_MDIO_THUNDER=n
++CONFIG_CAVIUM_ERRATUM_22375=n
++CONFIG_CAVIUM_ERRATUM_23154=n
++CONFIG_CAVIUM_ERRATUM_27456=n
++CONFIG_CAVIUM_ERRATUM_30115=n
++CONFIG_CAVIUM_TX2_ERRATUM_219=n
++CONFIG_HW_RANDOM_CAVIUM=n
++CONFIG_EEPROM_AT24=n
++CONFIG_NET_DSA=n
++CONFIG_AQUANTIA_PHY=n
++CONFIG_MICROSEMI_PHY=n
++CONFIG_VITESSE_PHY=n
++CONFIG_I2C_MUX_PCA954x=n
++CONFIG_SND_SOC_PCM3168A_I2C=n
++CONFIG_SENSORS_LM90=n
++CONFIG_SENSORS_INA2XX=n
++CONFIG_RTC_DRV_DS3232=n
++CONFIG_SPI_NXP_FLEXSPI=n
++CONFIG_GPIO_MAX732X=n
++CONFIG_SENSORS_ISL29018=n
++CONFIG_MPL3115=n
++CONFIG_MFD_ROHM_BD718XX=n
++CONFIG_ARM_SBSA_WATCHDOG=n
++CONFIG_ARM_SMC_WATCHDOG=n
++CONFIG_REGULATOR_PCA9450=n
++CONFIG_REGULATOR_PFUZE100=n
++CONFIG_DRM_PANEL_RAYDIUM_RM67191=n
++CONFIG_DRM_PANEL_SITRONIX_ST7703=n
++CONFIG_PHY_MIXEL_MIPI_DPHY=n
++CONFIG_DRM_NWL_MIPI_DSI=n
++CONFIG_DRM_MXSFB=n
++CONFIG_SND_SOC_FSL_SAI=n
++CONFIG_SND_SOC_FSL_ASRC=n
++CONFIG_SND_SOC_FSL_MICFIL=n
++CONFIG_SND_SOC_FSL_AUDMIX=n
++CONFIG_SND_SOC_FSL_SPDIF=n
++CONFIG_SND_SOC_WM8904=n
++CONFIG_RTC_DRV_RV8803=n
++CONFIG_RTC_DRV_DS1307=n
++CONFIG_RTC_DRV_PCF85363=n
++CONFIG_RTC_DRV_PCF2127=n
++CONFIG_PHY_FSL_IMX8MQ_USB=n
++CONFIG_FUJITSU_ERRATUM_010001=n
++CONFIG_PCI_PASID=n
++CONFIG_UACCE=n
++CONFIG_SPI_CADENCE_QUADSPI=n
++CONFIG_DW_WATCHDOG=n
++CONFIG_NOP_USB_XCEIV=n
++CONFIG_SURFACE_PLATFORMS=n
++CONFIG_GPIO_PCA953X=n
++CONFIG_BACKLIGHT_LP855X=n
++CONFIG_MFD_MAX77620=n
++CONFIG_SENSORS_PWM_FAN=n
++CONFIG_SENSORS_INA3221=n
++CONFIG_REGULATOR_MAX8973=n
++CONFIG_USB_CONN_GPIO=n
++CONFIG_MICREL_PHY=n
++CONFIG_MFD_BD9571MWV=n
++CONFIG_DRM_PANEL_LVDS=n
++CONFIG_DRM_RCAR_LVDS=n
++CONFIG_COMMON_CLK_VC5=n
++CONFIG_CRYPTO_DEV_CCREE=n
++CONFIG_VIDEO_IMX219=n
++CONFIG_VIDEO_OV5645=n
++CONFIG_SND_SOC_AK4613=n
++CONFIG_SND_SIMPLE_CARD=n
++CONFIG_SND_SIMPLE_CARD_UTILS=n
++CONFIG_SND_AUDIO_GRAPH_CARD=n
++CONFIG_TYPEC_HD3SS3220=n
++CONFIG_RTC_DRV_RX8581=n
++CONFIG_COMMON_CLK_CS2000_CP=n
++CONFIG_KEYBOARD_ADC=n
++CONFIG_REGULATOR_FAN53555=n
++CONFIG_TOUCHSCREEN_ATMEL_MXT=n
++CONFIG_RTC_DRV_HYM8563=n
++CONFIG_MFD_SEC_CORE=n
++CONFIG_PL330_DMA=n
++CONFIG_GPIO_MB86S7X=n
++CONFIG_MMC_SDHCI_F_SDH30=n
++CONFIG_MMC_SDHCI_CADENCE=n
++CONFIG_SOCIONEXT_SYNQUACER_PREITS=n
++CONFIG_NET_VENDOR_SOCIONEXT=n
++CONFIG_ARCH_ACTIONS=n
++CONFIG_ARCH_AGILEX=n
++CONFIG_ARCH_N5X=n
++CONFIG_ARCH_SUNXI=n
++CONFIG_ARCH_ALPINE=n
++CONFIG_ARCH_APPLE=n
++CONFIG_ARCH_BCM2835=n
++CONFIG_ARCH_BCM4908=n
++CONFIG_ARCH_BCM_IPROC=n
++CONFIG_ARCH_BERLIN=n
++CONFIG_ARCH_BRCMSTB=n
++CONFIG_ARCH_EXYNOS=n
++CONFIG_ARCH_K3=n
++CONFIG_ARCH_LAYERSCAPE=n
++CONFIG_ARCH_LG1K=n
++CONFIG_ARCH_HISI=n
++CONFIG_ARCH_KEEMBAY=n
++CONFIG_ARCH_MEDIATEK=n
++CONFIG_ARCH_MESON=n
++CONFIG_ARCH_MVEBU=n
++CONFIG_ARCH_MXC=n
++CONFIG_ARCH_RENESAS=n
++CONFIG_ARCH_ROCKCHIP=n
++CONFIG_ARCH_S32=n
++CONFIG_ARCH_SEATTLE=n
++CONFIG_ARCH_INTEL_SOCFPGA=n
++CONFIG_ARCH_SYNQUACER=n
++CONFIG_ARCH_TEGRA=n
++CONFIG_ARCH_SPRD=n
++CONFIG_ARCH_THUNDER=n
++CONFIG_ARCH_THUNDER2=n
++CONFIG_ARCH_UNIPHIER=n
++CONFIG_ARCH_VEXPRESS=n
++CONFIG_ARCH_VISCONTI=n
++CONFIG_ARCH_XGENE=n
++CONFIG_ARCH_ZX=n
++CONFIG_ARCH_ZYNQMP=n
++CONFIG_ARM_ALLWINNER_SUN50I_CPUFREQ_NVMEM=n
++CONFIG_ARM_ARMADA_37XX_CPUFREQ=n
++CONFIG_ARM_IMX_CPUFREQ_DT=n
++CONFIG_ARM_RASPBERRYPI_CPUFREQ=n
++CONFIG_ARM_TEGRA186_CPUFREQ=n
++CONFIG_QORIQ_CPUFREQ=n
++CONFIG_RASPBERRYPI_FIRMWARE=n
++CONFIG_INTEL_STRATIX10_SERVICE=n
++CONFIG_INTEL_STRATIX10_RSU=n
++CONFIG_IMX_SCU=n
++CONFIG_IMX_SCU_PD=n
++CONFIG_CAN_RCAR=n
++CONFIG_CAN_RCAR_CANFD=n
++CONFIG_CAN_FLEXCAN=n
++CONFIG_PCI_AARDVARK=n
++CONFIG_PCI_TEGRA=n
++CONFIG_PCIE_RCAR_HOST=n
++CONFIG_PCIE_RCAR_EP=n
++CONFIG_PCI_XGENE=n
++CONFIG_PCIE_ALTERA=n
++CONFIG_PCIE_ALTERA_MSI=n
++CONFIG_PCI_HOST_THUNDER_PEM=n
++CONFIG_PCI_HOST_THUNDER_ECAM=n
++CONFIG_PCIE_ROCKCHIP_HOST=n
++CONFIG_PCIE_BRCMSTB=n
++CONFIG_PCI_IMX6=n
++CONFIG_PCI_LAYERSCAPE=n
++CONFIG_PCIE_LAYERSCAPE_GEN4=n
++CONFIG_PCI_HISI=n
++CONFIG_PCIE_ARMADA_8K=n
++CONFIG_PCIE_KIRIN=n
++CONFIG_PCIE_HISI_STB=n
++CONFIG_PCIE_TEGRA194_HOST=n
++CONFIG_HISILICON_LPC=n
++CONFIG_FSL_MC_BUS=n
++CONFIG_TEGRA_ACONNECT=n
++CONFIG_MTD_CFI_INTELEXT=n
++CONFIG_MTD_CFI_AMDSTD=n
++CONFIG_MTD_CFI_STAA=n
++CONFIG_MTD_SST25L=n
++CONFIG_MTD_NAND_DENALI_DT=n
++CONFIG_MTD_NAND_MARVELL=n
++CONFIG_MTD_NAND_FSL_IFC=n
++CONFIG_SCSI_HISI_SAS=n
++CONFIG_SCSI_HISI_SAS_PCI=n
++CONFIG_SCSI_UFS_HISI=n
++CONFIG_SCSI_UFS_EXYNOS=n
++CONFIG_AHCI_CEVA=n
++CONFIG_AHCI_MVEBU=n
++CONFIG_AHCI_XGENE=n
++CONFIG_AHCI_QORIQ=n
++CONFIG_SATA_SIL24=n
++CONFIG_SATA_RCAR=n
++CONFIG_FSL_FMAN=n
++CONFIG_FSL_DPAA_ETH=n
++CONFIG_FSL_DPAA2_ETH=n
++CONFIG_FSL_ENETC=n
++CONFIG_FSL_ENETC_VF=n
++CONFIG_FSL_ENETC_QOS=n
++CONFIG_HIX5HD2_GMAC=n
++CONFIG_HNS_DSAF=n
++CONFIG_HNS_ENET=n
++CONFIG_HNS3=n
++CONFIG_HNS3_HCLGE=n
++CONFIG_HNS3_ENET=n
++CONFIG_SERIAL_MESON=n
++CONFIG_SERIAL_MESON_CONSOLE=n
++CONFIG_SERIAL_SAMSUNG=n
++CONFIG_SERIAL_SAMSUNG_CONSOLE=n
++CONFIG_SERIAL_TEGRA=n
++CONFIG_SERIAL_TEGRA_TCU=n
++CONFIG_SERIAL_IMX=n
++CONFIG_SERIAL_IMX_CONSOLE=n
++CONFIG_SERIAL_XILINX_PS_UART=n
++CONFIG_SERIAL_XILINX_PS_UART_CONSOLE=n
++CONFIG_SERIAL_FSL_LPUART=n
++CONFIG_SERIAL_FSL_LPUART_CONSOLE=n
++CONFIG_SERIAL_FSL_LINFLEXUART=n
++CONFIG_SERIAL_FSL_LINFLEXUART_CONSOLE=n
++CONFIG_SERIAL_MVEBU_UART=n
++CONFIG_SERIAL_OWL=n
++CONFIG_I2C_BCM2835=n
++CONFIG_I2C_DESIGNWARE_PLATFORM=n
++CONFIG_I2C_IMX=n
++CONFIG_I2C_IMX_LPI2C=n
++CONFIG_I2C_MESON=n
++CONFIG_I2C_MT65XX=n
++CONFIG_I2C_MV64XXX=n
++CONFIG_I2C_OMAP=n
++CONFIG_I2C_OWL=n
++CONFIG_I2C_PXA=n
++CONFIG_I2C_RK3X=n
++CONFIG_I2C_SH_MOBILE=n
++CONFIG_I2C_TEGRA=n
++CONFIG_I2C_UNIPHIER_F=n
++CONFIG_I2C_RCAR=n
++CONFIG_SPI_ARMADA_3700=n
++CONFIG_SPI_BCM2835=n
++CONFIG_SPI_BCM2835AUX=n
++CONFIG_SPI_DESIGNWARE=n
++CONFIG_SPI_DW_DMA=n
++CONFIG_SPI_DW_MMIO=n
++CONFIG_SPI_FSL_LPSPI=n
++CONFIG_SPI_FSL_QUADSPI=n
++CONFIG_SPI_IMX=n
++CONFIG_SPI_FSL_DSPI=n
++CONFIG_SPI_MESON_SPICC=n
++CONFIG_SPI_MESON_SPIFC=n
++CONFIG_SPI_ORION=n
++CONFIG_SPI_PL022=n
++CONFIG_SPI_ROCKCHIP=n
++CONFIG_SPI_RPCIF=n
++CONFIG_SPI_S3C64XX=n
++CONFIG_SPI_SH_MSIOF=n
++CONFIG_SPI_SUN6I=n
++CONFIG_PINCTRL_MAX77620=n
++CONFIG_PINCTRL_OWL=n
++CONFIG_PINCTRL_S700=n
++CONFIG_PINCTRL_S900=n
++CONFIG_PINCTRL_IMX8MM=n
++CONFIG_PINCTRL_IMX8MN=n
++CONFIG_PINCTRL_IMX8MP=n
++CONFIG_PINCTRL_IMX8MQ=n
++CONFIG_PINCTRL_IMX8QM=n
++CONFIG_PINCTRL_IMX8QXP=n
++CONFIG_PINCTRL_IMX8DXL=n
++CONFIG_GPIO_ALTERA=n
++CONFIG_GPIO_DAVINCI=n
++CONFIG_GPIO_MPC8XXX=n
++CONFIG_GPIO_MXC=n
++CONFIG_GPIO_PL061=n
++CONFIG_GPIO_RCAR=n
++CONFIG_GPIO_UNIPHIER=n
++CONFIG_GPIO_VISCONTI=n
++CONFIG_GPIO_XGENE=n
++CONFIG_GPIO_XGENE_SB=n
++CONFIG_GPIO_PCA953X_IRQ=n
++CONFIG_GPIO_BD9571MWV=n
++CONFIG_GPIO_MAX77620=n
++CONFIG_GPIO_SL28CPLD=n
++CONFIG_ROCKCHIP_IODOMAIN=n
++CONFIG_POWER_RESET_XGENE=n
++CONFIG_POWER_RESET_SYSCON=n
++CONFIG_GNSS_MTK_SERIAL=n
++CONFIG_SENSORS_RASPBERRYPI_HWMON=n
++CONFIG_SENSORS_SL28CPLD=n
++CONFIG_QORIQ_THERMAL=n
++CONFIG_SUN8I_THERMAL=n
++CONFIG_IMX_SC_THERMAL=n
++CONFIG_IMX8MM_THERMAL=n
++CONFIG_ROCKCHIP_THERMAL=n
++CONFIG_RCAR_THERMAL=n
++CONFIG_RCAR_GEN3_THERMAL=n
++CONFIG_ARMADA_THERMAL=n
++CONFIG_BCM2711_THERMAL=n
++CONFIG_BCM2835_THERMAL=n
++CONFIG_BRCMSTB_THERMAL=n
++CONFIG_EXYNOS_THERMAL=n
++CONFIG_TEGRA_BPMP_THERMAL=n
++CONFIG_TEGRA_SOCTHERM=n
++CONFIG_UNIPHIER_THERMAL=n
++CONFIG_SL28CPLD_WATCHDOG=n
++CONFIG_ARM_SP805_WATCHDOG=n
++CONFIG_S3C2410_WATCHDOG=n
++CONFIG_SUNXI_WATCHDOG=n
++CONFIG_IMX2_WDT=n
++CONFIG_IMX_SC_WDT=n
++CONFIG_MESON_GXBB_WATCHDOG=n
++CONFIG_MESON_WATCHDOG=n
++CONFIG_RENESAS_WDT=n
++CONFIG_UNIPHIER_WATCHDOG=n
++CONFIG_BCM2835_WDT=n
++CONFIG_MFD_ALTERA_SYSMGR=n
++CONFIG_MFD_AXP20X_I2C=n
++CONFIG_MFD_AXP20X_RSB=n
++CONFIG_MFD_EXYNOS_LPASS=n
++CONFIG_MFD_HI6421_PMIC=n
++CONFIG_MFD_HI655X_PMIC=n
++CONFIG_MFD_MT6397=n
++CONFIG_MFD_RK808=n
++CONFIG_MFD_SL28CPLD=n
++CONFIG_REGULATOR_AXP20X=n
++CONFIG_REGULATOR_BD718XX=n
++CONFIG_REGULATOR_BD9571MWV=n
++CONFIG_REGULATOR_HI6421V530=n
++CONFIG_REGULATOR_HI655X=n
++CONFIG_REGULATOR_MAX77620=n
++CONFIG_REGULATOR_MP8859=n
++CONFIG_REGULATOR_MT6358=n
++CONFIG_REGULATOR_MT6397=n
++CONFIG_REGULATOR_PF8X00=n
++CONFIG_REGULATOR_RK808=n
++CONFIG_REGULATOR_S2MPS11=n
++CONFIG_REGULATOR_TPS65132=n
++CONFIG_IR_MESON=n
++CONFIG_IR_SUNXI=n
++CONFIG_MEDIA_ANALOG_TV_SUPPORT=n
++CONFIG_MEDIA_DIGITAL_TV_SUPPORT=n
++CONFIG_MEDIA_SDR_SUPPORT=n
++CONFIG_VIDEO_RCAR_CSI2=n
++CONFIG_VIDEO_RCAR_VIN=n
++CONFIG_VIDEO_SUN6I_CSI=n
++CONFIG_VIDEO_SAMSUNG_S5P_JPEG=n
++CONFIG_VIDEO_SAMSUNG_S5P_MFC=n
++CONFIG_VIDEO_SAMSUNG_EXYNOS_GSC=n
++CONFIG_VIDEO_RENESAS_FDP1=n
++CONFIG_VIDEO_RENESAS_FCP=n
++CONFIG_VIDEO_RENESAS_VSP1=n
++CONFIG_SDR_PLATFORM_DRIVERS=n
++CONFIG_VIDEO_RCAR_DRIF=n
++CONFIG_DRM_I2C_NXP_TDA998X=n
++CONFIG_DRM_MALI_DISPLAY=n
++CONFIG_DRM_NOUVEAU=n
++CONFIG_DRM_EXYNOS=n
++CONFIG_DRM_EXYNOS5433_DECON=n
++CONFIG_DRM_EXYNOS7_DECON=n
++CONFIG_DRM_EXYNOS_DSI=n
++CONFIG_DRM_EXYNOS_HDMI=n
++CONFIG_DRM_EXYNOS_MIC=n
++CONFIG_DRM_ROCKCHIP=n
++CONFIG_ROCKCHIP_ANALOGIX_DP=n
++CONFIG_ROCKCHIP_CDN_DP=n
++CONFIG_ROCKCHIP_DW_HDMI=n
++CONFIG_ROCKCHIP_DW_MIPI_DSI=n
++CONFIG_ROCKCHIP_INNO_HDMI=n
++CONFIG_ROCKCHIP_LVDS=n
++CONFIG_DRM_RCAR_DU=n
++CONFIG_DRM_RCAR_DW_HDMI=n
++CONFIG_DRM_SUN4I=n
++CONFIG_DRM_SUN6I_DSI=n
++CONFIG_DRM_SUN8I_DW_HDMI=n
++CONFIG_DRM_SUN8I_MIXER=n
++CONFIG_DRM_TEGRA=n
++CONFIG_DRM_PARADE_PS8640=n
++CONFIG_DRM_SII902X=n
++CONFIG_DRM_THINE_THC63LVD1024=n
++CONFIG_DRM_TI_SN65DSI86=n
++CONFIG_DRM_VC4=n
++CONFIG_DRM_ETNAVIV=n
++CONFIG_DRM_HISI_HIBMC=n
++CONFIG_DRM_HISI_KIRIN=n
++CONFIG_DRM_MEDIATEK=n
++CONFIG_DRM_MEDIATEK_HDMI=n
++CONFIG_DRM_MESON=n
++CONFIG_DRM_PL111=n
++CONFIG_DRM_LIMA=n
++CONFIG_DRM_PANFROST=n
++CONFIG_SND_HDA_TEGRA=n
++CONFIG_SND_HDA_CODEC_HDMI=n
++CONFIG_SND_BCM2835_SOC_I2S=n
++CONFIG_SND_SOC_FSL_EASRC=n
++CONFIG_SND_IMX_SOC=n
++CONFIG_SND_SOC_IMX_SGTL5000=n
++CONFIG_SND_SOC_IMX_SPDIF=n
++CONFIG_SND_SOC_IMX_AUDMIX=n
++CONFIG_SND_SOC_FSL_ASOC_CARD=n
++CONFIG_SND_MESON_AXG_SOUND_CARD=n
++CONFIG_SND_MESON_GX_SOUND_CARD=n
++CONFIG_SND_SOC_ROCKCHIP=n
++CONFIG_SND_SOC_ROCKCHIP_SPDIF=n
++CONFIG_SND_SOC_ROCKCHIP_RT5645=n
++CONFIG_SND_SOC_RK3399_GRU_SOUND=n
++CONFIG_SND_SOC_SAMSUNG=n
++CONFIG_SND_SOC_RCAR=n
++CONFIG_SND_SUN4I_I2S=n
++CONFIG_SND_SUN4I_SPDIF=n
++CONFIG_SND_SOC_TEGRA=n
++CONFIG_SND_SOC_TEGRA210_AHUB=n
++CONFIG_SND_SOC_TEGRA210_DMIC=n
++CONFIG_SND_SOC_TEGRA210_I2S=n
++CONFIG_SND_SOC_TEGRA186_DSPK=n
++CONFIG_SND_SOC_TEGRA210_ADMAIF=n
++CONFIG_SND_SOC_TEGRA_AUDIO_GRAPH_CARD=n
++CONFIG_SND_SOC_GTM601=n
++CONFIG_SND_SOC_RT5659=n
++CONFIG_SND_SOC_WM8960=n
++CONFIG_SND_SOC_WM8962=n
++CONFIG_USB_XHCI_PCI_RENESAS=n
++CONFIG_USB_XHCI_TEGRA=n
++CONFIG_USB_EHCI_EXYNOS=n
++CONFIG_USB_OHCI_EXYNOS=n
++CONFIG_USB_RENESAS_USBHS_HCD=n
++CONFIG_USB_RENESAS_USBHS=n
++CONFIG_USB_CHIPIDEA_UDC=n
++CONFIG_USB_CHIPIDEA_HOST=n
++CONFIG_USB_RENESAS_USBHS_UDC=n
++CONFIG_USB_RENESAS_USB3=n
++CONFIG_USB_TEGRA_XUDC=n
++CONFIG_MMC_SDHCI_OF_ARASAN=n
++CONFIG_MMC_SDHCI_OF_ESDHC=n
++CONFIG_MMC_SDHCI_ESDHC_IMX=n
++CONFIG_MMC_SDHCI_TEGRA=n
++CONFIG_MMC_MESON_GX=n
++CONFIG_MMC_DW_EXYNOS=n
++CONFIG_MMC_DW_HI3798CV200=n
++CONFIG_MMC_DW_K3=n
++CONFIG_MMC_DW_ROCKCHIP=n
++CONFIG_MMC_SUNXI=n
++CONFIG_MMC_BCM2835=n
++CONFIG_MMC_MTK=n
++CONFIG_MMC_SDHCI_XENON=n
++CONFIG_MMC_SDHCI_AM654=n
++CONFIG_MMC_OWL=n
++CONFIG_RTC_DRV_MAX77686=n
++CONFIG_RTC_DRV_RK808=n
++CONFIG_RTC_DRV_M41T80=n
++CONFIG_RTC_DRV_RV3028=n
++CONFIG_RTC_DRV_S5M=n
++CONFIG_RTC_DRV_FSL_FTM_ALARM=n
++CONFIG_RTC_DRV_S3C=n
++CONFIG_RTC_DRV_PL031=n
++CONFIG_RTC_DRV_SUN6I=n
++CONFIG_RTC_DRV_ARMADA38X=n
++CONFIG_RTC_DRV_TEGRA=n
++CONFIG_RTC_DRV_SNVS=n
++CONFIG_RTC_DRV_IMX_SC=n
++CONFIG_RTC_DRV_XGENE=n
++CONFIG_DMA_BCM2835=n
++CONFIG_DMA_SUN6I=n
++CONFIG_FSL_EDMA=n
++CONFIG_IMX_SDMA=n
++CONFIG_K3_DMA=n
++CONFIG_MV_XOR=n
++CONFIG_MV_XOR_V2=n
++CONFIG_OWL_DMA=n
++CONFIG_TEGRA20_APB_DMA=n
++CONFIG_TEGRA210_ADMA=n
++CONFIG_RCAR_DMAC=n
++CONFIG_RENESAS_USB_DMAC=n
++CONFIG_TI_K3_UDMA=n
++CONFIG_TI_K3_UDMA_GLUE_LAYER=n
++CONFIG_COMMON_CLK_RK808=n
++CONFIG_COMMON_CLK_FSL_SAI=n
++CONFIG_COMMON_CLK_S2MPS11=n
++CONFIG_COMMON_CLK_ZYNQMP=n
++CONFIG_COMMON_CLK_BD718XX=n
++CONFIG_CLK_RASPBERRYPI=n
++CONFIG_CLK_IMX8MM=n
++CONFIG_CLK_IMX8MN=n
++CONFIG_CLK_IMX8MP=n
++CONFIG_CLK_IMX8MQ=n
++CONFIG_CLK_IMX8QXP=n
++CONFIG_TI_SCI_CLK=n
++CONFIG_IMX_MBOX=n
++CONFIG_BCM2835_MBOX=n
++CONFIG_ROCKCHIP_IOMMU=n
++CONFIG_TEGRA_IOMMU_SMMU=n
++CONFIG_MTK_IOMMU=n
++CONFIG_OWL_PM_DOMAINS=n
++CONFIG_RASPBERRYPI_POWER=n
++CONFIG_FSL_DPAA=n
++CONFIG_FSL_MC_DPIO=n
++CONFIG_FSL_RCPM=n
++CONFIG_MTK_PMIC_WRAP=n
++CONFIG_ARCH_R8A774A1=n
++CONFIG_ARCH_R8A774B1=n
++CONFIG_ARCH_R8A774C0=n
++CONFIG_ARCH_R8A774E1=n
++CONFIG_ARCH_R8A77950=n
++CONFIG_ARCH_R8A77951=n
++CONFIG_ARCH_R8A77960=n
++CONFIG_ARCH_R8A77961=n
++CONFIG_ARCH_R8A77965=n
++CONFIG_ARCH_R8A77970=n
++CONFIG_ARCH_R8A77980=n
++CONFIG_ARCH_R8A77990=n
++CONFIG_ARCH_R8A77995=n
++CONFIG_ARCH_R8A779A0=n
++CONFIG_ARCH_R9A07G044=n
++CONFIG_ROCKCHIP_PM_DOMAINS=n
++CONFIG_ARCH_TEGRA_132_SOC=n
++CONFIG_ARCH_TEGRA_210_SOC=n
++CONFIG_ARCH_TEGRA_186_SOC=n
++CONFIG_ARCH_TEGRA_194_SOC=n
++CONFIG_ARCH_TEGRA_234_SOC=n
++CONFIG_TI_SCI_PM_DOMAINS=n
++CONFIG_ARM_IMX_BUS_DEVFREQ=n
++CONFIG_ARM_IMX8M_DDRC_DEVFREQ=n
++CONFIG_RENESAS_RPCIF=n
++CONFIG_EXYNOS_ADC=n
++CONFIG_MAX9611=n
++CONFIG_ROCKCHIP_SARADC=n
++CONFIG_PWM_BCM2835=n
++CONFIG_PWM_IMX27=n
++CONFIG_PWM_MESON=n
++CONFIG_PWM_MTK_DISP=n
++CONFIG_PWM_MEDIATEK=n
++CONFIG_PWM_RCAR=n
++CONFIG_PWM_ROCKCHIP=n
++CONFIG_PWM_SAMSUNG=n
++CONFIG_PWM_SL28CPLD=n
++CONFIG_PWM_SUN4I=n
++CONFIG_PWM_TEGRA=n
++CONFIG_PWM_VISCONTI=n
++CONFIG_SL28CPLD_INTC=n
++CONFIG_RESET_IMX7=n
++CONFIG_RESET_TI_SCI=n
++CONFIG_PHY_XGENE=n
++CONFIG_PHY_SUN4I_USB=n
++CONFIG_PHY_HI6220_USB=n
++CONFIG_PHY_HISTB_COMBPHY=n
++CONFIG_PHY_HISI_INNO_USB2=n
++CONFIG_PHY_MVEBU_CP110_COMPHY=n
++CONFIG_PHY_MTK_TPHY=n
++CONFIG_PHY_RCAR_GEN3_PCIE=n
++CONFIG_PHY_RCAR_GEN3_USB2=n
++CONFIG_PHY_RCAR_GEN3_USB3=n
++CONFIG_PHY_ROCKCHIP_EMMC=n
++CONFIG_PHY_ROCKCHIP_INNO_HDMI=n
++CONFIG_PHY_ROCKCHIP_INNO_USB2=n
++CONFIG_PHY_ROCKCHIP_INNO_DSIDPHY=n
++CONFIG_PHY_ROCKCHIP_PCIE=n
++CONFIG_PHY_ROCKCHIP_TYPEC=n
++CONFIG_PHY_SAMSUNG_UFS=n
++CONFIG_PHY_UNIPHIER_USB2=n
++CONFIG_PHY_UNIPHIER_USB3=n
++CONFIG_PHY_TEGRA_XUSB=n
++CONFIG_FSL_IMX8_DDR_PMU=n
++CONFIG_HISI_PMU=n
++CONFIG_NVMEM_IMX_OCOTP=n
++CONFIG_NVMEM_IMX_OCOTP_SCU=n
++CONFIG_MTK_EFUSE=n
++CONFIG_ROCKCHIP_EFUSE=n
++CONFIG_NVMEM_SUNXI_SID=n
++CONFIG_UNIPHIER_EFUSE=n
++CONFIG_MESON_EFUSE=n
++CONFIG_NVMEM_RMEM=n
++CONFIG_FPGA=n
++CONFIG_FPGA_MGR_STRATIX10_SOC=n
++CONFIG_FPGA_BRIDGE=n
++CONFIG_ALTERA_FREEZE_BRIDGE=n
++CONFIG_FPGA_REGION=n
++CONFIG_OF_FPGA_REGION=n
++CONFIG_INTERCONNECT_IMX=n
++CONFIG_INTERCONNECT_IMX8MQ=n
+\ No newline at end of file
+diff --git a/drivers/clk/qcom/gcc-sc7180.c b/drivers/clk/qcom/gcc-sc7180.c
+index c2ea09945c4720..a38394b4739a2e 100644
+--- a/drivers/clk/qcom/gcc-sc7180.c
++++ b/drivers/clk/qcom/gcc-sc7180.c
+@@ -667,6 +667,7 @@ static struct clk_rcg2 gcc_sdcc2_apps_clk_src = {
+ 		.name = "gcc_sdcc2_apps_clk_src",
+ 		.parent_data = gcc_parent_data_5,
+ 		.num_parents = ARRAY_SIZE(gcc_parent_data_5),
++		.flags = CLK_OPS_PARENT_ENABLE,
+ 		.ops = &clk_rcg2_floor_ops,
+ 	},
+ };
+diff --git a/drivers/dma/qcom/gpi.c b/drivers/dma/qcom/gpi.c
+index 8f0c9c4e2efda0..77bc70b04ca361 100644
+--- a/drivers/dma/qcom/gpi.c
++++ b/drivers/dma/qcom/gpi.c
+@@ -2288,6 +2288,7 @@ static int gpi_probe(struct platform_device *pdev)
+ static const struct of_device_id gpi_of_match[] = {
+ 	{ .compatible = "qcom,sc7280-gpi-dma", .data = (void *)0x10000 },
+ 	{ .compatible = "qcom,sdm845-gpi-dma", .data = (void *)0x0 },
++	{ .compatible = "qcom,sm7125-gpi-dma", .data = (void *)0x10000 },
+ 	{ .compatible = "qcom,sm8150-gpi-dma", .data = (void *)0x0 },
+ 	{ .compatible = "qcom,sm8250-gpi-dma", .data = (void *)0x0 },
+ 	{ .compatible = "qcom,sm8350-gpi-dma", .data = (void *)0x10000 },
+diff --git a/drivers/firmware/qcom_scm.c b/drivers/firmware/qcom_scm.c
+index cdbfe54c814674..8b412d0f53436f 100644
+--- a/drivers/firmware/qcom_scm.c
++++ b/drivers/firmware/qcom_scm.c
+@@ -920,8 +920,9 @@ int qcom_scm_assign_mem(phys_addr_t mem_addr, size_t mem_sz,
+ 	src_sz = hweight_long(srcvm_bits) * sizeof(*src);
+ 	mem_to_map_sz = sizeof(*mem_to_map);
+ 	dest_sz = dest_cnt * sizeof(*destvm);
+-	ptr_sz = ALIGN(src_sz, SZ_64) + ALIGN(mem_to_map_sz, SZ_64) +
+-			ALIGN(dest_sz, SZ_64);
++	//HACK: anything less than 0x1001(4097) causes kernel to hang on boot for unknown reason. ( Original ptr_sz value is 0xCO(192) )
++	ptr_sz = 4097;/*ALIGN(src_sz, SZ_64) + ALIGN(mem_to_map_sz, SZ_64) +
++			ALIGN(dest_sz, SZ_64);*/
+ 
+ 	ptr = dma_alloc_coherent(__scm->dev, ptr_sz, &ptr_phys, GFP_KERNEL);
+ 	if (!ptr)
+diff --git a/drivers/gpu/drm/msm/adreno/a6xx_gpu.c b/drivers/gpu/drm/msm/adreno/a6xx_gpu.c
+index 4d501100b9e45e..09205a0c7684b7 100644
+--- a/drivers/gpu/drm/msm/adreno/a6xx_gpu.c
++++ b/drivers/gpu/drm/msm/adreno/a6xx_gpu.c
+@@ -1822,6 +1822,8 @@ static u32 a618_get_speed_bin(u32 fuse)
+ 		return 1;
+ 	else if (fuse == 174)
+ 		return 2;
++	else if (fuse == 159)
++		return 3;
+ 
+ 	return UINT_MAX;
+ }
+diff --git a/drivers/gpu/drm/msm/adreno/adreno_device.c b/drivers/gpu/drm/msm/adreno/adreno_device.c
+index 24b489b6129a00..4c0b1c4f9f5c5f 100644
+--- a/drivers/gpu/drm/msm/adreno/adreno_device.c
++++ b/drivers/gpu/drm/msm/adreno/adreno_device.c
+@@ -264,6 +264,8 @@ static const struct adreno_info gpulist[] = {
+ 		.gmem = SZ_512K,
+ 		.inactive_period = DRM_MSM_INACTIVE_PERIOD,
+ 		.init = a6xx_gpu_init,
++		.zapfw = "a615_zap.mdt",
++		.hwcg = a615_hwcg,
+ 	}, {
+ 		.rev = ADRENO_REV(6, 1, 9, ANY_ID),
+ 		.revn = 619,
+@@ -371,6 +373,10 @@ MODULE_FIRMWARE("qcom/a530_zap.mdt");
+ MODULE_FIRMWARE("qcom/a530_zap.b00");
+ MODULE_FIRMWARE("qcom/a530_zap.b01");
+ MODULE_FIRMWARE("qcom/a530_zap.b02");
++MODULE_FIRMWARE("qcom/a615_zap.mbt");
++MODULE_FIRMWARE("qcom/a615_zap.b00");
++MODULE_FIRMWARE("qcom/a615_zap.b01");
++MODULE_FIRMWARE("qcom/a615_zap.b02");
+ MODULE_FIRMWARE("qcom/a619_gmu.bin");
+ MODULE_FIRMWARE("qcom/a630_sqe.fw");
+ MODULE_FIRMWARE("qcom/a630_gmu.bin");
+diff --git a/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_catalog.c b/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_catalog.c
+index 0239a811d5ecb3..ee0ed67ba186b8 100644
+--- a/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_catalog.c
++++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_catalog.c
+@@ -318,6 +318,19 @@ static const struct dpu_caps sc7180_dpu_caps = {
+ 	.pixel_ram_size = DEFAULT_PIXEL_RAM_SIZE,
+ };
+ 
++static const struct dpu_caps sm7125_dpu_caps = {
++	.max_mixer_width = DEFAULT_DPU_OUTPUT_LINE_WIDTH,
++	.max_mixer_blendstages = 0x7,
++	.qseed_type = DPU_SSPP_SCALER_QSEED3LITE,
++	.smart_dma_rev = DPU_SSPP_SMART_DMA_V2,
++	.ubwc_version = DPU_HW_UBWC_VER_20,
++	.has_src_split = true,
++	.has_dim_layer = true,
++	.has_idle_pc = true,
++	.max_linewidth = DEFAULT_DPU_OUTPUT_LINE_WIDTH,
++	.pixel_ram_size = DEFAULT_PIXEL_RAM_SIZE,
++};
++
+ static const struct dpu_caps sm8150_dpu_caps = {
+ 	.max_mixer_width = DEFAULT_DPU_OUTPUT_LINE_WIDTH,
+ 	.max_mixer_blendstages = 0xb,
+@@ -472,6 +485,25 @@ static const struct dpu_mdp_cfg sc8180x_mdp[] = {
+ 	},
+ };
+ 
++static const struct dpu_mdp_cfg sm7125_mdp[] = {
++	{
++	.name = "top_0", .id = MDP_TOP,
++	.base = 0x0, .len = 0x494,
++	.features = 0,
++	.highest_bank_bit = 0x1,
++	.clk_ctrls[DPU_CLK_CTRL_VIG0] = {
++		.reg_off = 0x2AC, .bit_off = 0},
++	.clk_ctrls[DPU_CLK_CTRL_DMA0] = {
++		.reg_off = 0x2AC, .bit_off = 8},
++	.clk_ctrls[DPU_CLK_CTRL_CURSOR0] = {
++		.reg_off = 0x2B4, .bit_off = 8},
++	.clk_ctrls[DPU_CLK_CTRL_CURSOR1] = {
++		.reg_off = 0x2C4, .bit_off = 8},
++	.clk_ctrls[DPU_CLK_CTRL_REG_DMA] = {
++		.reg_off = 0x2BC, .bit_off = 15},
++	},
++};
++
+ static const struct dpu_mdp_cfg sm8250_mdp[] = {
+ 	{
+ 	.name = "top_0", .id = MDP_TOP,
+@@ -620,6 +652,27 @@ static const struct dpu_ctl_cfg sc7180_ctl[] = {
+ 	},
+ };
+ 
++static const struct dpu_ctl_cfg sm7125_ctl[] = {
++	{
++	.name = "ctl_0", .id = CTL_0,
++	.base = 0x1000, .len = 0x1DC,
++	.features = BIT(DPU_CTL_ACTIVE_CFG),
++	.intr_start = DPU_IRQ_IDX(MDP_SSPP_TOP0_INTR2, 9),
++	},
++	{
++	.name = "ctl_1", .id = CTL_1,
++	.base = 0x1200, .len = 0x1DC,
++	.features = BIT(DPU_CTL_ACTIVE_CFG),
++	.intr_start = DPU_IRQ_IDX(MDP_SSPP_TOP0_INTR2, 10),
++	},
++	{
++	.name = "ctl_2", .id = CTL_2,
++	.base = 0x1400, .len = 0x1DC,
++	.features = BIT(DPU_CTL_ACTIVE_CFG),
++	.intr_start = DPU_IRQ_IDX(MDP_SSPP_TOP0_INTR2, 11),
++	},
++};
++
+ static const struct dpu_ctl_cfg sm8150_ctl[] = {
+ 	{
+ 	.name = "ctl_0", .id = CTL_0,
+@@ -849,6 +902,20 @@ static const struct dpu_sspp_cfg sc7180_sspp[] = {
+ 		sdm845_dma_sblk_2, 9, SSPP_TYPE_DMA, DPU_CLK_CTRL_CURSOR1),
+ };
+ 
++static const struct dpu_sspp_sub_blks sm7125_vig_sblk_0 =
++				_VIG_SBLK("0", 4, DPU_SSPP_SCALER_QSEED3LITE);
++
++static const struct dpu_sspp_cfg sm7125_sspp[] = {
++	SSPP_BLK("sspp_0", SSPP_VIG0, 0x4000, VIG_SC7180_MASK,
++		sm7125_vig_sblk_0, 0,  SSPP_TYPE_VIG, DPU_CLK_CTRL_VIG0),
++	SSPP_BLK("sspp_8", SSPP_DMA0, 0x24000,  DMA_SDM845_MASK,
++		sdm845_dma_sblk_0, 1, SSPP_TYPE_DMA, DPU_CLK_CTRL_DMA0),
++	SSPP_BLK("sspp_9", SSPP_DMA1, 0x26000,  DMA_CURSOR_SDM845_MASK,
++		sdm845_dma_sblk_1, 5, SSPP_TYPE_DMA, DPU_CLK_CTRL_CURSOR0),
++	SSPP_BLK("sspp_10", SSPP_DMA2, 0x28000,  DMA_CURSOR_SDM845_MASK,
++		sdm845_dma_sblk_2, 9, SSPP_TYPE_DMA, DPU_CLK_CTRL_CURSOR1),
++};
++
+ static const struct dpu_sspp_sub_blks sm8250_vig_sblk_0 =
+ 				_VIG_SBLK("0", 5, DPU_SSPP_SCALER_QSEED3LITE);
+ static const struct dpu_sspp_sub_blks sm8250_vig_sblk_1 =
+@@ -1154,6 +1221,15 @@ static struct dpu_pingpong_cfg sc7180_pp[] = {
+ 	PP_BLK_TE("pingpong_1", PINGPONG_1, 0x70800, 0, sdm845_pp_sblk_te, -1, -1),
+ };
+ 
++static struct dpu_pingpong_cfg sm7125_pp[] = {
++	PP_BLK_TE("pingpong_0", PINGPONG_0, 0x70000, 0, sdm845_pp_sblk_te,
++			DPU_IRQ_IDX(MDP_SSPP_TOP0_INTR, 8),
++			DPU_IRQ_IDX(MDP_SSPP_TOP0_INTR, 12)),
++	PP_BLK_TE("pingpong_1", PINGPONG_1, 0x70800, 0, sdm845_pp_sblk_te, 
++			DPU_IRQ_IDX(MDP_SSPP_TOP0_INTR, 9),
++			DPU_IRQ_IDX(MDP_SSPP_TOP0_INTR, 13)),
++};
++
+ static const struct dpu_pingpong_cfg sm8150_pp[] = {
+ 	PP_BLK_TE("pingpong_0", PINGPONG_0, 0x70000, MERGE_3D_0, sdm845_pp_sblk_te,
+ 			DPU_IRQ_IDX(MDP_SSPP_TOP0_INTR, 8),
+@@ -1587,6 +1663,34 @@ static const struct dpu_perf_cfg sc7180_perf_data = {
+ 	.bw_inefficiency_factor = 120,
+ };
+ 
++static const struct dpu_perf_cfg sm7125_perf_data = {
++	.max_bw_low = 3900000,
++	.max_bw_high = 5500000,
++	.min_core_ib = 2400000,
++	.min_llcc_ib = 800000,
++	.min_dram_ib = 800000,
++	.min_prefill_lines = 24,
++	.danger_lut_tbl = {0xff, 0xffff, 0x0},
++	.safe_lut_tbl = {0xfff0, 0xff00, 0xffff},
++	.qos_lut_tbl = {
++		{.nentry = ARRAY_SIZE(sc7180_qos_linear),
++		.entries = sc7180_qos_linear
++		},
++		{.nentry = ARRAY_SIZE(sc7180_qos_macrotile),
++		.entries = sc7180_qos_macrotile
++		},
++		{.nentry = ARRAY_SIZE(sc7180_qos_nrt),
++		.entries = sc7180_qos_nrt
++		},
++	},
++	.cdp_cfg = {
++		{.rd_enable = 1, .wr_enable = 1},
++		{.rd_enable = 1, .wr_enable = 0}
++	},
++	.clk_inefficiency_factor = 105,
++	.bw_inefficiency_factor = 120,
++};
++
+ static const struct dpu_perf_cfg sm8150_perf_data = {
+ 	.max_bw_low = 12800000,
+ 	.max_bw_high = 12800000,
+@@ -1798,6 +1902,30 @@ static const struct dpu_mdss_cfg sc7180_dpu_cfg = {
+ 	.mdss_irqs = IRQ_SC7180_MASK,
+ };
+ 
++static const struct dpu_mdss_cfg sm7125_dpu_cfg = {
++	.caps = &sm7125_dpu_caps,
++	.mdp_count = ARRAY_SIZE(sm7125_mdp),
++	.mdp = sm7125_mdp,
++	.ctl_count = ARRAY_SIZE(sm7125_ctl),
++	.ctl = sm7125_ctl,
++	.sspp_count = ARRAY_SIZE(sm7125_sspp),
++	.sspp = sm7125_sspp,
++	.mixer_count = ARRAY_SIZE(sc7180_lm),
++	.mixer = sc7180_lm,
++	.dspp_count = ARRAY_SIZE(sc7180_dspp),
++	.dspp = sc7180_dspp,
++	.pingpong_count = ARRAY_SIZE(sm7125_pp),
++	.pingpong = sm7125_pp,
++	.intf_count = ARRAY_SIZE(sc7180_intf),
++	.intf = sc7180_intf,
++	.vbif_count = ARRAY_SIZE(sdm845_vbif),
++	.vbif = sdm845_vbif,
++	.reg_dma_count = 1,
++	.dma_cfg = &sm8250_regdma,
++	.perf = &sm7125_perf_data,
++	.mdss_irqs = IRQ_SC7180_MASK,
++};
++
+ static const struct dpu_mdss_cfg sm8150_dpu_cfg = {
+ 	.caps = &sm8150_dpu_caps,
+ 	.mdp_count = ARRAY_SIZE(sdm845_mdp),
+@@ -1931,7 +2059,9 @@ static const struct dpu_mdss_hw_cfg_handler cfg_handler[] = {
+ 	{ .hw_rev = DPU_HW_VER_501, .dpu_cfg = &sm8150_dpu_cfg},
+ 	{ .hw_rev = DPU_HW_VER_510, .dpu_cfg = &sc8180x_dpu_cfg},
+ 	{ .hw_rev = DPU_HW_VER_600, .dpu_cfg = &sm8250_dpu_cfg},
+-	{ .hw_rev = DPU_HW_VER_620, .dpu_cfg = &sc7180_dpu_cfg},
++	//sc7180 commented because sc7180 and sm7125 dpu configuration is different, but they have same dpu hw version...
++	//{ .hw_rev = DPU_HW_VER_620, .dpu_cfg = &sc7180_dpu_cfg},
++	{ .hw_rev = DPU_HW_VER_620, .dpu_cfg = &sm7125_dpu_cfg},
+ 	{ .hw_rev = DPU_HW_VER_650, .dpu_cfg = &qcm2290_dpu_cfg},
+ 	{ .hw_rev = DPU_HW_VER_720, .dpu_cfg = &sc7280_dpu_cfg},
+ };
+@@ -1954,4 +2084,3 @@ const struct dpu_mdss_cfg *dpu_hw_catalog_init(u32 hw_rev)
+ 
+ 	return ERR_PTR(-ENODEV);
+ }
+-
+diff --git a/drivers/gpu/drm/panel/Kconfig b/drivers/gpu/drm/panel/Kconfig
+index a9043eacce97c6..b447d408e3861a 100644
+--- a/drivers/gpu/drm/panel/Kconfig
++++ b/drivers/gpu/drm/panel/Kconfig
+@@ -531,6 +531,16 @@ config DRM_PANEL_SAMSUNG_S6E88A0_AMS452EF01
+ 	select DRM_MIPI_DSI
+ 	select VIDEOMODE_HELPERS
+ 
++config DRM_PANEL_SAMSUNG_S6E3FC3_AMS667YM01
++	tristate "Samsung AMS667YM01 panel with S6E3FC3 DSI cmd mode controller"
++	depends on OF
++	depends on DRM_MIPI_DSI
++	depends on BACKLIGHT_CLASS_DEVICE
++	select VIDEOMODE_HELPERS
++	help
++	  Say Y or M here if you want to enable support for the Samsung AMOLED
++	  (2400x1080@90Hz) command mode panel found in the Samsung Galaxy A72 smartphones.
++
+ config DRM_PANEL_SAMSUNG_S6E8AA0
+ 	tristate "Samsung S6E8AA0 DSI video mode panel"
+ 	depends on OF
+diff --git a/drivers/gpu/drm/panel/Makefile b/drivers/gpu/drm/panel/Makefile
+index 34e717382dbb65..105ac75b28710e 100644
+--- a/drivers/gpu/drm/panel/Makefile
++++ b/drivers/gpu/drm/panel/Makefile
+@@ -53,6 +53,7 @@ obj-$(CONFIG_DRM_PANEL_SAMSUNG_S6E63M0) += panel-samsung-s6e63m0.o
+ obj-$(CONFIG_DRM_PANEL_SAMSUNG_S6E63M0_SPI) += panel-samsung-s6e63m0-spi.o
+ obj-$(CONFIG_DRM_PANEL_SAMSUNG_S6E63M0_DSI) += panel-samsung-s6e63m0-dsi.o
+ obj-$(CONFIG_DRM_PANEL_SAMSUNG_S6E88A0_AMS452EF01) += panel-samsung-s6e88a0-ams452ef01.o
++obj-$(CONFIG_DRM_PANEL_SAMSUNG_S6E3FC3_AMS667YM01) += panel-samsung-s6e3fc3-ams667ym01.o
+ obj-$(CONFIG_DRM_PANEL_SAMSUNG_S6E8AA0) += panel-samsung-s6e8aa0.o
+ obj-$(CONFIG_DRM_PANEL_SAMSUNG_SOFEF00) += panel-samsung-sofef00.o
+ obj-$(CONFIG_DRM_PANEL_SEIKO_43WVF1G) += panel-seiko-43wvf1g.o
+diff --git a/drivers/gpu/drm/panel/panel-samsung-s6e3fc3-ams667ym01.c b/drivers/gpu/drm/panel/panel-samsung-s6e3fc3-ams667ym01.c
+new file mode 100644
+index 00000000000000..b5ccfacd39c2dc
+--- /dev/null
++++ b/drivers/gpu/drm/panel/panel-samsung-s6e3fc3-ams667ym01.c
+@@ -0,0 +1,330 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/* Copyright (c) 2022 map220v <map220v300@gmail.com>
++ * Generated with linux-mdss-dsi-panel-driver-generator from vendor device tree:
++ * Copyright (c) 2022, The Linux Foundation. All rights reserved.
++ */
++
++#include <linux/backlight.h>
++#include <linux/delay.h>
++#include <linux/gpio/consumer.h>
++#include <linux/module.h>
++#include <linux/of.h>
++
++#include <drm/drm_mipi_dsi.h>
++#include <drm/drm_modes.h>
++#include <drm/drm_panel.h>
++
++struct s6e3fc3_ams667ym01 {
++	struct drm_panel panel;
++	struct mipi_dsi_device *dsi;
++	struct gpio_desc *reset_gpio;
++	bool prepared;
++};
++
++static inline
++struct s6e3fc3_ams667ym01 *to_s6e3fc3_ams667ym01(struct drm_panel *panel)
++{
++	return container_of(panel, struct s6e3fc3_ams667ym01, panel);
++}
++
++#define dsi_generic_write_seq(dsi, seq...) do {				\
++		static const u8 d[] = { seq };				\
++		int ret;						\
++		ret = mipi_dsi_generic_write(dsi, d, ARRAY_SIZE(d));	\
++		if (ret < 0)						\
++			return ret;					\
++	} while (0)
++
++static void s6e3fc3_ams667ym01_reset(struct s6e3fc3_ams667ym01 *ctx)
++{
++	gpiod_set_value_cansleep(ctx->reset_gpio, 1);
++	usleep_range(10000, 11000);
++	gpiod_set_value_cansleep(ctx->reset_gpio, 0);
++	usleep_range(10000, 11000);
++}
++
++static int s6e3fc3_ams667ym01_on(struct s6e3fc3_ams667ym01 *ctx)
++{
++	struct mipi_dsi_device *dsi = ctx->dsi;
++	struct device *dev = &dsi->dev;
++	int ret;
++	
++	dsi->mode_flags |= MIPI_DSI_MODE_LPM;
++
++	ret = mipi_dsi_dcs_exit_sleep_mode(dsi);
++	if (ret < 0) {
++		dev_err(dev, "Failed to exit sleep mode: %d\n", ret);
++		return ret;
++	}
++	msleep(30);
++
++	dsi_generic_write_seq(dsi, 0xf0, 0x5a, 0x5a);
++	dsi_generic_write_seq(dsi, 0x9f, 0xa5, 0xa5);
++	dsi_generic_write_seq(dsi, 0xf2,
++			      0x00, 0x05, 0x0e, 0x58, 0x54, 0x00, 0x0c, 0x00,
++			      0x04, 0x30, 0xb8, 0x30, 0xb8, 0x0c, 0x04, 0xbc,
++			      0x26, 0xe8, 0x0c, 0x00, 0x04, 0x10, 0x00, 0x10,
++			      0x26, 0xa8, 0x10, 0x00, 0x10, 0x10, 0x34, 0x10,
++			      0x00, 0x40, 0x30, 0xc8, 0x00, 0xc8, 0x00, 0x00,
++			      0xce);
++	dsi_generic_write_seq(dsi, 0xf7, 0x0f);
++	dsi_generic_write_seq(dsi, 0x35, 0x00);
++	dsi_generic_write_seq(dsi, 0x2a, 0x00, 0x00, 0x04, 0x37);
++	dsi_generic_write_seq(dsi, 0x2b, 0x00, 0x00, 0x09, 0x5f);
++	dsi_generic_write_seq(dsi, 0xc2,
++			      0x1b, 0x41, 0xb0, 0x0e, 0x00, 0x3c, 0x5a, 0x00,
++			      0x00);
++	dsi_generic_write_seq(dsi, 0xe5, 0x15);
++	dsi_generic_write_seq(dsi, 0xed, 0x44, 0x4c, 0x20);
++	dsi_generic_write_seq(dsi, 0xcc, 0x5c, 0x51);
++	dsi_generic_write_seq(dsi, 0xb0, 0x00, 0x27, 0xf2);
++	dsi_generic_write_seq(dsi, 0xf2, 0x00);
++	dsi_generic_write_seq(dsi, 0xb0, 0x00, 0x92, 0x63);
++	dsi_generic_write_seq(dsi, 0x63, 0x04);
++	dsi_generic_write_seq(dsi, 0x60, 0x08, 0x00);
++	dsi_generic_write_seq(dsi, 0xf7, 0x0f);
++	dsi_generic_write_seq(dsi, 0x9f, 0x5a, 0x5a);
++	dsi_generic_write_seq(dsi, 0xf0, 0xa5, 0xa5);
++	msleep(90);
++
++	return 0;
++}
++
++static int s6e3fc3_ams667ym01_off(struct s6e3fc3_ams667ym01 *ctx)
++{
++	struct mipi_dsi_device *dsi = ctx->dsi;
++	struct device *dev = &dsi->dev;
++	int ret;
++	
++	dsi->mode_flags |= MIPI_DSI_MODE_LPM;
++
++	dsi_generic_write_seq(dsi, 0x9f, 0xa5, 0xa5);
++
++	ret = mipi_dsi_dcs_set_display_off(dsi);
++	if (ret < 0) {
++		dev_err(dev, "Failed to set display off: %d\n", ret);
++		return ret;
++	}
++	msleep(20);
++
++	ret = mipi_dsi_dcs_enter_sleep_mode(dsi);
++	if (ret < 0) {
++		dev_err(dev, "Failed to enter sleep mode: %d\n", ret);
++		return ret;
++	}
++	msleep(120);
++
++	dsi_generic_write_seq(dsi, 0x9f, 0x5a, 0x5a);
++
++	return 0;
++}
++
++static int s6e3fc3_ams667ym01_prepare(struct drm_panel *panel)
++{
++	struct s6e3fc3_ams667ym01 *ctx = to_s6e3fc3_ams667ym01(panel);
++	struct device *dev = &ctx->dsi->dev;
++	int ret;
++
++	if (ctx->prepared)
++		return 0;
++
++	//s6e3fc3_ams667ym01_reset(ctx);
++
++	ret = s6e3fc3_ams667ym01_on(ctx);
++	if (ret < 0) {
++		dev_err(dev, "Failed to initialize panel: %d\n", ret);
++		gpiod_set_value_cansleep(ctx->reset_gpio, 1);
++		return ret;
++	}
++
++	ctx->prepared = true;
++	return 0;
++}
++
++static int s6e3fc3_ams667ym01_unprepare(struct drm_panel *panel)
++{
++	struct s6e3fc3_ams667ym01 *ctx = to_s6e3fc3_ams667ym01(panel);
++	//struct device *dev = &ctx->dsi->dev;
++	//int ret;
++
++	if (!ctx->prepared)
++		return 0;
++
++	/*ret = s6e3fc3_ams667ym01_off(ctx);
++	if (ret < 0)
++		dev_err(dev, "Failed to un-initialize panel: %d\n", ret);
++
++	gpiod_set_value_cansleep(ctx->reset_gpio, 1);*/
++
++	ctx->prepared = false;
++	return 0;
++}
++
++static const struct drm_display_mode s6e3fc3_ams667ym01_mode = {
++	.clock = (1080 + 80 + 84 + 88) * (2400 + 15 + 2 + 2) * 90 / 1000,
++	.hdisplay = 1080,
++	.hsync_start = 1080 + 80,
++	.hsync_end = 1080 + 80 + 84,
++	.htotal = 1080 + 80 + 84 + 88,
++	.vdisplay = 2400,
++	.vsync_start = 2400 + 15,
++	.vsync_end = 2400 + 15 + 2,
++	.vtotal = 2400 + 15 + 2 + 2,
++	.width_mm = 70,
++	.height_mm = 155,
++};
++
++static int s6e3fc3_ams667ym01_get_modes(struct drm_panel *panel,
++					    struct drm_connector *connector)
++{
++	struct drm_display_mode *mode;
++
++	mode = drm_mode_duplicate(connector->dev, &s6e3fc3_ams667ym01_mode);
++	if (!mode)
++		return -ENOMEM;
++
++	drm_mode_set_name(mode);
++
++	mode->type = DRM_MODE_TYPE_DRIVER | DRM_MODE_TYPE_PREFERRED;
++	connector->display_info.width_mm = mode->width_mm;
++	connector->display_info.height_mm = mode->height_mm;
++	drm_mode_probed_add(connector, mode);
++
++	return 1;
++}
++
++static const struct drm_panel_funcs s6e3fc3_ams667ym01_panel_funcs = {
++	.prepare = s6e3fc3_ams667ym01_prepare,
++	.unprepare = s6e3fc3_ams667ym01_unprepare,
++	.get_modes = s6e3fc3_ams667ym01_get_modes,
++};
++
++static int s6e3fc3_ams667ym01_bl_update_status(struct backlight_device *bl)
++{
++	struct mipi_dsi_device *dsi = bl_get_data(bl);
++	u16 brightness = backlight_get_brightness(bl);
++	int ret;
++
++	dsi->mode_flags &= ~MIPI_DSI_MODE_LPM;
++
++	ret = mipi_dsi_dcs_set_display_brightness(dsi, brightness);
++	if (ret < 0)
++		return ret;
++
++	dsi->mode_flags |= MIPI_DSI_MODE_LPM;
++
++	return 0;
++}
++
++// TODO: Check if /sys/class/backlight/.../actual_brightness actually returns
++// correct values. If not, remove this function.
++static int s6e3fc3_ams667ym01_bl_get_brightness(struct backlight_device *bl)
++{
++	struct mipi_dsi_device *dsi = bl_get_data(bl);
++	u16 brightness;
++	int ret;
++
++	dsi->mode_flags &= ~MIPI_DSI_MODE_LPM;
++
++	ret = mipi_dsi_dcs_get_display_brightness(dsi, &brightness);
++	if (ret < 0)
++		return ret;
++
++	dsi->mode_flags |= MIPI_DSI_MODE_LPM;
++
++	return brightness;
++}
++
++static const struct backlight_ops s6e3fc3_ams667ym01_bl_ops = {
++	.update_status = s6e3fc3_ams667ym01_bl_update_status,
++	.get_brightness = s6e3fc3_ams667ym01_bl_get_brightness,
++};
++
++static struct backlight_device *
++s6e3fc3_ams667ym01_create_backlight(struct mipi_dsi_device *dsi)
++{
++	struct device *dev = &dsi->dev;
++	const struct backlight_properties props = {
++		.type = BACKLIGHT_RAW,
++		.brightness = 486,
++		.max_brightness = 486,
++	};
++
++	return devm_backlight_device_register(dev, dev_name(dev), dev, dsi,
++					      &s6e3fc3_ams667ym01_bl_ops, &props);
++}
++
++static int s6e3fc3_ams667ym01_probe(struct mipi_dsi_device *dsi)
++{
++	struct device *dev = &dsi->dev;
++	struct s6e3fc3_ams667ym01 *ctx;
++	int ret;
++
++	ctx = devm_kzalloc(dev, sizeof(*ctx), GFP_KERNEL);
++	if (!ctx)
++		return -ENOMEM;
++
++	/*ctx->reset_gpio = devm_gpiod_get(dev, "reset", GPIOD_OUT_HIGH);
++	if (IS_ERR(ctx->reset_gpio))
++		return dev_err_probe(dev, PTR_ERR(ctx->reset_gpio),
++				     "Failed to get reset-gpios\n");*/
++
++	ctx->dsi = dsi;
++	mipi_dsi_set_drvdata(dsi, ctx);
++
++	dsi->lanes = 4;
++	dsi->format = MIPI_DSI_FMT_RGB888;
++
++	drm_panel_init(&ctx->panel, dev, &s6e3fc3_ams667ym01_panel_funcs,
++		       DRM_MODE_CONNECTOR_DSI);
++
++	ctx->panel.backlight = s6e3fc3_ams667ym01_create_backlight(dsi);
++	if (IS_ERR(ctx->panel.backlight))
++		return dev_err_probe(dev, PTR_ERR(ctx->panel.backlight),
++				     "Failed to create backlight\n");
++
++	drm_panel_add(&ctx->panel);
++
++	ret = mipi_dsi_attach(dsi);
++	if (ret < 0) {
++		dev_err(dev, "Failed to attach to DSI host: %d\n", ret);
++		drm_panel_remove(&ctx->panel);
++		return ret;
++	}
++
++	return 0;
++}
++
++static int s6e3fc3_ams667ym01_remove(struct mipi_dsi_device *dsi)
++{
++	struct s6e3fc3_ams667ym01 *ctx = mipi_dsi_get_drvdata(dsi);
++	int ret;
++
++	ret = mipi_dsi_detach(dsi);
++	if (ret < 0)
++		dev_err(&dsi->dev, "Failed to detach from DSI host: %d\n", ret);
++
++	drm_panel_remove(&ctx->panel);
++
++	return 0;
++}
++
++static const struct of_device_id s6e3fc3_ams667ym01_of_match[] = {
++	{ .compatible = "samsung,s6e3fc3-ams667ym01" }, //Samsung Galaxy A72
++	{ /* sentinel */ }
++};
++MODULE_DEVICE_TABLE(of, s6e3fc3_ams667ym01_of_match);
++
++static struct mipi_dsi_driver s6e3fc3_ams667ym01_driver = {
++	.probe = s6e3fc3_ams667ym01_probe,
++	.remove = s6e3fc3_ams667ym01_remove,
++	.driver = {
++		.name = "panel-s6e3fc3-ams667ym01",
++		.of_match_table = s6e3fc3_ams667ym01_of_match,
++	},
++};
++module_mipi_dsi_driver(s6e3fc3_ams667ym01_driver);
++
++MODULE_AUTHOR("map220v <map220v300@gmail.com>");
++MODULE_DESCRIPTION("MIPI-DSI based Panel Driver for AMS667YM01 AMOLED LCD with a S6E3FC3 controller");
++MODULE_LICENSE("GPL v2");
+diff --git a/drivers/input/touchscreen/Kconfig b/drivers/input/touchscreen/Kconfig
+index 2d70c945b20a97..3657d7b628bd6d 100644
+--- a/drivers/input/touchscreen/Kconfig
++++ b/drivers/input/touchscreen/Kconfig
+@@ -1238,6 +1238,17 @@ config TOUCHSCREEN_STMFTS
+ 	  To compile this driver as a module, choose M here: the
+ 	  module will be called stmfts.
+ 
++config TOUCHSCREEN_STMFTS_FTS5CU56A
++	tristate "STMicroelectronics STMFTS_FTS5CU56A touchscreen"
++	depends on I2C
++	depends on LEDS_CLASS
++	help
++	  Say Y here if you want support for STMicroelectronics
++	  STMFTS_FTS5CU56A touchscreen.
++
++	  To compile this driver as a module, choose M here: the
++	  module will be called stmfts.
++
+ config TOUCHSCREEN_STMPE
+ 	tristate "STMicroelectronics STMPE touchscreens"
+ 	depends on MFD_STMPE
+diff --git a/drivers/input/touchscreen/Makefile b/drivers/input/touchscreen/Makefile
+index 557f84fd20755f..9a672d0d75b168 100644
+--- a/drivers/input/touchscreen/Makefile
++++ b/drivers/input/touchscreen/Makefile
+@@ -80,6 +80,7 @@ obj-$(CONFIG_TOUCHSCREEN_SILEAD)	+= silead.o
+ obj-$(CONFIG_TOUCHSCREEN_SIS_I2C)	+= sis_i2c.o
+ obj-$(CONFIG_TOUCHSCREEN_ST1232)	+= st1232.o
+ obj-$(CONFIG_TOUCHSCREEN_STMFTS)	+= stmfts.o
++obj-$(CONFIG_TOUCHSCREEN_STMFTS_FTS5CU56A)	+= stmfts_fts5cu56a.o
+ obj-$(CONFIG_TOUCHSCREEN_STMPE)		+= stmpe-ts.o
+ obj-$(CONFIG_TOUCHSCREEN_SUN4I)		+= sun4i-ts.o
+ obj-$(CONFIG_TOUCHSCREEN_SUR40)		+= sur40.o
+diff --git a/drivers/input/touchscreen/stmfts_fts5cu56a.c b/drivers/input/touchscreen/stmfts_fts5cu56a.c
+new file mode 100644
+index 00000000000000..2b5426fa854f26
+--- /dev/null
++++ b/drivers/input/touchscreen/stmfts_fts5cu56a.c
+@@ -0,0 +1,1169 @@
++// SPDX-License-Identifier: GPL-2.0
++// STMicroelectronics FTS Touchscreen device driver
++//
++// Copyright (c) 2017 Samsung Electronics Co., Ltd.
++// Copyright (c) 2017 Andi Shyti <andi@etezian.org>
++
++#include <linux/delay.h>
++#include <linux/i2c.h>
++#include <linux/input/mt.h>
++#include <linux/input/touchscreen.h>
++#include <linux/interrupt.h>
++#include <linux/irq.h>
++#include <linux/leds.h>
++#include <linux/module.h>
++#include <linux/pm_runtime.h>
++#include <linux/regulator/consumer.h>
++
++/* I2C commands */
++#define STMFTS_READ_STATUS			0x84
++#define STMFTS_READ_ONE_EVENT			0x85
++#define STMFTS_READ_ALL_EVENT			0x86
++#define STMFTS_LATEST_EVENT			0x87
++#define STMFTS_SLEEP_IN				0x90
++#define STMFTS_SLEEP_OUT			0x91
++#define STMFTS_MS_MT_SENSE_OFF			0x92
++#define STMFTS_MS_MT_SENSE_ON			0x93
++#define STMFTS_SS_HOVER_SENSE_OFF		0x94
++#define STMFTS_SS_HOVER_SENSE_ON		0x95
++#define STMFTS_MS_KEY_SENSE_OFF			0x9a
++#define STMFTS_MS_KEY_SENSE_ON			0x9b
++#define STMFTS_SYSTEM_RESET			0xa0
++#define STMFTS_CLEAR_EVENT_STACK		0xa1
++#define STMFTS_MS_CX_TUNING			0xa3
++#define STMFTS_SS_CX_TUNING			0xa4
++
++/* events */
++#define STMFTS_EV_NO_EVENT			0x00
++#define STMFTS_EV_MULTI_TOUCH_DETECTED		0x02
++#define STMFTS_EV_MULTI_TOUCH_ENTER		0x03
++#define STMFTS_EV_MULTI_TOUCH_LEAVE		0x04
++#define STMFTS_EV_MULTI_TOUCH_MOTION		0x05
++#define STMFTS_EV_HOVER_ENTER			0x07
++#define STMFTS_EV_HOVER_LEAVE			0x08
++#define STMFTS_EV_HOVER_MOTION			0x09
++#define STMFTS_EV_KEY_STATUS			0x0e
++#define STMFTS_EV_ERROR				0x0f
++#define STMFTS_EV_CONTROLLER_READY		0x10
++#define STMFTS_EV_SLEEP_OUT_CONTROLLER_READY	0x11
++#define STMFTS_EV_STATUS			0x16
++#define STMFTS_EV_DEBUG				0xdb
++
++/* multi touch related event masks */
++#define STMFTS_MASK_EVENT_ID			0x0f
++#define STMFTS_MASK_TOUCH_ID			0xf0
++#define STMFTS_MASK_LEFT_EVENT			0x0f
++#define STMFTS_MASK_X_MSB			0x0f
++#define STMFTS_MASK_Y_LSB			0xf0
++
++/* key related event masks */
++#define STMFTS_MASK_KEY_NO_TOUCH		0x00
++#define STMFTS_MASK_KEY_MENU			0x01
++#define STMFTS_MASK_KEY_BACK			0x02
++
++#define STMFTS_EVENT_SIZE	16
++#define STMFTS_STACK_DEPTH	31
++#define STMFTS_DATA_MAX_SIZE	(STMFTS_EVENT_SIZE * STMFTS_STACK_DEPTH)
++
++#define STMFTS_MAX_FINGERS	10
++#define STMFTS_DEV_NAME		"stmfts"
++
++/* FTS fts5cu56a */
++struct fts_event_coordinate {
++	u8 eid:2;
++	u8 tid:4;
++	u8 tchsta:2;
++	u8 x_11_4;
++	u8 y_11_4;
++	u8 y_3_0:4;
++	u8 x_3_0:4;
++	u8 major;
++	u8 minor;
++	u8 z:6;
++	u8 ttype_3_2:2;
++	u8 left_event:5;
++	u8 max_energy:1;
++	u8 ttype_1_0:2;
++	u8 noise_level;
++	u8 max_strength;
++	u8 hover_id_num:4;
++	u8 reserved_10:4;
++	u8 reserved_11;
++	u8 reserved_12;
++	u8 reserved_13;
++	u8 reserved_14;
++	u8 reserved_15;
++} __packed;
++
++
++/* 16 byte */
++struct fts_event_status {
++	u8 eid:2;
++	u8 stype:4;
++	u8 sf:2;
++	u8 status_id;
++	u8 status_data_1;
++	u8 status_data_2;
++	u8 status_data_3;
++	u8 status_data_4;
++	u8 status_data_5;
++	u8 left_event_4_0:5;
++	u8 max_energy:1;
++	u8 reserved:2;
++	u8 reserved_8;
++	u8 reserved_9;
++	u8 reserved_10;
++	u8 reserved_11;
++	u8 reserved_12;
++	u8 reserved_13;
++	u8 reserved_14;
++	u8 reserved_15;
++} __packed;
++
++/* 16 byte */
++struct fts_gesture_status {
++	u8 eid:2;
++	u8 stype:4;
++	u8 sf:2;
++	u8 gesture_id;
++	u8 gesture_data_1;
++	u8 gesture_data_2;
++	u8 gesture_data_3;
++	u8 gesture_data_4;
++	u8 reserved_6;
++	u8 left_event_4_0:5;
++	u8 max_energy:1;
++	u8 reserved_7:2;
++	u8 reserved_8;
++	u8 reserved_9;
++	u8 reserved_10;
++	u8 reserved_11;
++	u8 reserved_12;
++	u8 reserved_13;
++	u8 reserved_14;
++	u8 reserved_15;
++} __packed;
++
++/**
++ * struct fts_finger - Represents fingers.
++ * @ state: finger status (Event ID).
++ * @ mcount: moving counter for debug.
++ */
++struct fts_finger {
++	u8 id;
++	u8 prev_ttype;
++	u8 ttype;
++	u8 action;
++	u16 x;
++	u16 y;
++	u16 p_x;
++	u16 p_y;
++	u8 z;
++	u8 hover_flag;
++	u8 glove_flag;
++	u8 touch_height;
++	u16 mcount;
++	u8 major;
++	u8 minor;
++	bool palm;
++	int palm_count;
++	u8 left_event;
++	u8 max_energy;
++	u16 max_energy_x;
++	u16 max_energy_y;
++	u8 noise_level;
++	u8 max_strength;
++	u8 hover_id_num;
++};
++
++enum tsp_power_mode {
++	FTS_POWER_STATE_POWERDOWN = 0,
++	FTS_POWER_STATE_LOWPOWER,
++	FTS_POWER_STATE_ACTIVE,
++//	FTS_POWER_STATE_SLEEP,
++};
++
++#define FTS_READ_DEVICE_ID				0x22
++#define FTS_READ_FW_VERSION				0x24
++#define FTS_CMD_FORCE_CALIBRATION		0x13
++
++#define FTS_READ_ONE_EVENT				0x60
++#define FTS_READ_ALL_EVENT				0x61
++#define FTS_CMD_CLEAR_ALL_EVENT			0x62
++
++#define FTS_TS_LOCATION_DETECT_SIZE	6
++#define FTS_EVENT_SIZE 16
++#define FTS_FIFO_MAX 31
++
++/* Status Event */
++#define FTS_COORDINATE_EVENT			0
++#define FTS_STATUS_EVENT			1
++#define FTS_GESTURE_EVENT			2
++#define FTS_VENDOR_EVENT			3
++
++#define FTS_COORDINATE_ACTION_NONE		0
++#define FTS_COORDINATE_ACTION_PRESS		1
++#define FTS_COORDINATE_ACTION_MOVE		2
++#define FTS_COORDINATE_ACTION_RELEASE		3
++
++#define FTS_EVENT_TOUCHTYPE_NORMAL		0
++#define FTS_EVENT_TOUCHTYPE_HOVER		1
++#define FTS_EVENT_TOUCHTYPE_FLIPCOVER		2
++#define FTS_EVENT_TOUCHTYPE_GLOVE		3
++#define FTS_EVENT_TOUCHTYPE_STYLUS		4
++#define FTS_EVENT_TOUCHTYPE_PALM		5
++#define FTS_EVENT_TOUCHTYPE_WET			6
++#define FTS_EVENT_TOUCHTYPE_PROXIMITY		7
++#define FTS_EVENT_TOUCHTYPE_JIG			8
++
++/* Status - ERROR event */
++#define FTS_EVENT_STATUSTYPE_CMDDRIVEN		0
++#define FTS_EVENT_STATUSTYPE_ERROR		1
++#define FTS_EVENT_STATUSTYPE_INFORMATION	2
++#define FTS_EVENT_STATUSTYPE_USERINPUT		3
++#define FTS_EVENT_STATUSTYPE_VENDORINFO		7
++
++#define FTS_ERR_EVNET_CORE_ERR			0x00
++#define FTS_ERR_EVENT_QUEUE_FULL		0x01
++#define FTS_ERR_EVENT_ESD			0x02
++
++/* Status - Information report */
++#define FTS_INFO_READY_STATUS			0x00
++#define FTS_INFO_WET_MODE			0x01
++#define FTS_INFO_NOISE_MODE			0x02
++#define FTS_INFO_XENOSENSOR_DETECT		0x04
++
++
++enum stmfts_regulators {
++	STMFTS_REGULATOR_VDD,
++	STMFTS_REGULATOR_AVDD,
++};
++
++struct stmfts_data {
++	struct i2c_client *client;
++	struct input_dev *input;
++	struct led_classdev led_cdev;
++	struct mutex mutex;
++
++	struct touchscreen_properties prop;
++
++	struct regulator_bulk_data regulators[2];
++
++	/*
++	 * Presence of ledvdd will be used also to check
++	 * whether the LED is supported.
++	 */
++	struct regulator *ledvdd;
++
++	u16 chip_id;
++	u8 chip_ver;
++	u16 fw_ver;
++	u8 config_id;
++	u8 config_ver;
++
++	u8 data[STMFTS_DATA_MAX_SIZE];
++
++	struct completion cmd_done;
++
++	struct fts_finger finger[STMFTS_MAX_FINGERS];
++	int touch_count;
++
++	u8 check_multi;
++	unsigned int multi_count;
++	unsigned int all_finger_count;
++
++	bool use_key;
++	bool led_status;
++	bool hover_enabled;
++	bool running;
++};
++
++static int stmfts_brightness_set(struct led_classdev *led_cdev,
++					enum led_brightness value)
++{
++	struct stmfts_data *sdata = container_of(led_cdev,
++					struct stmfts_data, led_cdev);
++	int err;
++
++	if (value != sdata->led_status && sdata->ledvdd) {
++		if (!value) {
++			regulator_disable(sdata->ledvdd);
++		} else {
++			err = regulator_enable(sdata->ledvdd);
++			if (err) {
++				dev_warn(&sdata->client->dev,
++					 "failed to disable ledvdd regulator: %d\n",
++					 err);
++				return err;
++			}
++		}
++		sdata->led_status = value;
++	}
++
++	return 0;
++}
++
++static enum led_brightness stmfts_brightness_get(struct led_classdev *led_cdev)
++{
++	struct stmfts_data *sdata = container_of(led_cdev,
++						struct stmfts_data, led_cdev);
++
++	return !!regulator_is_enabled(sdata->ledvdd);
++}
++
++/************************************************************
++*  720  * 1480 : <48 96 60> indicator: 24dp navigator:48dp edge:60px dpi=320
++* 1080  * 2220 :  4096 * 4096 : <133 266 341>  (approximately value)
++************************************************************/
++
++static void location_detect(char *loc, int x, int y)
++{
++	int i;
++
++	for (i = 0; i < FTS_TS_LOCATION_DETECT_SIZE; ++i)
++		loc[i] = 0;
++
++	if (x < 60)
++		strcat(loc, "E.");
++	else if (x < (4095 - 60))
++		strcat(loc, "C.");
++	else
++		strcat(loc, "e.");
++
++	if (y < 48)
++		strcat(loc, "S");
++	else if (y < (4095 - 96))
++		strcat(loc, "C");
++	else
++		strcat(loc, "N");
++}
++
++static const char finger_mode[10] = {'N', '1', '2', 'G', '4', 'P'};
++
++//#define I2C_SMBUS_BLOCK_MAX 240
++static u8 fts_event_handler_type_b(struct stmfts_data *sdata)
++{
++	u8 regAdd;
++	int left_event_count = 0;
++	int EventNum = 0;
++	u8 TouchID = 0, event_id = 0;
++	u8 data[FTS_FIFO_MAX * FTS_EVENT_SIZE] = {0};
++	u8 *event_buff;
++	struct fts_event_coordinate *p_event_coord;
++	struct fts_gesture_status *p_gesture_status;
++	struct fts_event_status *p_event_status;
++
++	u8 prev_action = 0;
++	char location[FTS_TS_LOCATION_DETECT_SIZE] = { 0 };
++
++	regAdd = FTS_READ_ONE_EVENT;
++	i2c_smbus_read_i2c_block_data(sdata->client, regAdd,
++					    FTS_EVENT_SIZE, (u8 *)&data[0 * FTS_EVENT_SIZE]);
++	left_event_count = (data[7] & 0x1F);
++
++	if (left_event_count >= FTS_FIFO_MAX)
++		left_event_count = FTS_FIFO_MAX - 1;
++
++	if (left_event_count > 0) {
++		regAdd = FTS_READ_ALL_EVENT;
++		i2c_smbus_read_i2c_block_data(sdata->client, regAdd,
++					    FTS_EVENT_SIZE * (left_event_count), (u8 *)&data[1 * FTS_EVENT_SIZE]);
++	}
++
++	do {
++		/* for event debugging */
++		dev_dbg(&sdata->client->dev, "[%d] %02X %02X %02X %02X %02X %02X %02X %02X\n",
++				EventNum, data[EventNum * FTS_EVENT_SIZE+0], data[EventNum * FTS_EVENT_SIZE+1],
++				data[EventNum * FTS_EVENT_SIZE+2], data[EventNum * FTS_EVENT_SIZE+3],
++				data[EventNum * FTS_EVENT_SIZE+4], data[EventNum * FTS_EVENT_SIZE+5],
++				data[EventNum * FTS_EVENT_SIZE+6], data[EventNum * FTS_EVENT_SIZE+7]);
++
++		event_buff = (u8 *) &data[EventNum * FTS_EVENT_SIZE];
++		event_id = event_buff[0] & 0x3;
++
++		switch (event_id) {
++		case FTS_STATUS_EVENT:
++			p_event_status = (struct fts_event_status *)event_buff;
++
++			if (p_event_status->stype > 0)
++				dev_dbg(&sdata->client->dev, "%s: STATUS %02X %02X %02X %02X %02X %02X %02X %02X\n",
++						__func__, event_buff[0], event_buff[1], event_buff[2],
++						event_buff[3], event_buff[4], event_buff[5],
++						event_buff[6], event_buff[7]);
++
++			if ((p_event_status->stype == FTS_EVENT_STATUSTYPE_ERROR) &&
++					(p_event_status->status_id == FTS_ERR_EVENT_QUEUE_FULL)) {
++				dev_dbg(&sdata->client->dev, "%s: IC Event Queue is full\n", __func__);
++			}
++
++			if ((p_event_status->stype == FTS_EVENT_STATUSTYPE_ERROR) &&
++					(p_event_status->status_id == FTS_ERR_EVENT_ESD)) {
++				dev_dbg(&sdata->client->dev, "%s: ESD detected. run reset\n", __func__);
++			}
++
++			if ((p_event_status->stype == FTS_EVENT_STATUSTYPE_INFORMATION) &&
++					(p_event_status->status_id == FTS_INFO_READY_STATUS)) {
++				if (p_event_status->status_data_1 == 0x10) {
++					dev_dbg(&sdata->client->dev, "%s: IC Reset\n", __func__);
++				}
++			}
++			break;
++
++		case FTS_COORDINATE_EVENT:
++			p_event_coord = (struct fts_event_coordinate *) event_buff;
++
++			TouchID = p_event_coord->tid;
++			if (TouchID >= STMFTS_MAX_FINGERS) {
++				dev_dbg(&sdata->client->dev,
++						"%s: tid(%d) is out of supported max finger number\n",
++						__func__, TouchID);
++				break;
++			}
++
++			sdata->finger[TouchID].prev_ttype = sdata->finger[TouchID].ttype;
++			prev_action = sdata->finger[TouchID].action;
++			sdata->finger[TouchID].id = TouchID;
++			sdata->finger[TouchID].action = p_event_coord->tchsta;
++			sdata->finger[TouchID].x = (p_event_coord->x_11_4 << 4) | (p_event_coord->x_3_0);
++			sdata->finger[TouchID].y = (p_event_coord->y_11_4 << 4) | (p_event_coord->y_3_0);
++			sdata->finger[TouchID].z = p_event_coord->z & 0x3F;
++			sdata->finger[TouchID].ttype = p_event_coord->ttype_3_2 << 2 |
++							p_event_coord->ttype_1_0 << 0;
++			sdata->finger[TouchID].major = p_event_coord->major;
++			sdata->finger[TouchID].minor = p_event_coord->minor;
++			sdata->finger[TouchID].max_energy = p_event_coord->max_energy;
++			if (sdata->finger[TouchID].max_energy) {
++				sdata->finger[TouchID].max_energy_x = sdata->finger[TouchID].x;
++				sdata->finger[TouchID].max_energy_y = sdata->finger[TouchID].y;
++			}
++
++			if (!sdata->finger[TouchID].palm &&
++					sdata->finger[TouchID].ttype == FTS_EVENT_TOUCHTYPE_PALM)
++				sdata->finger[TouchID].palm_count++;
++
++			sdata->finger[TouchID].palm = (sdata->finger[TouchID].ttype == FTS_EVENT_TOUCHTYPE_PALM);
++			sdata->finger[TouchID].left_event = p_event_coord->left_event;
++
++			sdata->finger[TouchID].noise_level = p_event_coord->noise_level;
++			sdata->finger[TouchID].max_strength = max(sdata->finger[TouchID].max_strength, p_event_coord->max_strength);
++			sdata->finger[TouchID].hover_id_num = max(sdata->finger[TouchID].hover_id_num, (u8)p_event_coord->hover_id_num);
++
++			if (sdata->finger[TouchID].z <= 0)
++				sdata->finger[TouchID].z = 1;
++
++			if ((sdata->finger[TouchID].ttype == FTS_EVENT_TOUCHTYPE_NORMAL) ||
++					(sdata->finger[TouchID].ttype == FTS_EVENT_TOUCHTYPE_PALM)   ||
++					(sdata->finger[TouchID].ttype == FTS_EVENT_TOUCHTYPE_WET)    ||
++					(sdata->finger[TouchID].ttype == FTS_EVENT_TOUCHTYPE_GLOVE)) {
++
++				location_detect(location, sdata->finger[TouchID].x, sdata->finger[TouchID].y);
++
++				if (sdata->finger[TouchID].action == FTS_COORDINATE_ACTION_RELEASE) {
++					input_mt_slot(sdata->input, TouchID);
++
++					/*if (sdata->board->support_mt_pressure)
++						input_report_abs(sdata->input, ABS_MT_PRESSURE, 0);*/
++
++					//input_report_abs(sdata->input, ABS_MT_CUSTOM, 0);
++
++					input_mt_report_slot_state(sdata->input, MT_TOOL_FINGER, 0);
++
++					if (sdata->touch_count > 0)
++						sdata->touch_count--;
++
++					if (sdata->touch_count == 0) {
++						input_report_key(sdata->input, BTN_TOUCH, 0);
++						input_report_key(sdata->input, BTN_TOOL_FINGER, 0);
++						sdata->check_multi = 0;
++					}
++
++					dev_dbg(&sdata->client->dev,
++							"[R] tID:%d loc:%s dd:%d,%d mc:%d tc:%d lx:%d ly:%d mx:%d my:%d p:%d nlvl:%d maxS:%d hid:%d\n",
++							TouchID, location,
++							sdata->finger[TouchID].x - sdata->finger[TouchID].p_x,
++							sdata->finger[TouchID].y - sdata->finger[TouchID].p_y,
++							sdata->finger[TouchID].mcount, sdata->touch_count,
++							sdata->finger[TouchID].x, sdata->finger[TouchID].y,
++							sdata->finger[TouchID].max_energy_x, sdata->finger[TouchID].max_energy_y,
++							sdata->finger[TouchID].palm_count, sdata->finger[TouchID].noise_level,
++							sdata->finger[TouchID].max_strength, sdata->finger[TouchID].hover_id_num);
++
++					sdata->finger[TouchID].action = FTS_COORDINATE_ACTION_NONE;
++					sdata->finger[TouchID].mcount = 0;
++					sdata->finger[TouchID].palm_count = 0;
++					sdata->finger[TouchID].noise_level = 0;
++					sdata->finger[TouchID].max_strength = 0;
++					sdata->finger[TouchID].hover_id_num = 0;
++
++				} else if (sdata->finger[TouchID].action == FTS_COORDINATE_ACTION_PRESS) {
++
++					sdata->touch_count++;
++					sdata->all_finger_count++;
++
++					sdata->finger[TouchID].p_x = sdata->finger[TouchID].x;
++					sdata->finger[TouchID].p_y = sdata->finger[TouchID].y;
++
++					input_mt_slot(sdata->input, TouchID);
++					input_mt_report_slot_state(sdata->input, MT_TOOL_FINGER, 1);
++					input_report_key(sdata->input, BTN_TOUCH, 1);
++					input_report_key(sdata->input, BTN_TOOL_FINGER, 1);
++
++					input_report_abs(sdata->input, ABS_MT_POSITION_X, sdata->finger[TouchID].x);
++					input_report_abs(sdata->input, ABS_MT_POSITION_Y, sdata->finger[TouchID].y);
++					input_report_abs(sdata->input, ABS_MT_TOUCH_MAJOR,
++								sdata->finger[TouchID].major);
++					input_report_abs(sdata->input, ABS_MT_TOUCH_MINOR,
++								sdata->finger[TouchID].minor);
++
++					/*if (sdata->brush_mode)
++						input_report_abs(sdata->input, ABS_MT_CUSTOM,
++									(sdata->finger[TouchID].max_energy << 16) |
++									(sdata->finger[TouchID].z << 1) |
++									sdata->finger[TouchID].palm);
++					else
++						input_report_abs(sdata->input, ABS_MT_CUSTOM,
++									(sdata->finger[TouchID].max_energy << 16) |
++									(BRUSH_Z_DATA << 1) |
++									sdata->finger[TouchID].palm);*/
++
++					/*if (sdata->board->support_mt_pressure)
++						input_report_abs(sdata->input, ABS_MT_PRESSURE,
++									sdata->finger[TouchID].z);*/
++
++					if ((sdata->touch_count > 4) && (sdata->check_multi == 0)) {
++						sdata->check_multi = 1;
++						sdata->multi_count++;
++					}
++
++					dev_dbg(&sdata->client->dev,
++							"[P] tID:%d.%d x:%d y:%d z:%d major:%d minor:%d loc:%s tc:%d type:%d p:%d nlvl:%d maxS:%d hid:%d\n",
++							TouchID, (sdata->input->mt->trkid - 1) & TRKID_MAX,
++							sdata->finger[TouchID].x, sdata->finger[TouchID].y,
++							sdata->finger[TouchID].z,
++							sdata->finger[TouchID].major, sdata->finger[TouchID].minor,
++							location, sdata->touch_count, sdata->finger[TouchID].ttype,
++							sdata->finger[TouchID].palm_count, sdata->finger[TouchID].noise_level,
++							sdata->finger[TouchID].max_strength, sdata->finger[TouchID].hover_id_num);
++
++				} else if (sdata->finger[TouchID].action == FTS_COORDINATE_ACTION_MOVE) {
++					if (sdata->touch_count == 0) {
++						dev_dbg(&sdata->client->dev, "%s: touch count 0\n", __func__);
++						break;
++					}
++
++					if (prev_action == FTS_COORDINATE_ACTION_NONE) {
++						dev_dbg(&sdata->client->dev,
++								"%s: previous state is released but point is moved\n",
++								__func__);
++						break;
++					}
++
++					input_mt_slot(sdata->input, TouchID);
++					input_mt_report_slot_state(sdata->input, MT_TOOL_FINGER, 1);
++					input_report_key(sdata->input, BTN_TOUCH, 1);
++					input_report_key(sdata->input, BTN_TOOL_FINGER, 1);
++
++					input_report_abs(sdata->input, ABS_MT_POSITION_X, sdata->finger[TouchID].x);
++					input_report_abs(sdata->input, ABS_MT_POSITION_Y, sdata->finger[TouchID].y);
++					input_report_abs(sdata->input, ABS_MT_TOUCH_MAJOR,
++								sdata->finger[TouchID].major);
++					input_report_abs(sdata->input, ABS_MT_TOUCH_MINOR,
++								sdata->finger[TouchID].minor);
++
++					/*if (sdata->brush_mode)
++						input_report_abs(sdata->input, ABS_MT_CUSTOM,
++									(sdata->finger[TouchID].max_energy << 16) |
++									(sdata->finger[TouchID].z << 1) |
++									sdata->finger[TouchID].palm);
++					else
++						input_report_abs(sdata->input, ABS_MT_CUSTOM,
++									(sdata->finger[TouchID].max_energy << 16) |
++									(BRUSH_Z_DATA << 1) |
++									sdata->finger[TouchID].palm);*/
++
++					/*if (sdata->board->support_mt_pressure)
++						input_report_abs(sdata->input, ABS_MT_PRESSURE,
++									sdata->finger[TouchID].z);*/
++
++					sdata->finger[TouchID].mcount++;
++				} else {
++					dev_dbg(&sdata->client->dev,
++							"%s: do not support coordinate action(%d)\n",
++							__func__, sdata->finger[TouchID].action);
++				}
++
++
++				if (sdata->finger[TouchID].ttype != sdata->finger[TouchID].prev_ttype) {
++					dev_dbg(&sdata->client->dev, "%s: tID:%d ttype(%c->%c) : %s\n",
++							__func__, sdata->finger[TouchID].id,
++							finger_mode[sdata->finger[TouchID].prev_ttype],
++							finger_mode[sdata->finger[TouchID].ttype],
++							sdata->finger[TouchID].action == FTS_COORDINATE_ACTION_PRESS ? "P" :
++							sdata->finger[TouchID].action == FTS_COORDINATE_ACTION_MOVE ? "M" : "R");
++				}
++			} else {
++				dev_dbg(&sdata->client->dev,
++						"%s: do not support coordinate type(%d)\n",
++						__func__, sdata->finger[TouchID].ttype);
++			}
++
++			break;
++		case FTS_GESTURE_EVENT:
++			p_gesture_status = (struct fts_gesture_status *)event_buff;
++			dev_dbg(&sdata->client->dev, "%s: [GESTURE] type:%X sf:%X id:%X | %X, %X, %X, %X\n",
++				__func__, p_gesture_status->stype, p_gesture_status->sf, p_gesture_status->gesture_id,
++				p_gesture_status->gesture_data_1, p_gesture_status->gesture_data_2,
++				p_gesture_status->gesture_data_3, p_gesture_status->gesture_data_4);
++			break;
++		case FTS_VENDOR_EVENT: // just print message for debugging
++			if (event_buff[1] == 0x01) {  // echo event
++				dev_dbg(&sdata->client->dev,
++						"%s: echo event %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n",
++						__func__, event_buff[0], event_buff[1], event_buff[2], event_buff[3], event_buff[4], event_buff[5],
++						event_buff[6], event_buff[7], event_buff[8], event_buff[9], event_buff[10], event_buff[11],
++						event_buff[12], event_buff[13], event_buff[14], event_buff[15]);
++			} else {
++				dev_dbg(&sdata->client->dev,
++						"%s: %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n",
++						__func__, event_buff[0], event_buff[1], event_buff[2], event_buff[3], event_buff[4], event_buff[5],
++						event_buff[6], event_buff[7], event_buff[8], event_buff[9], event_buff[10], event_buff[11],
++						event_buff[12], event_buff[13], event_buff[14], event_buff[15]);
++			}
++			break;
++		default:
++			dev_dbg(&sdata->client->dev,
++					"%s: unknown event %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n",
++						__func__, event_buff[0], event_buff[1], event_buff[2], event_buff[3], event_buff[4], event_buff[5],
++						event_buff[6], event_buff[7], event_buff[8], event_buff[9], event_buff[10], event_buff[11],
++						event_buff[12], event_buff[13], event_buff[14], event_buff[15]);
++			break;
++		}
++
++		EventNum++;
++		left_event_count--;
++	} while (left_event_count >= 0);
++
++	input_sync(sdata->input);
++
++//	fts_lfd_ctrl(info, sdata->touch_count);
++	
++	return 0;
++}
++
++static irqreturn_t stmfts_irq_handler(int irq, void *dev)
++{
++	struct stmfts_data *sdata = dev;
++
++	mutex_lock(&sdata->mutex);
++
++	/*err = stmfts_read_events(sdata);
++	if (unlikely(err))
++		dev_err(&sdata->client->dev,
++			"failed to read events: %d\n", err);
++	else*/
++		fts_event_handler_type_b(sdata);
++
++	mutex_unlock(&sdata->mutex);
++	return IRQ_HANDLED;
++}
++
++static int stmfts_input_open(struct input_dev *dev)
++{
++	struct stmfts_data *sdata = input_get_drvdata(dev);
++	int err;
++
++	err = pm_runtime_get_sync(&sdata->client->dev);
++	if (err < 0)
++		return err;
++
++	err = i2c_smbus_write_byte(sdata->client, STMFTS_MS_MT_SENSE_ON);
++	if (err)
++		return err;
++
++	mutex_lock(&sdata->mutex);
++	sdata->running = true;
++
++	if (sdata->hover_enabled) {
++		err = i2c_smbus_write_byte(sdata->client,
++					   STMFTS_SS_HOVER_SENSE_ON);
++		if (err)
++			dev_warn(&sdata->client->dev,
++				 "failed to enable hover\n");
++	}
++	mutex_unlock(&sdata->mutex);
++
++	if (sdata->use_key) {
++		err = i2c_smbus_write_byte(sdata->client,
++					   STMFTS_MS_KEY_SENSE_ON);
++		if (err)
++			/* I can still use only the touch screen */
++			dev_warn(&sdata->client->dev,
++				 "failed to enable touchkey\n");
++	}
++
++	return 0;
++}
++
++static void stmfts_input_close(struct input_dev *dev)
++{
++	struct stmfts_data *sdata = input_get_drvdata(dev);
++	int err;
++
++	err = i2c_smbus_write_byte(sdata->client, STMFTS_MS_MT_SENSE_OFF);
++	if (err)
++		dev_warn(&sdata->client->dev,
++			 "failed to disable touchscreen: %d\n", err);
++
++	mutex_lock(&sdata->mutex);
++
++	sdata->running = false;
++
++	if (sdata->hover_enabled) {
++		err = i2c_smbus_write_byte(sdata->client,
++					   STMFTS_SS_HOVER_SENSE_OFF);
++		if (err)
++			dev_warn(&sdata->client->dev,
++				 "failed to disable hover: %d\n", err);
++	}
++	mutex_unlock(&sdata->mutex);
++
++	if (sdata->use_key) {
++		err = i2c_smbus_write_byte(sdata->client,
++					   STMFTS_MS_KEY_SENSE_OFF);
++		if (err)
++			dev_warn(&sdata->client->dev,
++				 "failed to disable touchkey: %d\n", err);
++	}
++
++	pm_runtime_put_sync(&sdata->client->dev);
++}
++
++static ssize_t stmfts_sysfs_chip_id(struct device *dev,
++				struct device_attribute *attr, char *buf)
++{
++	struct stmfts_data *sdata = dev_get_drvdata(dev);
++
++	return sprintf(buf, "%#x\n", sdata->chip_id);
++}
++
++static ssize_t stmfts_sysfs_chip_version(struct device *dev,
++				struct device_attribute *attr, char *buf)
++{
++	struct stmfts_data *sdata = dev_get_drvdata(dev);
++
++	return sprintf(buf, "%u\n", sdata->chip_ver);
++}
++
++static ssize_t stmfts_sysfs_fw_ver(struct device *dev,
++				struct device_attribute *attr, char *buf)
++{
++	struct stmfts_data *sdata = dev_get_drvdata(dev);
++
++	return sprintf(buf, "%u\n", sdata->fw_ver);
++}
++
++static ssize_t stmfts_sysfs_config_id(struct device *dev,
++				struct device_attribute *attr, char *buf)
++{
++	struct stmfts_data *sdata = dev_get_drvdata(dev);
++
++	return sprintf(buf, "%#x\n", sdata->config_id);
++}
++
++static ssize_t stmfts_sysfs_config_version(struct device *dev,
++				struct device_attribute *attr, char *buf)
++{
++	struct stmfts_data *sdata = dev_get_drvdata(dev);
++
++	return sprintf(buf, "%u\n", sdata->config_ver);
++}
++
++static ssize_t stmfts_sysfs_read_status(struct device *dev,
++				struct device_attribute *attr, char *buf)
++{
++	struct stmfts_data *sdata = dev_get_drvdata(dev);
++	u8 status[4];
++	int err;
++
++	err = i2c_smbus_read_i2c_block_data(sdata->client, STMFTS_READ_STATUS,
++					    sizeof(status), status);
++	if (err)
++		return err;
++
++	return sprintf(buf, "%#02x\n", status[0]);
++}
++
++static ssize_t stmfts_sysfs_hover_enable_read(struct device *dev,
++				struct device_attribute *attr, char *buf)
++{
++	struct stmfts_data *sdata = dev_get_drvdata(dev);
++
++	return sprintf(buf, "%u\n", sdata->hover_enabled);
++}
++
++static ssize_t stmfts_sysfs_hover_enable_write(struct device *dev,
++				struct device_attribute *attr,
++				const char *buf, size_t len)
++{
++	struct stmfts_data *sdata = dev_get_drvdata(dev);
++	unsigned long value;
++	int err = 0;
++
++	if (kstrtoul(buf, 0, &value))
++		return -EINVAL;
++
++	mutex_lock(&sdata->mutex);
++
++	if (value && sdata->hover_enabled)
++		goto out;
++
++	if (sdata->running)
++		err = i2c_smbus_write_byte(sdata->client,
++					   value ? STMFTS_SS_HOVER_SENSE_ON :
++						   STMFTS_SS_HOVER_SENSE_OFF);
++
++	if (!err)
++		sdata->hover_enabled = !!value;
++
++out:
++	mutex_unlock(&sdata->mutex);
++
++	return len;
++}
++
++static DEVICE_ATTR(chip_id, 0444, stmfts_sysfs_chip_id, NULL);
++static DEVICE_ATTR(chip_version, 0444, stmfts_sysfs_chip_version, NULL);
++static DEVICE_ATTR(fw_ver, 0444, stmfts_sysfs_fw_ver, NULL);
++static DEVICE_ATTR(config_id, 0444, stmfts_sysfs_config_id, NULL);
++static DEVICE_ATTR(config_version, 0444, stmfts_sysfs_config_version, NULL);
++static DEVICE_ATTR(status, 0444, stmfts_sysfs_read_status, NULL);
++static DEVICE_ATTR(hover_enable, 0644, stmfts_sysfs_hover_enable_read,
++					stmfts_sysfs_hover_enable_write);
++
++static struct attribute *stmfts_sysfs_attrs[] = {
++	&dev_attr_chip_id.attr,
++	&dev_attr_chip_version.attr,
++	&dev_attr_fw_ver.attr,
++	&dev_attr_config_id.attr,
++	&dev_attr_config_version.attr,
++	&dev_attr_status.attr,
++	&dev_attr_hover_enable.attr,
++	NULL
++};
++
++static struct attribute_group stmfts_attribute_group = {
++	.attrs = stmfts_sysfs_attrs
++};
++
++static int stmfts_power_on(struct stmfts_data *sdata)
++{
++	int err;
++	u8 reg[8];
++	u8 resetCmds[6] = { 0xFA, 0x20, 0x00, 0x00, 0x24, 0x81 };
++	// (FTS_TOUCHTYPE_BIT_TOUCH | FTS_TOUCHTYPE_BIT_PALM | FTS_TOUCHTYPE_BIT_WET)
++	u8 touchCmds[3] = { 0x39, 0x61, 0x00 };
++	u8 calCmds[1] = { FTS_CMD_FORCE_CALIBRATION };
++	u8 event_clrCmds[1] = { FTS_CMD_CLEAR_ALL_EVENT };
++	u8 scanCmds[3] = { 0xA0, 0x00, 0x01 };
++
++	err = regulator_bulk_enable(ARRAY_SIZE(sdata->regulators),
++				    sdata->regulators);
++	if (err)
++		return err;
++
++	/*
++	 * The datasheet does not specify the power on time, but considering
++	 * that the reset time is < 10ms, I sleep 20ms to be sure
++	 */
++	msleep(20);
++
++	//i2c_transfer for some reason reads only zeroes...
++	err = i2c_smbus_read_i2c_block_data(sdata->client, FTS_READ_FW_VERSION,
++					    sizeof(reg), reg);
++	if (err < 0)
++		return err;
++	if (err != sizeof(reg))
++		return -EIO;
++
++	sdata->fw_ver = (reg[0] << 8) + reg[1];
++	sdata->config_id = 0;
++	sdata->config_ver = (reg[2] << 8) + reg[3];
++
++	printk("sdata->fw_ver: %X", sdata->fw_ver);
++
++	err = i2c_smbus_read_i2c_block_data(sdata->client, FTS_READ_DEVICE_ID,
++					    sizeof(reg), reg);
++	if (err < 0)
++		return err;
++	if (err != sizeof(reg))
++		return -EIO;
++
++	sdata->chip_id = (reg[2] << 8) + reg[3];
++	sdata->chip_ver = reg[4];
++
++	err = i2c_master_send(sdata->client, resetCmds, 6);
++	if (err < 0)
++		return err;
++
++	msleep(20);
++
++	enable_irq(sdata->client->irq);
++
++	err = i2c_master_send(sdata->client, touchCmds, 3);
++	if (err < 0)
++		return err;
++
++	err = i2c_master_send(sdata->client, calCmds, 1);
++	if (err < 0)
++		return err;
++
++	err = i2c_master_send(sdata->client, event_clrCmds, 1);
++	if (err < 0)
++		return err;
++
++	err = i2c_master_send(sdata->client, scanCmds, 3);
++	if (err < 0)
++		return err;
++
++	return 0;
++}
++
++static void stmfts_power_off(void *data)
++{
++	struct stmfts_data *sdata = data;
++
++	disable_irq(sdata->client->irq);
++	regulator_bulk_disable(ARRAY_SIZE(sdata->regulators),
++						sdata->regulators);
++}
++
++/* This function is void because I don't want to prevent using the touch key
++ * only because the LEDs don't get registered
++ */
++static int stmfts_enable_led(struct stmfts_data *sdata)
++{
++	int err;
++
++	/* get the regulator for powering the leds on */
++	sdata->ledvdd = devm_regulator_get(&sdata->client->dev, "ledvdd");
++	if (IS_ERR(sdata->ledvdd))
++		return PTR_ERR(sdata->ledvdd);
++
++	sdata->led_cdev.name = STMFTS_DEV_NAME;
++	sdata->led_cdev.max_brightness = LED_ON;
++	sdata->led_cdev.brightness = LED_OFF;
++	sdata->led_cdev.brightness_set_blocking = stmfts_brightness_set;
++	sdata->led_cdev.brightness_get = stmfts_brightness_get;
++
++	err = devm_led_classdev_register(&sdata->client->dev, &sdata->led_cdev);
++	if (err) {
++		devm_regulator_put(sdata->ledvdd);
++		return err;
++	}
++
++	return 0;
++}
++
++static int stmfts_probe(struct i2c_client *client,
++			const struct i2c_device_id *id)
++{
++	int err;
++	struct stmfts_data *sdata;
++
++	if (!i2c_check_functionality(client->adapter, I2C_FUNC_I2C |
++						I2C_FUNC_SMBUS_BYTE_DATA |
++						I2C_FUNC_SMBUS_I2C_BLOCK))
++		return -ENODEV;
++
++	sdata = devm_kzalloc(&client->dev, sizeof(*sdata), GFP_KERNEL);
++	if (!sdata)
++		return -ENOMEM;
++
++	i2c_set_clientdata(client, sdata);
++
++	sdata->client = client;
++	mutex_init(&sdata->mutex);
++	init_completion(&sdata->cmd_done);
++
++	sdata->regulators[STMFTS_REGULATOR_VDD].supply = "vdd";
++	sdata->regulators[STMFTS_REGULATOR_AVDD].supply = "avdd";
++	err = devm_regulator_bulk_get(&client->dev,
++				      ARRAY_SIZE(sdata->regulators),
++				      sdata->regulators);
++	if (err)
++		return err;
++
++	sdata->input = devm_input_allocate_device(&client->dev);
++	if (!sdata->input)
++		return -ENOMEM;
++
++	sdata->input->name = STMFTS_DEV_NAME;
++	sdata->input->id.bustype = BUS_I2C;
++	sdata->input->open = stmfts_input_open;
++	sdata->input->close = stmfts_input_close;
++
++	input_set_capability(sdata->input, EV_ABS, ABS_MT_POSITION_X);
++	input_set_capability(sdata->input, EV_ABS, ABS_MT_POSITION_Y);
++	touchscreen_parse_properties(sdata->input, true, &sdata->prop);
++
++//Downstream device tree uses 4095 as max_coords
++	input_set_abs_params(sdata->input, ABS_MT_POSITION_X, 0,
++			     4095, 0, 0);
++	input_set_abs_params(sdata->input, ABS_MT_POSITION_Y, 0,
++			     4095, 0, 0);
++	input_set_abs_params(sdata->input, ABS_MT_TOUCH_MAJOR, 0, 255, 0, 0);
++	input_set_abs_params(sdata->input, ABS_MT_TOUCH_MAJOR, 0, 255, 0, 0);
++	input_set_abs_params(sdata->input, ABS_MT_TOUCH_MINOR, 0, 255, 0, 0);
++	input_set_abs_params(sdata->input, ABS_MT_ORIENTATION, 0, 255, 0, 0);
++	input_set_abs_params(sdata->input, ABS_MT_PRESSURE, 0, 255, 0, 0);
++	input_set_abs_params(sdata->input, ABS_DISTANCE, 0, 255, 0, 0);
++
++	sdata->use_key = device_property_read_bool(&client->dev,
++						   "touch-key-connected");
++	if (sdata->use_key) {
++		input_set_capability(sdata->input, EV_KEY, KEY_MENU);
++		input_set_capability(sdata->input, EV_KEY, KEY_BACK);
++	}
++
++	err = input_mt_init_slots(sdata->input,
++				  STMFTS_MAX_FINGERS, INPUT_MT_DIRECT);
++	if (err)
++		return err;
++
++	input_set_drvdata(sdata->input, sdata);
++
++	/*
++	 * stmfts_power_on expects interrupt to be disabled, but
++	 * at this point the device is still off and I do not trust
++	 * the status of the irq line that can generate some spurious
++	 * interrupts. To be on the safe side it's better to not enable
++	 * the interrupts during their request.
++	 */
++	err = devm_request_threaded_irq(&client->dev, client->irq,
++					NULL, stmfts_irq_handler,
++					IRQF_ONESHOT | IRQF_NO_AUTOEN,
++					"stmfts_irq", sdata);
++	if (err)
++		return err;
++
++	dev_dbg(&client->dev, "initializing ST-Microelectronics FTS...\n");
++
++	err = stmfts_power_on(sdata);
++	if (err)
++		return err;
++
++	err = devm_add_action_or_reset(&client->dev, stmfts_power_off, sdata);
++	if (err)
++		return err;
++
++	err = input_register_device(sdata->input);
++	if (err)
++		return err;
++
++	if (sdata->use_key) {
++		err = stmfts_enable_led(sdata);
++		if (err) {
++			/*
++			 * Even if the LEDs have failed to be initialized and
++			 * used in the driver, I can still use the device even
++			 * without LEDs. The ledvdd regulator pointer will be
++			 * used as a flag.
++			 */
++			dev_warn(&client->dev, "unable to use touchkey leds\n");
++			sdata->ledvdd = NULL;
++		}
++	}
++
++	err = devm_device_add_group(&client->dev, &stmfts_attribute_group);
++	if (err)
++		return err;
++
++	pm_runtime_enable(&client->dev);
++	device_enable_async_suspend(&client->dev);
++
++	return 0;
++}
++
++static int stmfts_remove(struct i2c_client *client)
++{
++	pm_runtime_disable(&client->dev);
++
++	return 0;
++}
++
++static int __maybe_unused stmfts_runtime_suspend(struct device *dev)
++{
++	struct stmfts_data *sdata = dev_get_drvdata(dev);
++	int ret;
++
++	ret = i2c_smbus_write_byte(sdata->client, STMFTS_SLEEP_IN);
++	if (ret)
++		dev_warn(dev, "failed to suspend device: %d\n", ret);
++
++	return ret;
++}
++
++static int __maybe_unused stmfts_runtime_resume(struct device *dev)
++{
++	struct stmfts_data *sdata = dev_get_drvdata(dev);
++	int ret;
++
++	ret = i2c_smbus_write_byte(sdata->client, STMFTS_SLEEP_OUT);
++	if (ret)
++		dev_err(dev, "failed to resume device: %d\n", ret);
++
++	return ret;
++}
++
++static int __maybe_unused stmfts_suspend(struct device *dev)
++{
++	struct stmfts_data *sdata = dev_get_drvdata(dev);
++
++	stmfts_power_off(sdata);
++
++	return 0;
++}
++
++static int __maybe_unused stmfts_resume(struct device *dev)
++{
++	struct stmfts_data *sdata = dev_get_drvdata(dev);
++
++	return stmfts_power_on(sdata);
++}
++
++static const struct dev_pm_ops stmfts_pm_ops = {
++	SET_SYSTEM_SLEEP_PM_OPS(stmfts_suspend, stmfts_resume)
++	SET_RUNTIME_PM_OPS(stmfts_runtime_suspend, stmfts_runtime_resume, NULL)
++};
++
++#ifdef CONFIG_OF
++static const struct of_device_id stmfts_of_match[] = {
++	{ .compatible = "st,stmfts_fts5cu56a", },
++	{ },
++};
++MODULE_DEVICE_TABLE(of, stmfts_of_match);
++#endif
++
++static const struct i2c_device_id stmfts_id[] = {
++	{ "stmfts_fts5cu56a", 0 },
++	{ },
++};
++MODULE_DEVICE_TABLE(i2c, stmfts_id);
++
++static struct i2c_driver stmfts_driver = {
++	.driver = {
++		.name = STMFTS_DEV_NAME,
++		.of_match_table = of_match_ptr(stmfts_of_match),
++		.pm = &stmfts_pm_ops,
++		.probe_type = PROBE_PREFER_ASYNCHRONOUS,
++	},
++	.probe = stmfts_probe,
++	.remove = stmfts_remove,
++	.id_table = stmfts_id,
++};
++
++module_i2c_driver(stmfts_driver);
++
++MODULE_AUTHOR("Andi Shyti <andi.shyti@samsung.com>");
++MODULE_DESCRIPTION("STMicroelectronics FTS Touch Screen");
++MODULE_LICENSE("GPL v2");
+diff --git a/drivers/media/platform/qcom/venus/core.c b/drivers/media/platform/qcom/venus/core.c
+index 990a1519f968df..e419293cf64c90 100644
+--- a/drivers/media/platform/qcom/venus/core.c
++++ b/drivers/media/platform/qcom/venus/core.c
+@@ -765,6 +765,53 @@ static const struct venus_resources sc7180_res = {
+ 	.fwname = "qcom/venus-5.4/venus.mdt",
+ };
+ 
++static const struct freq_tbl sm7125_freq_table[] = {
++	{  0, 434000000 },
++	{  0, 340000000 },
++	{  0, 270000000 },
++	{  0, 150000000 },
++};
++
++static const struct bw_tbl sm7125_bw_table_enc[] = {
++	{  972000,  750000, 0, 0, 0 },	/* 3840x2160@30 */
++	{  489600,  451000, 0, 0, 0 },	/* 1920x1080@60 */
++	{  244800,  234000, 0, 0, 0 },	/* 1920x1080@30 */
++};
++
++static const struct bw_tbl sm7125_bw_table_dec[] = {
++	{ 1036800, 1386000, 0, 1875000, 0 },	/* 4096x2160@30 */
++	{  489600,  865000, 0, 1146000, 0 },	/* 1920x1080@60 */
++	{  244800,  530000, 0,  583000, 0 },	/* 1920x1080@30 */
++};
++
++static const struct venus_resources sm7125_res = {
++	.freq_tbl = sm7125_freq_table,
++	.freq_tbl_size = ARRAY_SIZE(sm7125_freq_table),
++	.bw_tbl_enc = sm7125_bw_table_enc,
++	.bw_tbl_enc_size = ARRAY_SIZE(sm7125_bw_table_enc),
++	.bw_tbl_dec = sm7125_bw_table_dec,
++	.bw_tbl_dec_size = ARRAY_SIZE(sm7125_bw_table_dec),
++	.clks = {"core", "iface", "bus" },
++	.clks_num = 3,
++	.vcodec0_clks = { "vcodec0_core", "vcodec0_bus" },
++	.vcodec_clks_num = 2,
++	.vcodec_pmdomains = { "venus", "vcodec0" },
++	.vcodec_pmdomains_num = 2,
++	.opp_pmdomain = (const char *[]) { "cx", NULL },
++	.vcodec_num = 1,
++	.max_load = 1944000,	/* 3840x2160@60 */
++	.hfi_version = HFI_VERSION_4XX,
++	.vmem_id = VIDC_RESOURCE_NONE,
++	.vmem_size = 0,
++	.vmem_addr = 0,
++	.dma_mask = 0xe0000000 - 1,
++	.cp_start = 0,
++	.cp_size = 0x70800000,
++	.cp_nonpixel_start = 0x1000000,
++	.cp_nonpixel_size = 0x24800000,
++	.fwname = "qcom/venus-5.4/venus.mdt",
++};
++
+ static const struct freq_tbl sm8250_freq_table[] = {
+ 	{ 0, 444000000 },
+ 	{ 0, 366000000 },
+@@ -884,6 +931,7 @@ static const struct of_device_id venus_dt_match[] = {
+ 	{ .compatible = "qcom,sdm845-venus-v2", .data = &sdm845_res_v2, },
+ 	{ .compatible = "qcom,sc7180-venus", .data = &sc7180_res, },
+ 	{ .compatible = "qcom,sc7280-venus", .data = &sc7280_res, },
++	{ .compatible = "qcom,sm7125-venus", .data = &sm7125_res, },
+ 	{ .compatible = "qcom,sm8250-venus", .data = &sm8250_res, },
+ 	{ }
+ };
+diff --git a/drivers/phy/qualcomm/phy-qcom-qmp-ufs.c b/drivers/phy/qualcomm/phy-qcom-qmp-ufs.c
+index c8583f5a54bdbc..dcfc4eab3572ff 100644
+--- a/drivers/phy/qualcomm/phy-qcom-qmp-ufs.c
++++ b/drivers/phy/qualcomm/phy-qcom-qmp-ufs.c
+@@ -393,6 +393,36 @@ static const struct qmp_phy_init_tbl sdm845_ufsphy_pcs_tbl[] = {
+ 	QMP_PHY_INIT_CFG(QPHY_V3_PCS_UFS_MULTI_LANE_CTRL1, 0x02),
+ };
+ 
++static const struct qmp_phy_init_tbl sm7125_ufsphy_rx_tbl[] = {
++	QMP_PHY_INIT_CFG(QSERDES_V3_RX_SIGDET_LVL, 0x24),
++	QMP_PHY_INIT_CFG(QSERDES_V3_RX_SIGDET_CNTRL, 0x0f),
++	QMP_PHY_INIT_CFG(QSERDES_V3_RX_SIGDET_DEGLITCH_CNTRL, 0x1e),
++	QMP_PHY_INIT_CFG(QSERDES_V3_RX_RX_INTERFACE_MODE, 0x40),
++	QMP_PHY_INIT_CFG(QSERDES_V3_RX_UCDR_FASTLOCK_FO_GAIN, 0x0b),
++	QMP_PHY_INIT_CFG(QSERDES_V3_RX_RX_TERM_BW, 0x5b),
++	QMP_PHY_INIT_CFG(QSERDES_V3_RX_RX_EQU_ADAPTOR_CNTRL2, 0x06),
++	QMP_PHY_INIT_CFG(QSERDES_V3_RX_RX_EQU_ADAPTOR_CNTRL3, 0x04),
++	QMP_PHY_INIT_CFG(QSERDES_V3_RX_RX_EQU_ADAPTOR_CNTRL4, 0x1b),
++	QMP_PHY_INIT_CFG(QSERDES_V3_RX_UCDR_SVS_SO_GAIN_HALF, 0x04),
++	QMP_PHY_INIT_CFG(QSERDES_V3_RX_UCDR_SVS_SO_GAIN_QUARTER, 0x04),
++	QMP_PHY_INIT_CFG(QSERDES_V3_RX_UCDR_SVS_SO_GAIN, 0x04),
++	QMP_PHY_INIT_CFG(QSERDES_V3_RX_UCDR_SO_SATURATION_AND_ENABLE, 0x5b),
++	QMP_PHY_INIT_CFG(QSERDES_V3_RX_UCDR_PI_CONTROLS, 0x81),
++	QMP_PHY_INIT_CFG(QSERDES_V3_RX_UCDR_FASTLOCK_COUNT_LOW, 0x80),
++	QMP_PHY_INIT_CFG(QSERDES_V3_RX_RX_MODE_00, 0x59),
++};
++
++static const struct qmp_phy_init_tbl sm7125_ufsphy_pcs_tbl[] = {
++	QMP_PHY_INIT_CFG(QPHY_V3_PCS_UFS_RX_SIGDET_CTRL2, 0x6f),
++	QMP_PHY_INIT_CFG(QPHY_V3_PCS_UFS_TX_LARGE_AMP_DRV_LVL, 0x0f),
++	QMP_PHY_INIT_CFG(QPHY_V3_PCS_UFS_TX_SMALL_AMP_DRV_LVL, 0x02),
++	QMP_PHY_INIT_CFG(QPHY_V3_PCS_UFS_RX_SYM_RESYNC_CTRL, 0x03),
++	QMP_PHY_INIT_CFG(QPHY_V3_PCS_UFS_TX_MID_TERM_CTRL1, 0x43),
++	QMP_PHY_INIT_CFG(QPHY_V3_PCS_UFS_RX_SIGDET_CTRL1, 0x0f),
++	QMP_PHY_INIT_CFG(QPHY_V3_PCS_UFS_RX_MIN_HIBERN8_TIME, 0xFF),
++	QMP_PHY_INIT_CFG(QPHY_V3_PCS_UFS_MULTI_LANE_CTRL1, 0x02),
++};
++
+ static const struct qmp_phy_init_tbl sm8150_ufsphy_serdes_tbl[] = {
+ 	QMP_PHY_INIT_CFG(QSERDES_V4_COM_SYSCLK_EN_SEL, 0xd9),
+ 	QMP_PHY_INIT_CFG(QSERDES_V4_COM_HSCLK_SEL, 0x11),
+@@ -819,6 +849,31 @@ static const struct qmp_phy_cfg sm8150_ufsphy_cfg = {
+ 	.is_dual_lane_phy	= true,
+ };
+ 
++static const struct qmp_phy_cfg sm7125_ufsphy_cfg = {
++	.type			= PHY_TYPE_UFS,
++	.nlanes			= 1,
++
++	.serdes_tbl		= sdm845_ufsphy_serdes_tbl,
++	.serdes_tbl_num		= ARRAY_SIZE(sdm845_ufsphy_serdes_tbl),
++	.tx_tbl			= sdm845_ufsphy_tx_tbl,
++	.tx_tbl_num		= ARRAY_SIZE(sdm845_ufsphy_tx_tbl),
++	.rx_tbl			= sm7125_ufsphy_rx_tbl,
++	.rx_tbl_num		= ARRAY_SIZE(sm7125_ufsphy_rx_tbl),
++	.pcs_tbl		= sm7125_ufsphy_pcs_tbl,
++	.pcs_tbl_num		= ARRAY_SIZE(sm7125_ufsphy_pcs_tbl),
++	.clk_list		= sdm845_ufs_phy_clk_l,
++	.num_clks		= ARRAY_SIZE(sdm845_ufs_phy_clk_l),
++	.vreg_list		= qmp_phy_vreg_l,
++	.num_vregs		= ARRAY_SIZE(qmp_phy_vreg_l),
++	.regs			= sdm845_ufsphy_regs_layout,
++
++	.start_ctrl		= SERDES_START,
++	.pwrdn_ctrl		= SW_PWRDN,
++	.phy_status		= PHYSTATUS,
++
++	.is_dual_lane_phy	= false,
++};
++
+ static const struct qmp_phy_cfg sm8350_ufsphy_cfg = {
+ 	.type			= PHY_TYPE_UFS,
+ 	.nlanes			= 2,
+@@ -1267,6 +1322,9 @@ static const struct of_device_id qcom_qmp_phy_ufs_of_match_table[] = {
+ 	}, {
+ 		.compatible = "qcom,sm6350-qmp-ufs-phy",
+ 		.data = &sdm845_ufsphy_cfg,
++	}, {
++		.compatible = "qcom,sm7125-qmp-ufs-phy",
++		.data = &sm7125_ufsphy_cfg,
+ 	}, {
+ 		.compatible = "qcom,sm8150-qmp-ufs-phy",
+ 		.data = &sm8150_ufsphy_cfg,
+diff --git a/drivers/power/supply/Kconfig b/drivers/power/supply/Kconfig
+index 1aa8323ad9f6a0..95b5f829706758 100644
+--- a/drivers/power/supply/Kconfig
++++ b/drivers/power/supply/Kconfig
+@@ -897,4 +897,25 @@ config BATTERY_UG3105
+ 	  device is off or suspended, the functionality of this driver is
+ 	  limited to reporting capacity only.
+ 
++config BATTERY_SM5714
++	tristate "SiliconMitus SM5714 Fuel Gauge support"
++	depends on I2C
++	help
++	  Say Y here to enable support for the Fuel-Gauge unit of the SM5714
++	  multi-function device.
++
++	  This driver can also be built as a module. If so, the module will be
++	  called sm5714-fg.
++
++config CHARGER_SM5714
++	tristate "SiliconMitus SM5714 Charger support"
++	depends on I2C
++	help
++	  Say Y here to enable support for the Charger unit of the SM5714
++	  multi-function device.
++
++	  This driver can also be built as a module. If so, the module will be
++	  called sm5714-charger.
++
++
+ endif # POWER_SUPPLY
+diff --git a/drivers/power/supply/Makefile b/drivers/power/supply/Makefile
+index 7f02f36aea55d8..be594c6e70e8eb 100644
+--- a/drivers/power/supply/Makefile
++++ b/drivers/power/supply/Makefile
+@@ -108,3 +108,5 @@ obj-$(CONFIG_BATTERY_ACER_A500)	+= acer_a500_battery.o
+ obj-$(CONFIG_BATTERY_SURFACE)	+= surface_battery.o
+ obj-$(CONFIG_CHARGER_SURFACE)	+= surface_charger.o
+ obj-$(CONFIG_BATTERY_UG3105)	+= ug3105_battery.o
++obj-$(CONFIG_BATTERY_SM5714)	+= sm5714-fg.o
++obj-$(CONFIG_CHARGER_SM5714)	+= sm5714-charger.o
+diff --git a/drivers/power/supply/sm5714-charger.c b/drivers/power/supply/sm5714-charger.c
+new file mode 100644
+index 00000000000000..4dde69a7de7222
+--- /dev/null
++++ b/drivers/power/supply/sm5714-charger.c
+@@ -0,0 +1,238 @@
++#include <linux/delay.h>
++#include <linux/i2c.h>
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/property.h>
++#include <linux/of_gpio.h>
++#include <linux/power_supply.h>
++#include <linux/regmap.h>
++#include <linux/platform_device.h>
++#include <linux/property.h>
++
++//SM5714-CHARGER reg
++#define SM5714_CHG_REG_STATUS1            0x0D
++#define SM5714_CHG_REG_STATUS2            0x0E
++#define SM5714_CHG_REG_STATUS3            0x0F
++#define SM5714_CHG_REG_STATUS4            0x10
++#define SM5714_CHG_REG_STATUS5            0x11
++
++#define SM5714_CHG_REG_CNTL1              0x13
++#define SM5714_CHG_REG_VBUSCNTL           0x15
++#define SM5714_CHG_REG_CHGCNTL2           0x18
++#define SM5714_CHG_REG_CHGCNTL4           0x1A
++#define SM5714_CHG_REG_CHGCNTL5           0x1B
++
++struct sm5714_charger {
++    struct power_supply *psy;
++    struct regmap* regmap;
++    bool use_autostop;
++};
++
++static enum power_supply_property sm5714_charger_props[] = {
++    POWER_SUPPLY_PROP_PRESENT,
++	POWER_SUPPLY_PROP_STATUS,
++	POWER_SUPPLY_PROP_HEALTH,
++	POWER_SUPPLY_PROP_ONLINE,
++};
++
++static int chg_set_input_current_limit(struct sm5714_charger *charger, int mA)
++{
++	u8 offset;
++
++    if (mA < 100) {
++        offset = 0x00;
++    } else {
++        offset = ((mA - 100) / 25) & 0x7F;
++    }
++    return regmap_update_bits(charger->regmap, SM5714_CHG_REG_VBUSCNTL, (0x7F << 0), (offset << 0));
++}
++
++static int chg_set_charging_current(struct sm5714_charger *charger, int mA)
++{
++	u8 offset;
++	int uA;
++
++	uA = mA * 1000;
++
++	if (uA < 109375) {			// 109.375 mA
++		offset = 0x07;
++	} else if (uA > 3500000) {	//	3500.000 mA
++		offset = 0xE0;
++	} else {
++		offset = (7 + ((uA - 109375) / 15625)) & 0xFF;
++	}
++	return regmap_update_bits(charger->regmap, SM5714_CHG_REG_CHGCNTL2, (0xFF << 0), (offset << 0));
++}
++
++static int chg_set_topoff_current(struct sm5714_charger *charger, int mA)
++{
++	u8 offset;
++
++	if (mA < 100) {
++		offset = 0x0;               /* Topoff = 100mA */
++	} else if (mA < 800) {
++		offset = (mA - 100) / 25;   /* Topoff = 125mA ~ 775mA in 25mA steps */
++	} else {
++		offset = 0x1C;              /* Topoff = 800mA */
++	}
++	return regmap_update_bits(charger->regmap, SM5714_CHG_REG_CHGCNTL5, (0x1F << 0), (offset << 0));
++}
++
++static int sm5714_charger_get_property(struct power_supply *psy,
++				   enum power_supply_property psp,
++				   union power_supply_propval *val) 
++{
++    int error;
++    unsigned int value;
++    struct sm5714_charger *drv;
++
++    int status = POWER_SUPPLY_STATUS_UNKNOWN;
++    int health = POWER_SUPPLY_HEALTH_UNKNOWN;
++    unsigned int reg_st1, reg_st2, reg_st3;
++
++    drv = power_supply_get_drvdata(psy);
++    switch (psp) {
++        case POWER_SUPPLY_PROP_PRESENT:
++            error = regmap_read(drv->regmap, SM5714_CHG_REG_STATUS2, &value);
++            val->intval = (value & (0x1 << 2)) ? 0 : 1;
++            break;
++        case POWER_SUPPLY_PROP_ONLINE:
++            error = regmap_read(drv->regmap, SM5714_CHG_REG_STATUS1, &value);
++            val->intval = value & 0x1 ? 1 : 0;
++            break;
++        case POWER_SUPPLY_PROP_STATUS:
++            error = regmap_read(drv->regmap, SM5714_CHG_REG_STATUS1, &reg_st1);
++            error = regmap_read(drv->regmap, SM5714_CHG_REG_STATUS2, &reg_st2);
++            error = regmap_read(drv->regmap, SM5714_CHG_REG_STATUS3, &reg_st3);
++
++            if (reg_st2 & (0x1 << 5))
++                status = POWER_SUPPLY_STATUS_FULL;
++            else if (reg_st2 & (0x1 << 3))
++                status = POWER_SUPPLY_STATUS_CHARGING;
++            else {
++                if (reg_st1 & (0x1 << 0))
++                    status = POWER_SUPPLY_STATUS_NOT_CHARGING;
++                else
++                    status = POWER_SUPPLY_STATUS_DISCHARGING;
++            }
++            val->intval = status;
++            break;
++        case POWER_SUPPLY_PROP_HEALTH:
++            error = regmap_read(drv->regmap, SM5714_CHG_REG_STATUS1, &value);
++            if (value & (0x1 << 0))
++                health = POWER_SUPPLY_HEALTH_GOOD;
++            else {
++                if (value & (0x1 << 2)) {
++                    health = POWER_SUPPLY_HEALTH_OVERVOLTAGE;
++                } else if (value & (0x1 << 1)) {
++                    //undervoltage
++                    health = POWER_SUPPLY_HEALTH_UNKNOWN;
++                }
++            }
++            val->intval = health;
++            break;
++        default:
++            return -EINVAL;
++    }
++    return 0;
++}
++
++static const struct power_supply_desc sm5714_charger_desc = {
++	.name			= "sm5714_charger",
++	.type			= POWER_SUPPLY_TYPE_USB,
++	.properties		= sm5714_charger_props,
++	.num_properties		= ARRAY_SIZE(sm5714_charger_props),
++	.get_property		= sm5714_charger_get_property,
++};
++
++static const struct regmap_config sm5714_charger_regmap = {
++	.reg_bits	= 8,
++	.val_bits	= 16,
++    .val_format_endian = REGMAP_ENDIAN_LITTLE,
++};
++
++static int sm5714_charger_probe (struct i2c_client* i2c) {
++    int error;
++    struct device* dev = &i2c->dev;
++    struct power_supply_config charger_cfg = {};
++    struct sm5714_charger *drv;
++    int input_current_limit = 500, charging_current = 500, topoff_current = 100;
++
++	drv = devm_kzalloc(&i2c->dev, sizeof(*drv), GFP_KERNEL);
++	if (!drv)
++		return -ENOMEM;
++
++    charger_cfg.drv_data = drv;
++	charger_cfg.of_node = i2c->dev.of_node;
++
++    drv->regmap = devm_regmap_init_i2c(i2c, &sm5714_charger_regmap);
++    if (IS_ERR(drv->regmap))
++		return PTR_ERR(drv->regmap);
++
++	drv->use_autostop = device_property_read_bool(dev, "siliconmitus,enable-autostop");
++
++    error = regmap_update_bits(drv->regmap, SM5714_CHG_REG_CHGCNTL4, (0x1 << 6), 
++                            (drv->use_autostop << 6));
++    if (error)
++         return dev_err_probe(dev, error, "Unable to set autostop register\n");
++
++    device_property_read_u32(dev, "siliconmitus,input-current-limit", &input_current_limit);
++
++    error = chg_set_input_current_limit(drv, input_current_limit);
++    if (error)
++         return dev_err_probe(dev, error, "Unable to set default input current limit\n");
++
++    device_property_read_u32(dev, "siliconmitus,charging-current", &charging_current);
++
++    error = chg_set_charging_current(drv, charging_current);
++    if (error)
++         return dev_err_probe(dev, error, "Unable to set default charging current\n");
++
++    device_property_read_u32(dev, "siliconmitus,topoff-current", &topoff_current);
++
++    error = chg_set_topoff_current(drv, topoff_current);
++    if (error)
++         return dev_err_probe(dev, error, "Unable to set topoff current\n");
++
++    //enable charging
++    error = regmap_update_bits(drv->regmap, SM5714_CHG_REG_CNTL1, (0x1 << 3), (1 << 3));
++    if (error)
++         return dev_err_probe(dev, error, "Unable to enable charging\n");
++
++	drv->psy = devm_power_supply_register(dev, &sm5714_charger_desc,
++						   &charger_cfg);
++
++	if (IS_ERR(drv->psy)) {
++		dev_err(dev, "failed to register power supply\n");
++		return PTR_ERR(drv->psy);
++	}
++
++	return 0;
++}
++
++static const struct i2c_device_id sm5714_i2c_ids[] = {
++        { "sm5714-charger", 0 },
++        { },
++};
++MODULE_DEVICE_TABLE(i2c, sm5714_i2c_ids);
++
++static struct of_device_id sm5714_of_match_table[] = {
++	{ .compatible = "siliconmitus,sm5714-charger", },
++	{ },
++};
++MODULE_DEVICE_TABLE(of, sm5714_of_match_table);
++
++static struct i2c_driver sm5714_charger_driver = {
++	.driver = {
++		   .name = "sm5714-charger",
++		   .of_match_table = sm5714_of_match_table,
++	},
++	.probe_new	= sm5714_charger_probe,
++    .id_table   = sm5714_i2c_ids,
++};
++
++module_i2c_driver(sm5714_charger_driver);
++
++MODULE_DESCRIPTION("Samsung SM5714-CHARGER");
++MODULE_AUTHOR("map220v <map220v300@gmail.com>");
++MODULE_LICENSE("GPL");
+\ No newline at end of file
+diff --git a/drivers/power/supply/sm5714-fg.c b/drivers/power/supply/sm5714-fg.c
+new file mode 100644
+index 00000000000000..7b2f758f2be98e
+--- /dev/null
++++ b/drivers/power/supply/sm5714-fg.c
+@@ -0,0 +1,191 @@
++#include <linux/delay.h>
++#include <linux/gpio/consumer.h>
++#include <linux/i2c.h>
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/property.h>
++#include <linux/regulator/driver.h>
++#include <linux/regulator/of_regulator.h>
++#include <linux/of_gpio.h>
++#include <linux/power_supply.h>
++#include <linux/regmap.h>
++
++#define SM5714_FG_REG_DEVICE_ID           0x00
++#define SM5714_FG_REG_CTRL				  0x01
++#define SM5714_FG_REG_INTFG               0x02
++#define SM5714_FG_REG_STATUS              0x03
++#define SM5714_FG_REG_INTFG_MASK          0x04
++
++#define SM5714_FG_REG_SRAM_PROT		      0x8B
++#define SM5714_FG_REG_SRAM_RADDR		  0x8C
++#define SM5714_FG_REG_SRAM_RDATA		  0x8D
++#define SM5714_FG_REG_SRAM_WADDR		  0x8E
++#define SM5714_FG_REG_SRAM_WDATA		  0x8F
++
++//SM5714 SRAM
++#define SM5714_FG_ADDR_SRAM_SOC			  0x00
++#define SM5714_FG_ADDR_SRAM_OCV			  0x01
++#define SM5714_FG_ADDR_SRAM_VBAT		  0x03
++#define SM5714_FG_ADDR_SRAM_VSYS		  0x04
++#define SM5714_FG_ADDR_SRAM_CURRENT		  0x05
++#define SM5714_FG_ADDR_SRAM_TEMPERATURE	  0x07
++#define SM5714_FG_ADDR_SRAM_VBAT_AVG	  0x08
++#define SM5714_FG_ADDR_SRAM_CURRENT_AVG	  0x09
++#define SM5714_FG_ADDR_SRAM_STATE         0x15
++
++#define FIXED_POINT_8_8_EXTEND_TO_INT(fp_value, extend_orders) ((((fp_value & 0xff00) >> 8) * extend_orders) + (((fp_value & 0xff) * extend_orders) / 256))
++
++struct sm5714_fg {
++    struct i2c_client* i2c;
++    struct power_supply *psy;
++};
++
++static enum power_supply_property sm5714_fg_props[] = {
++	POWER_SUPPLY_PROP_STATUS,
++    POWER_SUPPLY_PROP_TEMP,
++	POWER_SUPPLY_PROP_CAPACITY,
++	POWER_SUPPLY_PROP_VOLTAGE_NOW,
++	POWER_SUPPLY_PROP_CURRENT_NOW,
++};
++
++static int sm5714_fg_get_status(int *status)
++{
++	union power_supply_propval val;
++	struct power_supply *psy;
++	int ret = -EINVAL;
++
++    psy = power_supply_get_by_name("sm5714_charger");
++    if (!psy)
++        return ret;
++
++    ret = power_supply_get_property(psy, POWER_SUPPLY_PROP_STATUS,
++                    &val);
++    power_supply_put(psy);
++    if (ret)
++        return ret;
++
++    *status = val.intval;
++
++	return ret;
++}
++
++static int sm5714_fg_get_property(struct power_supply *psy,
++				   enum power_supply_property psp,
++				   union power_supply_propval *val) 
++{
++    int error;
++    unsigned int value;
++    struct sm5714_fg *drv;
++
++    drv = power_supply_get_drvdata(psy);
++    switch(psp) {
++        case POWER_SUPPLY_PROP_STATUS:
++            error = sm5714_fg_get_status(&value);
++            val->intval = value;
++            break;
++        case POWER_SUPPLY_PROP_TEMP:
++            i2c_smbus_write_word_data(drv->i2c, SM5714_FG_REG_SRAM_RADDR, SM5714_FG_ADDR_SRAM_TEMPERATURE);
++            value = i2c_smbus_read_word_data(drv->i2c, SM5714_FG_REG_SRAM_RDATA);
++            if (value < 0)
++		        return value;
++            // Convert to decicelcius
++            value &= 0x7fff;
++            value = FIXED_POINT_8_8_EXTEND_TO_INT((unsigned short)value, 10);
++            val->intval = value;
++            break;
++        case POWER_SUPPLY_PROP_CAPACITY:
++            i2c_smbus_write_word_data(drv->i2c, SM5714_FG_REG_SRAM_RADDR, SM5714_FG_ADDR_SRAM_SOC);
++            value = i2c_smbus_read_word_data(drv->i2c, SM5714_FG_REG_SRAM_RDATA);
++            if (value < 0)
++		        return value;
++            // Convert to %
++            value = FIXED_POINT_8_8_EXTEND_TO_INT((unsigned short)value, 10);
++            value /= 10;
++            val->intval = value;
++            break;
++        case POWER_SUPPLY_PROP_VOLTAGE_NOW:
++            i2c_smbus_write_word_data(drv->i2c, SM5714_FG_REG_SRAM_RADDR, SM5714_FG_ADDR_SRAM_OCV);
++            value = i2c_smbus_read_word_data(drv->i2c, SM5714_FG_REG_SRAM_RDATA);
++            if (value < 0)
++		        return value;
++            // Convert to uV
++            value &= 0x7ff;
++            value = FIXED_POINT_8_8_EXTEND_TO_INT((unsigned short)value, 1000000);
++            val->intval = value;
++            break;
++        case POWER_SUPPLY_PROP_CURRENT_NOW:
++            i2c_smbus_write_word_data(drv->i2c, SM5714_FG_REG_SRAM_RADDR, SM5714_FG_ADDR_SRAM_CURRENT);
++            value = i2c_smbus_read_word_data(drv->i2c, SM5714_FG_REG_SRAM_RDATA);
++            if (value < 0)
++		        return value;
++            // Convert to mA
++            value &= 0x7ff;
++            value = FIXED_POINT_8_8_EXTEND_TO_INT((unsigned short)value, 1000);
++            val->intval = value;
++            break;
++        default:
++            return -EINVAL;
++    }
++    return 0;
++}
++
++static const struct power_supply_desc sm5714_fg_desc = {
++	.name			= "sm5714_fg",
++	.type			= POWER_SUPPLY_TYPE_BATTERY,
++	.properties		= sm5714_fg_props,
++	.num_properties		= ARRAY_SIZE(sm5714_fg_props),
++	.get_property		= sm5714_fg_get_property,
++};
++
++static int sm5714_fg_probe (struct i2c_client* i2c) {
++    struct sm5714_fg *drv;
++
++    struct power_supply* psy;
++    struct power_supply_config fg_cfg = { };
++
++	drv = devm_kzalloc(&i2c->dev, sizeof(*drv), GFP_KERNEL);
++	if (!drv)
++		return -ENOMEM;
++    drv->i2c = i2c;
++
++    fg_cfg.drv_data = drv;
++	fg_cfg.of_node = i2c->dev.of_node;
++
++	psy = devm_power_supply_register(&i2c->dev, &sm5714_fg_desc,
++						   &fg_cfg);
++
++	if (IS_ERR(psy)) {
++		dev_err(&i2c->dev, "failed to register power supply\n");
++		return PTR_ERR(psy);
++	}
++
++    drv->psy = psy;
++	return 0;
++}
++
++static const struct i2c_device_id sm5714_i2c_ids[] = {
++        { "sm5714-fg", 0 },
++        { },
++};
++MODULE_DEVICE_TABLE(i2c, sm5714_i2c_ids);
++
++static struct of_device_id sm5714_of_match_table[] = {
++	{ .compatible = "siliconmitus,sm5714-fg", },
++	{ },
++};
++MODULE_DEVICE_TABLE(of, sm5714_of_match_table);
++
++static struct i2c_driver sm5714_fg_driver = {
++	.driver = {
++		   .name = "sm5714-fg",
++		   .of_match_table = sm5714_of_match_table,
++	},
++	.probe_new	= sm5714_fg_probe,
++    .id_table   = sm5714_i2c_ids,
++};
++
++module_i2c_driver(sm5714_fg_driver);
++
++MODULE_DESCRIPTION("Samsung SM5714-FG");
++MODULE_AUTHOR("map220v <map220v300@gmail.com>");
++MODULE_LICENSE("GPL");
+\ No newline at end of file
+diff --git a/drivers/remoteproc/qcom_q6v5_pas.c b/drivers/remoteproc/qcom_q6v5_pas.c
+index 6afd0941e55245..d4c111114505a0 100644
+--- a/drivers/remoteproc/qcom_q6v5_pas.c
++++ b/drivers/remoteproc/qcom_q6v5_pas.c
+@@ -617,6 +617,23 @@ static const struct adsp_data sm6350_adsp_resource = {
+ 	.ssctl_id = 0x14,
+ };
+ 
++static const struct adsp_data sm7125_adsp_resource = {
++	.crash_reason_smem = 423,
++	.firmware_name = "adsp.mdt",
++	.pas_id = 1,
++	.has_aggre2_clk = false,
++	.auto_boot = true,
++	.proxy_pd_names = (char*[]){
++		"lcx",
++		"lmx",
++		NULL
++	},
++	.load_state = "adsp",
++	.ssr_name = "lpass",
++	.sysmon_name = "adsp",
++	.ssctl_id = 0x14,
++};
++
+ static const struct adsp_data sm8150_adsp_resource = {
+ 		.crash_reason_smem = 423,
+ 		.firmware_name = "adsp.mdt",
+@@ -722,6 +739,23 @@ static const struct adsp_data sm6350_cdsp_resource = {
+ 	.ssctl_id = 0x17,
+ };
+ 
++static const struct adsp_data sm7125_cdsp_resource = {
++	.crash_reason_smem = 601,
++	.firmware_name = "cdsp.mdt",
++	.pas_id = 18,
++	.has_aggre2_clk = false,
++	.auto_boot = true,
++	.proxy_pd_names = (char*[]){
++		"cx",
++		"mx",
++		NULL
++	},
++	.load_state = "cdsp",
++	.ssr_name = "cdsp",
++	.sysmon_name = "cdsp",
++	.ssctl_id = 0x17,
++};
++
+ static const struct adsp_data sm8150_cdsp_resource = {
+ 	.crash_reason_smem = 601,
+ 	.firmware_name = "cdsp.mdt",
+@@ -971,6 +1005,8 @@ static const struct of_device_id adsp_of_match[] = {
+ 	{ .compatible = "qcom,sm6350-adsp-pas", .data = &sm6350_adsp_resource},
+ 	{ .compatible = "qcom,sm6350-cdsp-pas", .data = &sm6350_cdsp_resource},
+ 	{ .compatible = "qcom,sm6350-mpss-pas", .data = &mpss_resource_init},
++	{ .compatible = "qcom,sm7125-adsp-pas", .data = &sm7125_adsp_resource},
++	{ .compatible = "qcom,sm7125-cdsp-pas", .data = &sm7125_cdsp_resource},
+ 	{ .compatible = "qcom,sm8150-adsp-pas", .data = &sm8150_adsp_resource},
+ 	{ .compatible = "qcom,sm8150-cdsp-pas", .data = &sm8150_cdsp_resource},
+ 	{ .compatible = "qcom,sm8150-mpss-pas", .data = &mpss_resource_init},
+diff --git a/drivers/soc/qcom/socinfo.c b/drivers/soc/qcom/socinfo.c
+index 4554fb8655d34e..42ef155296d47a 100644
+--- a/drivers/soc/qcom/socinfo.c
++++ b/drivers/soc/qcom/socinfo.c
+@@ -323,6 +323,7 @@ static const struct soc_id soc_id[] = {
+ 	{ 425, "SC7180" },
+ 	{ 434, "SM6350" },
+ 	{ 439, "SM8350" },
++	{ 443, "SM7125" },
+ 	{ 449, "SC8280XP" },
+ 	{ 453, "IPQ6005" },
+ 	{ 455, "QRB5165" },
+diff --git a/sound/soc/codecs/lpass-rx-macro.c b/sound/soc/codecs/lpass-rx-macro.c
+index 3143f9cd7277e4..149441cb2c05eb 100644
+--- a/sound/soc/codecs/lpass-rx-macro.c
++++ b/sound/soc/codecs/lpass-rx-macro.c
+@@ -366,7 +366,7 @@
+ #define CDC_RX_DSD1_CFG2			(0x0F8C)
+ #define RX_MAX_OFFSET				(0x0F8C)
+ 
+-#define MCLK_FREQ		9600000
++#define MCLK_FREQ		19200000
+ 
+ #define RX_MACRO_RATES (SNDRV_PCM_RATE_8000 | SNDRV_PCM_RATE_16000 |\
+ 			SNDRV_PCM_RATE_32000 | SNDRV_PCM_RATE_48000 |\
+@@ -3584,7 +3584,7 @@ static int rx_macro_probe(struct platform_device *pdev)
+ 
+ 	/* set MCLK and NPL rates */
+ 	clk_set_rate(rx->mclk, MCLK_FREQ);
+-	clk_set_rate(rx->npl, 2 * MCLK_FREQ);
++	clk_set_rate(rx->npl, MCLK_FREQ);
+ 
+ 	ret = clk_prepare_enable(rx->macro);
+ 	if (ret)
+diff --git a/sound/soc/codecs/lpass-tx-macro.c b/sound/soc/codecs/lpass-tx-macro.c
+index 55503ba480bb63..df730b33b58263 100644
+--- a/sound/soc/codecs/lpass-tx-macro.c
++++ b/sound/soc/codecs/lpass-tx-macro.c
+@@ -202,7 +202,7 @@
+ #define TX_MACRO_AMIC_UNMUTE_DELAY_MS	100
+ #define TX_MACRO_DMIC_HPF_DELAY_MS	300
+ #define TX_MACRO_AMIC_HPF_DELAY_MS	300
+-#define MCLK_FREQ		9600000
++#define MCLK_FREQ		19200000
+ 
+ enum {
+ 	TX_MACRO_AIF_INVALID = 0,
+@@ -1860,7 +1860,7 @@ static int tx_macro_probe(struct platform_device *pdev)
+ 
+ 	/* set MCLK and NPL rates */
+ 	clk_set_rate(tx->mclk, MCLK_FREQ);
+-	clk_set_rate(tx->npl, 2 * MCLK_FREQ);
++	clk_set_rate(tx->npl, MCLK_FREQ);
+ 
+ 	ret = clk_prepare_enable(tx->macro);
+ 	if (ret)
+diff --git a/sound/soc/codecs/tas2562.c b/sound/soc/codecs/tas2562.c
+index dc088a1c672131..75f050557c7de9 100644
+--- a/sound/soc/codecs/tas2562.c
++++ b/sound/soc/codecs/tas2562.c
+@@ -503,6 +503,8 @@ static int tas2562_volume_control_put(struct snd_kcontrol *kcontrol,
+ {
+ 	struct snd_soc_component *component = snd_soc_kcontrol_component(kcontrol);
+ 	struct tas2562_data *tas2562 = snd_soc_component_get_drvdata(component);
++//Sometimes doesn't work with "amixer -c0 cset" command. Maybe it has to do something with 'page' switching
++#if 0
+ 	int ret;
+ 	u32 reg_val;
+ 
+@@ -523,7 +525,7 @@ static int tas2562_volume_control_put(struct snd_kcontrol *kcontrol,
+ 				      ((reg_val >> 24) & 0xff));
+ 	if (ret)
+ 		return ret;
+-
++#endif
+ 	tas2562->volume_lvl = ucontrol->value.integer.value[0];
+ 
+ 	return 0;
+diff --git a/sound/soc/qcom/sm8250.c b/sound/soc/qcom/sm8250.c
+index 98a2fde9e0041f..5f93620134c503 100644
+--- a/sound/soc/qcom/sm8250.c
++++ b/sound/soc/qcom/sm8250.c
+@@ -111,6 +111,14 @@ static int sm8250_snd_startup(struct snd_pcm_substream *substream)
+ 		snd_soc_dai_set_fmt(cpu_dai, fmt);
+ 		snd_soc_dai_set_fmt(codec_dai, codec_dai_fmt);
+ 		break;
++	case QUINARY_MI2S_RX:
++		codec_dai_fmt |= SND_SOC_DAIFMT_NB_NF | SND_SOC_DAIFMT_I2S;
++		snd_soc_dai_set_sysclk(cpu_dai,
++			Q6AFE_LPASS_CLK_ID_QUI_MI2S_IBIT,
++			MI2S_BCLK_RATE, SNDRV_PCM_STREAM_PLAYBACK);
++		snd_soc_dai_set_fmt(cpu_dai, fmt);
++		snd_soc_dai_set_fmt(codec_dai, codec_dai_fmt);
++		break;
+ 	default:
+ 		break;
+ 	}
+@@ -125,7 +133,37 @@ static int sm8250_snd_hw_params(struct snd_pcm_substream *substream,
+ 	struct snd_soc_dai *cpu_dai = asoc_rtd_to_cpu(rtd, 0);
+ 	struct sm8250_snd_data *pdata = snd_soc_card_get_drvdata(rtd->card);
+ 	struct sdw_stream_runtime *sruntime;
+-	int i;
++	int i, j;
++	int ret;
++
++	for_each_rtd_codec_dais(rtd, j, codec_dai) {
++		if (!codec_dai->component->name_prefix)
++			break;
++
++		if (!strcmp(codec_dai->component->name_prefix, "Left")) {
++			ret = snd_soc_dai_set_tdm_slot(
++					codec_dai, 0x01,
++					0x03, 8,
++					16);
++			if (ret < 0) {
++				dev_err(rtd->dev,
++					"DEV0 TDM slot err:%d\n", ret);
++				return ret;
++			}
++		}
++
++		if (!strcmp(codec_dai->component->name_prefix, "Right")) {
++			ret = snd_soc_dai_set_tdm_slot(
++					codec_dai, 0x02,
++					0x03, 8,
++					16);
++			if (ret < 0) {
++				dev_err(rtd->dev,
++					"DEV1 TDM slot err:%d\n", ret);
++				return ret;
++			}
++		}
++	}
+ 
+ 	switch (cpu_dai->id) {
+ 	case WSA_CODEC_DMA_RX_0:
