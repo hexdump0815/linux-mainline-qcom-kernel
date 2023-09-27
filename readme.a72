@@ -1,0 +1,70 @@
+# directories:
+# - /compile/doc/stable-qc - the files in this dir
+# - /compile/source/linux-stable-a72 - the kernel sources checked out from gitrepo
+# - /compile/result/stable-qc - the resulting kernel, modules etc. tar.gz files
+# - /compile/doc/kernel-config-options - https://github.com/hexdump0815/kernel-config-options
+# name: stb-a72 - sm7125 samsung galaxy a72 and a52 devices
+
+# INFO: this is not working completely yet and still very much work in progress
+#       parts are based on commit: 97744a6d9de46fe47f780de7213573201df15c69
+#       of the a72q-5.19 branch of https://github.com/map220v/sm7125-mainline
+#
+#	besides that it is also heavily based on postmarketos information, especially on
+#	https://gitlab.com/postmarketOS/boot-deploy/-/blob/master/boot-deploy-functions.sh
+#	for the creation of the android boot image and more
+
+cd /compile/source/linux-stable-a72
+
+# patches:
+# add changes from the map22v a72q-5.19 tree mentioned above 
+patch -p1 < /compile/doc/stable-qc/misc.a72/patches/v5.19/map220v-sm7125-changes-v5.19.patch.org
+# fix kernel version number: + instead of -dirty at the end
+patch -p1 < /compile/doc/stable-qc/misc.a72/patches/v5.19/fix-kernel-version-number.patch
+# switch usb port to usb host mode
+patch -p0 < /compile/doc/stable-qc/misc.a72/patches/v5.19/use-usb-host-mode.patch
+
+export ARCH=arm64
+# for now the kernel config is based on the one from the map220v tree instead of defconfig
+# and for now also lets not remove any unused options - this can be done later ...
+#scripts/kconfig/merge_config.sh -m arch/arm64/configs/defconfig /compile/doc/kernel-config-options/docker-options.cfg /compile/doc/kernel-config-options/options-to-remove-generic.cfg /compile/doc/stable-qc/misc.a72/options/options-to-remove-special.cfg /compile/doc/kernel-config-options/additional-options-generic.cfg /compile/doc/kernel-config-options/additional-options-aarch64.cfg /compile/doc/stable-qc/misc.a72/options/additional-options-special.cfg
+scripts/kconfig/merge_config.sh -m /compile/doc/stable-qc/misc.a72/misc/config-postmarketos-qcom-sm7125.aarch64 /compile/doc/kernel-config-options/docker-options.cfg /compile/doc/kernel-config-options/additional-options-generic.cfg /compile/doc/kernel-config-options/additional-options-aarch64.cfg /compile/doc/stable-qc/misc.a72/options/additional-options-special.cfg
+( cd /compile/doc/kernel-config-options ; git rev-parse --verify HEAD ) > /compile/doc/stable-qc/misc.a72/options/kernel-config-options.version
+make olddefconfig
+make -j 8 Image dtbs modules
+cd tools/perf
+make
+cd ../power/cpupower
+make
+cd ../../..
+export kver=`make kernelrelease`
+echo ${kver}
+# remove debug info if there and wanted
+# find . -type f -name '*.ko' | sudo xargs -n 1 objcopy --strip-unneeded
+make modules_install
+mkdir -p /lib/modules/${kver}/tools
+cp -v tools/perf/perf /lib/modules/${kver}/tools
+cp -v tools/power/cpupower/cpupower /lib/modules/${kver}/tools
+cp -v tools/power/cpupower/libcpupower.so.0.0.1 /lib/modules/${kver}/tools/libcpupower.so.0
+# make headers_install INSTALL_HDR_PATH=/usr
+cp -v .config /boot/config-${kver}
+cp -v arch/arm64/boot/Image /boot/Image-${kver}
+mkdir -p /boot/dtb-${kver}
+cp -v arch/arm64/boot/dts/qcom/sm7125*.dtb /boot/dtb-${kver}
+cp -v System.map /boot/System.map-${kver}
+cd /boot
+update-initramfs -c -k ${kver}
+# start android boot special - required: apt-get install abootimg mkbootimg
+zstdcat /boot/initrd.img-${kver} | gzip > /tmp/initrd.img.gz
+cat /boot/Image-${kver} | gzip > /tmp/Image.gz
+cat /tmp/Image.gz /boot/dtb-${kver}/sm7125-samsung-a52q.dtb > /tmp/kernel-dtb-a52
+cat /tmp/Image.gz /boot/dtb-${kver}/sm7125-samsung-a72q.dtb > /tmp/kernel-dtb-a72
+# the address values are taken from the pmos deviceinfo files
+mkbootimg --kernel /tmp/kernel-dtb-a52 --ramdisk /tmp/initrd.img.gz --base 0x00000000 --second_offset 0x00000000 --cmdline "console=tty1 root=/dev/mmcblk2p2 rootwait ro fsck.fix=yes fsck.repair=yes net.ifnames=0 ipv6.disable=1 noresume apparmor=0" --kernel_offset 0x00008000 --ramdisk_offset 0x02000000 --tags_offset 0x01e00000 --pagesize 4096 -o boot-a52.img-${kver}
+mkbootimg --kernel /tmp/kernel-dtb-a72 --ramdisk /tmp/initrd.img.gz --base 0x00000000 --second_offset 0x00000000 --cmdline "console=tty1 root=/dev/mmcblk2p2 rootwait ro fsck.fix=yes fsck.repair=yes net.ifnames=0 ipv6.disable=1 noresume apparmor=0" --kernel_offset 0x00008000 --ramdisk_offset 0x02000000 --tags_offset 0x01e00000 --pagesize 4096 -o boot-a72.img-${kver}
+rm -f /tmp/initrd.img.gz /tmp/Image.gz /tmp/kernel-dtb-a52 /tmp/kernel-dtb-a72
+# end android boot special
+tar cvzf /compile/source/linux-stable-a72/${kver}.tar.gz /boot/*-${kver} /lib/modules/${kver}
+cp -v /compile/doc/stable-qc/config.a72 /compile/doc/stable-qc/config.a72.old
+cp -v /compile/source/linux-stable-a72/.config /compile/doc/stable-qc/config.a72
+cp -v /compile/source/linux-stable-a72/.config /compile/doc/stable-qc/config.a72-${kver}
+cp -v /compile/source/linux-stable-a72/*.tar.gz /compile/result/stable-qc
