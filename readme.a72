@@ -6,8 +6,8 @@
 # name: stb-a72 - sm7125 samsung galaxy a72 and a52 devices
 
 # INFO: this is not working completely yet and still very much work in progress
-#       parts are based on commit: 97744a6d9de46fe47f780de7213573201df15c69
-#       of the a72q-5.19 branch of https://github.com/map220v/sm7125-mainline
+#       parts are based on commit: 678922ff5aa9848d2e6a52e49019d1ca39742c50
+#       of the a72q-6.0 branch of https://github.com/map220v/sm7125-mainline
 #
 #	besides that it is also heavily based on postmarketos information, especially on
 #	https://gitlab.com/postmarketOS/boot-deploy/-/blob/master/boot-deploy-functions.sh
@@ -17,11 +17,11 @@ cd /compile/source/linux-stable-a72
 
 # patches:
 # add changes from the map22v a72q-5.19 tree mentioned above 
-patch -p1 < /compile/doc/stable-qc/misc.a72/patches/v5.19/map220v-sm7125-changes-v5.19.patch.org
+patch -p1 < /compile/doc/stable-qc/misc.a72/patches/v6.0/map220v-sm7125-changes-v6.0.patch.org
 # fix kernel version number: + instead of -dirty at the end
-patch -p1 < /compile/doc/stable-qc/misc.a72/patches/v5.19/fix-kernel-version-number.patch
+patch -p1 < /compile/doc/stable-qc/misc.a72/patches/v6.0/fix-kernel-version-number.patch
 # switch usb port to usb host mode
-patch -p0 < /compile/doc/stable-qc/misc.a72/patches/v5.19/use-usb-host-mode.patch
+patch -p0 < /compile/doc/stable-qc/misc.a72/patches/v6.0/use-usb-host-mode.patch
 
 export ARCH=arm64
 # for now the kernel config is based on the one from the map220v tree instead of defconfig
