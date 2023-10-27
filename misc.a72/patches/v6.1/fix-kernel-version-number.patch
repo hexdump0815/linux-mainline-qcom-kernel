@@ -1,0 +1,14 @@
+diff --git a/scripts/setlocalversion b/scripts/setlocalversion
+index af4754a35e66..24e5d97c74f3 100755
+--- a/scripts/setlocalversion
++++ b/scripts/setlocalversion
+@@ -81,7 +81,8 @@ scm_version()
+ 			git --no-optional-locks status -uno --porcelain 2>/dev/null ||
+ 			git diff-index --name-only HEAD
+ 		} | read dummy; then
+-			printf '%s' -dirty
++			#printf '%s' -dirty
++			printf '%s' +
+ 		fi
+ 	fi
+ }
