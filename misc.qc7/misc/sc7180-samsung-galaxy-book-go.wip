@@ -199,17 +199,17 @@
 
 &camcc { status = "disabled"; };
 
-&dsi0 {
+&mdss_dsi0 {
 	status = "okay";
 	vdda-supply = <&vreg_l3c_1p2>;
 };
 
-&dsi0_out {
+&mdss_dsi0_out {
 	remote-endpoint = <&sn65dsi86_in>;
 	data-lanes = <0 1 2 3>;
 };
 
-&dsi_phy {
+&mdss_dsi0_phy {
 	status = "okay";
 	vdds-supply = <&vreg_l4a_0p8>;
 };
@@ -262,7 +262,7 @@
 			port@0 {
 				reg = <0>;
 				sn65dsi86_in: endpoint {
-					remote-endpoint = <&dsi0_out>;
+					remote-endpoint = <&mdss_dsi0_out>;
 				};
 			};
 
@@ -1055,11 +1055,12 @@
 		bias-disable;
 	};
 
-	ter_mi2s_active: ter-mi2s-active {
-// TODO
-		pins = "gpio63", "gpio64", "gpio65";
-		function = "mi2s_2";
-	};
+// this seems to be in sc7180.dtsi meanwhile, so no longer needed here
+//	ter_mi2s_active: ter-mi2s-active {
+//// TODO
+//		pins = "gpio63", "gpio64", "gpio65";
+//		function = "mi2s_2";
+//	};
 
 // OLD - we use sdc2 below as it worked for aceridus
 // 	sdc1_default: sdc1-default {

@@ -3,25 +3,26 @@
 # - /compile/source/linux-stable-qc7 - the kernel sources checked out from gitrepo
 # - /compile/result/stable-qc - the resulting kernel, modules etc. tar.gz files
 # - /compile/doc/kernel-config-options - https://github.com/hexdump0815/kernel-config-options
-# name: stb-qc7 - sc7180 qualcom windows on arm laptops based on the linux-stable v6.4 tree for now
+# name: stb-qc7 - sc7180 qualcom windows on arm laptops based on the linux-stable v6.6 tree for now
 
 # INFO: this is not working completely and still very much work in progress
-#       parts are based on commit: 1243f98ae368b67b7111a800aef0c58b677457fb
+#       parts are based on commit: 3ab0d2015b7ca3e3fad5a5d686d1772e9b36a5d2
 #       of the aspire1 branch of https://github.com/TravMurav/linux
+#       required: apt-get -y install libelf-dev libtraceevent-dev
 
 cd /compile/source/linux-stable-qc7
 
 # patches:
-# add changes from the travmurav v6.4-rc6 aspire 1 tree mentioned above 
-patch -p1 < /compile/doc/stable-qc/misc.qc7/patches/v6.4/travmurav-changes-v6.4-rc6.patch.org
+# add changes from the travmurav v6.6-rc6 aspire 1 tree mentioned above 
+patch -p1 < /compile/doc/stable-qc/misc.qc7/patches/v6.6/travmurav-changes-v6.6-rc6.patch.org
 # add samsung galaxy book go dts to the dts makefile
-patch -p1 < /compile/doc/stable-qc/misc.qc7/patches/v6.1/add-new-dts-files-to-makefile.patch
+patch -p1 < /compile/doc/stable-qc/misc.qc7/patches/v6.6/add-new-dts-files-to-makefile.patch
 # add panel info for it
-patch -p1 < /compile/doc/stable-qc/misc.qc7/patches/v6.1/add-galaxy-book-go-panel-info.patch
+patch -p1 < /compile/doc/stable-qc/misc.qc7/patches/v6.6/add-galaxy-book-go-panel-info.patch
 # add ufs storage support
-patch -p1 < /compile/doc/stable-qc/misc.qc7/patches/v6.4/add-ufs-support.patch
+patch -p1 < /compile/doc/stable-qc/misc.qc7/patches/v6.6/add-ufs-support.patch
 # fix kernel version number: + instead of -dirty at the end
-patch -p1 < /compile/doc/stable-qc/misc.qc7/patches/v6.4/fix-kernel-version-number.patch
+patch -p1 < /compile/doc/stable-qc/misc.qc7/patches/v6.6/fix-kernel-version-number.patch
 
 # copy the wip samsung galaxy book go dts into the tree
 cp /compile/doc/stable-qc/misc.qc7/misc/sc7180-samsung-galaxy-book-go.wip arch/arm64/boot/dts/qcom/sc7180-samsung-galaxy-book-go.dts
@@ -35,6 +36,8 @@ scripts/kconfig/merge_config.sh -m arch/arm64/configs/defconfig /compile/doc/ker
 make olddefconfig
 make -j 8 Image dtbs modules
 cd tools/perf
+# this is to avoid compile errors
+export NO_JEVENTS=1
 make
 cd ../power/cpupower
 make
