@@ -6,18 +6,13 @@
 # name: stb-qcn - msm8998 qualcom asus novago
 
 # INFO: this is not working yet and still very much work in progress
-#       based on commit: b9550ca03daff5fd7664d10a045bd4ab073f81d4
-#       of the mainline/6.1 branch of https://gitlab.com/msm8998-mainline/linux.git/
+#       based on linux-stable
 
 cd /compile/source/linux-stable-qcn
 
 # patches:
-# some tries to enable the gpu and cpufreq scaling following the oneplus dts - not working yet
-#patch -p1 < /compile/doc/stable-qc/misc.qcn/patches/add-gpu-and-cpufreq-to-novago-dts-v5.18.patch
-# patch the tree up to v5.18.1
-#patch -p1 < /compile/doc/stable-qc/misc.qcn/patches/linux-v5.18-rc1-to-v5.18-adjusted.patch
-#patch -p1 < /compile/doc/stable-qc/misc.qcn/patches/qcom-cpufreq-hw-patch-fix.patch
-#patch -p1 < /compile/doc/stable-qc/misc.qcn/patches/v5.18.1.patch
+# fix kernel version number: + instead of -dirty at the end
+patch -p1 < /compile/doc/stable-qc/misc.qcn/patches/fix-kernel-version-number.patch
 
 export ARCH=arm64
 scripts/kconfig/merge_config.sh -m arch/arm64/configs/defconfig /compile/doc/kernel-config-options/docker-options.cfg /compile/doc/kernel-config-options/options-to-remove-generic.cfg /compile/doc/stable-qc/misc.qcn/options/options-to-remove-special.cfg /compile/doc/kernel-config-options/additional-options-generic.cfg /compile/doc/kernel-config-options/additional-options-aarch64.cfg /compile/doc/stable-qc/misc.qcn/options/additional-options-special.cfg
@@ -25,6 +20,8 @@ scripts/kconfig/merge_config.sh -m arch/arm64/configs/defconfig /compile/doc/ker
 make olddefconfig
 make -j 8 Image dtbs modules
 cd tools/perf
+# this is to avoid compile errors
+export NO_JEVENTS=1
 make
 cd ../power/cpupower
 make
