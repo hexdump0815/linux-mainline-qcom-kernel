@@ -1,0 +1,97 @@
+# directories:
+# - /compile/doc/stable-qc - the files in this dir
+# - /compile/source/linux-stable-410 - the kernel sources checked out from gitrepo
+# - /compile/result/stable-qc - the resulting kernel, modules etc. tar.gz files
+# - /compile/doc/kernel-config-options - https://github.com/hexdump0815/kernel-config-options
+# - /compile/doc/pmos-initramfs - https://github.com/hexdump0815/pmos-initramfs
+# name: stb-410 - the qcom msm8916 is also called snapdragon 410
+
+# INFO: this is not working completely yet and still very much work in progress
+#       parts are based on commit: 038b2c46ae7ea7a027ef31628fa6b6751c0663b5
+#       of the msm8916/6.6 branch of https://github.com/msm8916-mainline/linux
+#
+#	besides that it is also heavily based on postmarketos information, especially on
+#	https://gitlab.com/postmarketOS/boot-deploy/-/blob/master/boot-deploy-functions.sh
+#	for the creation of the android boot image and more
+#
+#       required: apt-get -y install libelf-dev libtraceevent-dev abootimg mkbootimg
+
+cd /compile/source/linux-stable-410
+
+# patches:
+# switch usb port to usb host mode
+patch -p1 < /compile/doc/stable-qc/misc.410/patches/use-usb-host-mode.patch
+# fix kernel version number: + instead of -dirty at the end - seems to be not required with this tree
+#patch -p1 < /compile/doc/stable-qc/misc.410/patches/fix-kernel-version-number.patch
+
+export ARCH=arm64
+# for now the kernel config is based on the one from pmos instead of defconfig
+# and for now also lets not remove any unused options - this can be done later ...
+#scripts/kconfig/merge_config.sh -m arch/arm64/configs/defconfig /compile/doc/kernel-config-options/docker-options.cfg /compile/doc/kernel-config-options/options-to-remove-generic.cfg /compile/doc/stable-qc/misc.410/options/options-to-remove-special.cfg /compile/doc/kernel-config-options/additional-options-generic.cfg /compile/doc/kernel-config-options/additional-options-aarch64.cfg /compile/doc/stable-qc/misc.410/options/additional-options-special.cfg
+scripts/kconfig/merge_config.sh -m /compile/doc/stable-qc/misc.410/misc/config-postmarketos-qcom-msm8916.aarch64 /compile/doc/kernel-config-options/docker-options.cfg /compile/doc/kernel-config-options/additional-options-generic.cfg /compile/doc/kernel-config-options/additional-options-aarch64.cfg /compile/doc/stable-qc/misc.410/options/additional-options-special.cfg
+( cd /compile/doc/kernel-config-options ; git rev-parse --verify HEAD ) > /compile/doc/stable-qc/misc.410/options/kernel-config-options.version
+make olddefconfig
+make -j 4 Image dtbs modules
+cd tools/perf
+# this is to avoid compile errors
+export NO_JEVENTS=1
+make
+cd ../power/cpupower
+make
+cd ../../..
+export kver=`make kernelrelease`
+echo ${kver}
+# remove debug info if there and wanted
+# find . -type f -name '*.ko' | sudo xargs -n 1 objcopy --strip-unneeded
+make modules_install
+mkdir -p /lib/modules/${kver}/tools
+cp -v tools/perf/perf /lib/modules/${kver}/tools
+cp -v tools/power/cpupower/cpupower /lib/modules/${kver}/tools
+cp -v tools/power/cpupower/libcpupower.so.0.0.1 /lib/modules/${kver}/tools/libcpupower.so.0
+# make headers_install INSTALL_HDR_PATH=/usr
+cp -v .config /boot/config-${kver}
+cp -v arch/arm64/boot/Image /boot/Image-${kver}
+mkdir -p /boot/dtb-${kver}
+cp -v arch/arm64/boot/dts/qcom/msm8916-*.dtb /boot/dtb-${kver}
+cp -v System.map /boot/System.map-${kver}
+cd /boot
+# not needed as a special pmos based initrams is used
+# update-initramfs -c -k ${kver}
+# start android boot with special pmos based initramfs - required: apt-get install abootimg mkbootimg
+# build gt510 special pmos based initramfs
+mkdir /tmp/initramfs-gt510
+cd /tmp/initramfs-gt510
+gzip -dc < /compile/doc/pmos-initramfs/initramfs-gt510 | cpio -i
+find lib/modules/*-msm8916 -type f | sed "s,lib/modules/.*-msm8916/,/lib/modules/${kver}/,g" | xargs tar czf /tmp/modules-gt510.tar.gz
+rm -rf lib/modules/*-msm8916
+tar xzf /tmp/modules-gt510.tar.gz
+find . | cpio --create --format=newc | gzip > /boot/initramfs-gt510-${kver}
+# build harpia special pmos based initramfs
+mkdir /tmp/initramfs-harpia
+cd /tmp/initramfs-harpia
+gzip -dc < /compile/doc/pmos-initramfs/initramfs-harpia | cpio -i
+find lib/modules/*-msm8916 -type f | sed "s,lib/modules/.*-msm8916/,/lib/modules/${kver}/,g" | xargs tar czf /tmp/modules-harpia.tar.gz
+rm -rf lib/modules/*-msm8916
+tar xzf /tmp/modules-harpia.tar.gz
+find . | cpio --create --format=newc | gzip > /boot/initramfs-harpia-${kver}
+cd /boot
+cp /compile/doc/pmos-initramfs/initramfs-extra initramfs-extra-${kver}
+rm -rf /tmp/initramfs-gt510 /tmp/modules-gt510.tar.gz /tmp/initramfs-harpia /tmp/modules-harpia.tar.gz
+( cd /compile/doc/pmos-initramfs ; git rev-parse --verify HEAD ) > /compile/doc/stable-qc/misc.410/misc/pmos-initramfs.version
+# end of special initramfs section
+cat /boot/Image-${kver} | gzip > /tmp/Image.gz
+cat /tmp/Image.gz /boot/dtb-${kver}/msm8916-samsung-gt510.dtb > /tmp/kernel-dtb-gt510
+cat /tmp/Image.gz /boot/dtb-${kver}/msm8916-motorola-harpia.dtb > /tmp/kernel-dtb-harpia
+# lets use mkbootimg like for a72 instead of abootimg
+# abootimg --create boot.img-gt510-${kver} -f /compile/doc/stable-qc/misc.410/misc/bootimg.cfg-gt510 -k /tmp/kernel-dtb-gt510 -r /boot/initramfs-gt510-${kver}
+# abootimg --create boot.img-harpia-${kver} -f /compile/doc/stable-qc/misc.410/misc/bootimg.cfg-harpia -k /tmp/kernel-dtb-harpia -r /boot/initramfs-harpia-${kver}
+# the address values are taken from the pmos deviceinfo files
+mkbootimg --kernel /tmp/kernel-dtb-gt510 --ramdisk /boot/initramfs-gt510-${kver} --base 0x80000000 --second_offset 0x00f00000 --cmdline "earlycon console=ttyMSM0,115200 console=tty0 PMOS_NOSPLASH net.ifnames=0 ipv6.disable=1 noresume apparmor=0" --kernel_offset 0x00080000 --ramdisk_offset 0x02000000 --tags_offset 0x01e00000 --pagesize 2048 -o boot.img-gt510-${kver}
+mkbootimg --kernel /tmp/kernel-dtb-harpia --ramdisk /boot/initramfs-harpia-${kver} --base 0x80000000 --second_offset 0x00f00000 --cmdline "earlycon console=ttyMSM0,115200 console=tty0 PMOS_NOSPLASH net.ifnames=0 ipv6.disable=1 noresume apparmor=0" --kernel_offset 0x00080000 --ramdisk_offset 0x02000000 --tags_offset 0x01e00000 --pagesize 2048 -o boot.img-harpia-${kver}
+rm -f /tmp/Image.gz /tmp/kernel-dtb-gt510 /tmp/kernel-dtb-harpia
+# end android boot with special pmos based initramfs
+tar cvzf /compile/source/linux-stable-410/${kver}.tar.gz /boot/*-${kver} /lib/modules/${kver}
+cp -v /compile/doc/stable-qc/config.410 /compile/doc/stable-qc/config.410.old
+cp -v /compile/source/linux-stable-410/.config /compile/doc/stable-qc/config.410
+cp -v /compile/source/linux-stable-410/.config /compile/doc/stable-qc/config.410-${kver}
+cp -v /compile/source/linux-stable-410/*.tar.gz /compile/result/stable-qc
