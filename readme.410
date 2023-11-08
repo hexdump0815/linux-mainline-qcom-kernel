@@ -82,9 +82,6 @@ rm -rf /tmp/initramfs-gt510 /tmp/modules-gt510.tar.gz /tmp/initramfs-harpia /tmp
 cat /boot/Image-${kver} | gzip > /tmp/Image.gz
 cat /tmp/Image.gz /boot/dtb-${kver}/msm8916-samsung-gt510.dtb > /tmp/kernel-dtb-gt510
 cat /tmp/Image.gz /boot/dtb-${kver}/msm8916-motorola-harpia.dtb > /tmp/kernel-dtb-harpia
-# lets use mkbootimg like for a72 instead of abootimg
-# abootimg --create boot.img-gt510-${kver} -f /compile/doc/stable-qc/misc.410/misc/bootimg.cfg-gt510 -k /tmp/kernel-dtb-gt510 -r /boot/initramfs-gt510-${kver}
-# abootimg --create boot.img-harpia-${kver} -f /compile/doc/stable-qc/misc.410/misc/bootimg.cfg-harpia -k /tmp/kernel-dtb-harpia -r /boot/initramfs-harpia-${kver}
 # the address values are taken from the pmos deviceinfo files
 mkbootimg --kernel /tmp/kernel-dtb-gt510 --ramdisk /boot/initramfs-gt510-${kver} --base 0x80000000 --second_offset 0x00f00000 --cmdline "earlycon console=ttyMSM0,115200 console=tty0 PMOS_NOSPLASH net.ifnames=0 ipv6.disable=1 noresume apparmor=0" --kernel_offset 0x00080000 --ramdisk_offset 0x02000000 --tags_offset 0x01e00000 --pagesize 2048 -o boot.img-gt510-${kver}
 mkbootimg --kernel /tmp/kernel-dtb-harpia --ramdisk /boot/initramfs-harpia-${kver} --base 0x80000000 --second_offset 0x00f00000 --cmdline "earlycon console=ttyMSM0,115200 console=tty0 PMOS_NOSPLASH net.ifnames=0 ipv6.disable=1 noresume apparmor=0" --kernel_offset 0x00080000 --ramdisk_offset 0x02000000 --tags_offset 0x01e00000 --pagesize 2048 -o boot.img-harpia-${kver}
