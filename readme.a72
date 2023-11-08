@@ -12,6 +12,8 @@
 #	besides that it is also heavily based on postmarketos information, especially on
 #	https://gitlab.com/postmarketOS/boot-deploy/-/blob/master/boot-deploy-functions.sh
 #	for the creation of the android boot image and more
+#
+#       required: apt-get -y install libelf-dev libtraceevent-dev abootimg mkbootimg
 
 cd /compile/source/linux-stable-a72
 
