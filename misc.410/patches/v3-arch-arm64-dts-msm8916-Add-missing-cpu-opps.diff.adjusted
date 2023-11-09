@@ -1,0 +1,107 @@
+from: https://patchwork.kernel.org/project/linux-arm-msm/patch/1585904219-25117-1-git-send-email-loic.poulain@linaro.org/
+
+adjusted to patch and compile with the v6.6 linux-msm8916 tree - does not seem to work:
+qcom-spmi-regulator 200f000.spmi:pmic@0:regulators: unsupported regulator: name=l1 type=0x0D, subtype=0x02, dig major rev=0x00
+qcom-spmi-regulator 200f000.spmi:pmic@0:regulators: unsupported regulator: name=l17 type=0x06, subtype=0x01, dig major rev=0x01
+qcom-spmi-regulator 200f000.spmi:pmic@0:regulators: unsupported regulator: name=l18 type=0x06, subtype=0x08, dig major rev=0x00
+platform cpufreq-dt: deferred probe pending
+
+see also the discussion from:
+https://patchwork.kernel.org/project/linux-arm-msm/patch/1585763459-21484-1-git-send-email-loic.poulain@linaro.org/
+
+diff --git a/arch/arm64/boot/dts/qcom/msm8916.dtsi b/arch/arm64/boot/dts/qcom/msm8916.dtsi
+index 3e9de157cefb..5fb25344428f 100644
+--- a/arch/arm64/boot/dts/qcom/msm8916.dtsi
++++ b/arch/arm64/boot/dts/qcom/msm8916.dtsi
+@@ -149,6 +149,7 @@ CPU0: cpu@0 {
+ 			next-level-cache = <&L2_0>;
+ 			enable-method = "psci";
+ 			clocks = <&apcs>;
++			cpu-supply = <&pm8916_spmi_s2>;
+ 			operating-points-v2 = <&cpu_opp_table>;
+ 			#cooling-cells = <2>;
+ 			power-domains = <&CPU_PD0>;
+@@ -164,6 +165,7 @@ CPU1: cpu@1 {
+ 			next-level-cache = <&L2_0>;
+ 			enable-method = "psci";
+ 			clocks = <&apcs>;
++			cpu-supply = <&pm8916_spmi_s2>;
+ 			operating-points-v2 = <&cpu_opp_table>;
+ 			#cooling-cells = <2>;
+ 			power-domains = <&CPU_PD1>;
+@@ -179,6 +181,7 @@ CPU2: cpu@2 {
+ 			next-level-cache = <&L2_0>;
+ 			enable-method = "psci";
+ 			clocks = <&apcs>;
++			cpu-supply = <&pm8916_spmi_s2>;
+ 			operating-points-v2 = <&cpu_opp_table>;
+ 			#cooling-cells = <2>;
+ 			power-domains = <&CPU_PD2>;
+@@ -194,6 +197,7 @@ CPU3: cpu@3 {
+ 			next-level-cache = <&L2_0>;
+ 			enable-method = "psci";
+ 			clocks = <&apcs>;
++			cpu-supply = <&pm8916_spmi_s2>;
+ 			operating-points-v2 = <&cpu_opp_table>;
+ 			#cooling-cells = <2>;
+ 			power-domains = <&CPU_PD3>;
+@@ -248,15 +252,35 @@ cpu_opp_table: opp-table-cpu {
+ 
+ 		opp-200000000 {
+ 			opp-hz = /bits/ 64 <200000000>;
++			opp-microvolt = <1050000>;
+ 		};
+ 		opp-400000000 {
+ 			opp-hz = /bits/ 64 <400000000>;
++			opp-microvolt = <1050000>;
++		};
++		opp-533330000 {
++			opp-hz = /bits/ 64 <533330000>;
++			opp-microvolt = <1150000>;
+ 		};
+ 		opp-800000000 {
+ 			opp-hz = /bits/ 64 <800000000>;
++			opp-microvolt = <1150000>;
+ 		};
+ 		opp-998400000 {
+ 			opp-hz = /bits/ 64 <998400000>;
++			opp-microvolt = <1350000>;
++		};
++		opp-1094400000 {
++			opp-hz = /bits/ 64 <1094400000>;
++			opp-microvolt = <1350000>;
++		};
++		opp-1152000000 {
++			opp-hz = /bits/ 64 <1152000000>;
++			opp-microvolt = <1350000>;
++		};
++		opp-1209600000 {
++			opp-hz = /bits/ 64 <1209600000>;
++			opp-microvolt = <1350000>;
+ 		};
+ 	};
+ 
+diff --git a/arch/arm64/boot/dts/qcom/pm8916.dtsi b/arch/arm64/boot/dts/qcom/pm8916.dtsi
+index 24690cfdabb6..d84b17f5e223 100644
+--- a/arch/arm64/boot/dts/qcom/pm8916.dtsi
++++ b/arch/arm64/boot/dts/qcom/pm8916.dtsi
+@@ -165,6 +165,19 @@ pm8916_gpios: gpio@c000 {
+ 			interrupt-controller;
+ 			#interrupt-cells = <2>;
+ 		};
++
++		spmi_regulators: regulators {
++			compatible = "qcom,pm8916-regulators";
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			pm8916_spmi_s2: s2 {
++				regulator-always-on;
++				regulator-min-microvolt = <900000>;
++				regulator-max-microvolt = <1562000>;
++			};
++			/* other regulators can be controlled via rpm */
++		};
+ 	};
+ 
+ 	pm8916_1: pmic@1 {

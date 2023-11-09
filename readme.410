@@ -21,6 +21,8 @@ cd /compile/source/linux-stable-410
 # patches:
 # switch usb port to usb host mode
 patch -p1 < /compile/doc/stable-qc/misc.410/patches/use-usb-host-mode.patch
+# add opp points for up to the full 1.2ghz cpu freq - does not seem to work, see comments in patch
+#patch -p1 < /compile/doc/stable-qc/misc.410/patches/v3-arch-arm64-dts-msm8916-Add-missing-cpu-opps.diff.adjusted
 # fix kernel version number: + instead of -dirty at the end - seems to be not required with this tree
 #patch -p1 < /compile/doc/stable-qc/misc.410/patches/fix-kernel-version-number.patch
 

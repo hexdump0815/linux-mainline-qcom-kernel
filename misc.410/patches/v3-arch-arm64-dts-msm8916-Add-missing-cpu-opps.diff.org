@@ -1,0 +1,127 @@
+from: https://patchwork.kernel.org/project/linux-arm-msm/patch/1585904219-25117-1-git-send-email-loic.poulain@linaro.org/
+
+diff --git a/arch/arm64/boot/dts/qcom/apq8016-sbc.dtsi b/arch/arm64/boot/dts/qcom/apq8016-sbc.dtsi
+index 037e26b..a889649 100644
+--- a/arch/arm64/boot/dts/qcom/apq8016-sbc.dtsi
++++ b/arch/arm64/boot/dts/qcom/apq8016-sbc.dtsi
+@@ -594,9 +594,15 @@
+ 		regulator-max-microvolt = <1200000>;
+ 	};
+ 
++	/**
++	 * Set vdd-mx in turbo mode since we do not perform vdd-mx scaling.
++	 * vdd-mx (vdd-mem) is limited to 1.2875 max by the RPM.
++	 * cf APQ8016(E) device specification - Table 3-3 - Operating condition
++	 */
+ 	l3 {
+-		regulator-min-microvolt = <375000>;
+-		regulator-max-microvolt = <1525000>;
++		regulator-min-microvolt = <1287500>;
++		regulator-max-microvolt = <1287500>;
++		regulator-always-on;
+ 	};
+ 
+ 	l4 {
+diff --git a/arch/arm64/boot/dts/qcom/msm8916.dtsi b/arch/arm64/boot/dts/qcom/msm8916.dtsi
+index 9f31064..7407157 100644
+--- a/arch/arm64/boot/dts/qcom/msm8916.dtsi
++++ b/arch/arm64/boot/dts/qcom/msm8916.dtsi
+@@ -103,6 +103,7 @@
+ 			next-level-cache = <&L2_0>;
+ 			enable-method = "psci";
+ 			clocks = <&apcs>;
++			cpu-supply = <&pm8916_spmi_s2>;
+ 			operating-points-v2 = <&cpu_opp_table>;
+ 			#cooling-cells = <2>;
+ 			power-domains = <&CPU_PD0>;
+@@ -116,6 +117,7 @@
+ 			next-level-cache = <&L2_0>;
+ 			enable-method = "psci";
+ 			clocks = <&apcs>;
++			cpu-supply = <&pm8916_spmi_s2>;
+ 			operating-points-v2 = <&cpu_opp_table>;
+ 			#cooling-cells = <2>;
+ 			power-domains = <&CPU_PD1>;
+@@ -129,6 +131,7 @@
+ 			next-level-cache = <&L2_0>;
+ 			enable-method = "psci";
+ 			clocks = <&apcs>;
++			cpu-supply = <&pm8916_spmi_s2>;
+ 			operating-points-v2 = <&cpu_opp_table>;
+ 			#cooling-cells = <2>;
+ 			power-domains = <&CPU_PD2>;
+@@ -142,6 +145,7 @@
+ 			next-level-cache = <&L2_0>;
+ 			enable-method = "psci";
+ 			clocks = <&apcs>;
++			cpu-supply = <&pm8916_spmi_s2>;
+ 			operating-points-v2 = <&cpu_opp_table>;
+ 			#cooling-cells = <2>;
+ 			power-domains = <&CPU_PD3>;
+@@ -342,15 +346,35 @@
+ 
+ 		opp-200000000 {
+ 			opp-hz = /bits/ 64 <200000000>;
++			opp-microvolt = <1050000>;
+ 		};
+ 		opp-400000000 {
+ 			opp-hz = /bits/ 64 <400000000>;
++			opp-microvolt = <1050000>;
++		};
++		opp-533330000 {
++			opp-hz = /bits/ 64 <533330000>;
++			opp-microvolt = <1150000>;
+ 		};
+ 		opp-800000000 {
+ 			opp-hz = /bits/ 64 <800000000>;
++			opp-microvolt = <1150000>;
+ 		};
+ 		opp-998400000 {
+ 			opp-hz = /bits/ 64 <998400000>;
++			opp-microvolt = <1350000>;
++		};
++		opp-1094400000 {
++			opp-hz = /bits/ 64 <1094400000>;
++			opp-microvolt = <1350000>;
++		};
++		opp-1152000000 {
++			opp-hz = /bits/ 64 <1152000000>;
++			opp-microvolt = <1350000>;
++		};
++		opp-1209600000 {
++			opp-hz = /bits/ 64 <1209600000>;
++			opp-microvolt = <1350000>;
+ 		};
+ 	};
+ 
+@@ -1605,6 +1629,7 @@
+ 					compatible = "qcom,rpm-pm8916-regulators";
+ 
+ 					pm8916_s1: s1 {};
++					/* s2 is directly controlled via spmi */
+ 					pm8916_s3: s3 {};
+ 					pm8916_s4: s4 {};
+ 
+diff --git a/arch/arm64/boot/dts/qcom/pm8916.dtsi b/arch/arm64/boot/dts/qcom/pm8916.dtsi
+index 0bcdf04..04f55f1 100644
+--- a/arch/arm64/boot/dts/qcom/pm8916.dtsi
++++ b/arch/arm64/boot/dts/qcom/pm8916.dtsi
+@@ -157,5 +157,18 @@
+ 			vdd-micbias-supply = <&pm8916_l13>;
+ 			#sound-dai-cells = <1>;
+ 		};
++
++		spmi_regulators: spmi_regulators  {
++			compatible = "qcom,pm8916-regulators";
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			pm8916_spmi_s2: s2 {
++				regulator-always-on;
++				regulator-min-microvolt = <900000>;
++				regulator-max-microvolt = <1562000>;
++			};
++			/* other regulators can be controlled via rpm */
++		};
+ 	};
+ };
