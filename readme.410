@@ -67,8 +67,6 @@ gzip -dc < /compile/doc/pmos-initramfs/initramfs-gt510 | cpio -i
 find lib/modules/*-msm8916 -type f | sed "s,lib/modules/.*-msm8916/,/lib/modules/${kver}/,g" | xargs tar czf /tmp/modules-gt510.tar.gz
 rm -rf lib/modules/*-msm8916
 tar xzf /tmp/modules-gt510.tar.gz
-mkdir -p lib/firmware/qcom
-cp -v /lib/firmware/qcom/a300* lib/firmware/qcom
 find . | cpio --create --format=newc | gzip > /boot/initramfs-gt510-${kver}
 # build harpia special pmos based initramfs
 mkdir /tmp/initramfs-harpia
@@ -77,8 +75,6 @@ gzip -dc < /compile/doc/pmos-initramfs/initramfs-harpia | cpio -i
 find lib/modules/*-msm8916 -type f | sed "s,lib/modules/.*-msm8916/,/lib/modules/${kver}/,g" | xargs tar czf /tmp/modules-harpia.tar.gz
 rm -rf lib/modules/*-msm8916
 tar xzf /tmp/modules-harpia.tar.gz
-mkdir -p lib/firmware/qcom
-cp -v /lib/firmware/qcom/a300* lib/firmware/qcom
 find . | cpio --create --format=newc | gzip > /boot/initramfs-harpia-${kver}
 cd /boot
 cp /compile/doc/pmos-initramfs/initramfs-extra initramfs-extra-${kver}
