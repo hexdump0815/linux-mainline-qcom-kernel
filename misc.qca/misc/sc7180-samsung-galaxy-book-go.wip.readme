@@ -1,9 +1,0 @@
-this is a work in progress version of the galaxy book go dts - it is not useable in this state!
-
-some ideas of it:
-- start with the acer aspire 1 dts from travmurav which is know to work for that device and thus should be a good starting point
-- adjust some things like keyboard and touchpad which are partially working on the galaxy book go to those values
-- comment out some less important stuff like audio and bluetooth to look at this later
-- try to adjust things like i2c and gpios to the galaxy book go hardware based on the galaxy dsl and by comparing the acer to the galaxy dsl
-- add a lot of comments about why some things are done the way they are done
-- add TODO label for everything still unclear
