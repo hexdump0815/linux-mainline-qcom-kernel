@@ -216,9 +216,7 @@
 		reg = <0x40>;
 		hid-descr-addr = <0x0e>;
 
-		// unclear so far if this is the proper one
-		// see also TPXC in dsl: maybe its 31 or 32
-		interrupts-extended = <&tlmm 33 IRQ_TYPE_LEVEL_LOW>;
+		interrupts-extended = <&tlmm 31 IRQ_TYPE_LEVEL_LOW>;
 
 		vdd-supply = <&vdd_touchpad>;
 		vddl-supply = <&vreg_l10a_1p8>;
