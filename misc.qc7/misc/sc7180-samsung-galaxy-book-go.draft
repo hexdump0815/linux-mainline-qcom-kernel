@@ -193,14 +193,10 @@
 		hid-descr-addr = <0x20>;
 
 		// this one is wrong, the proper one has not been found yet
-		// not sure if the bluetooth values a proper, but then 38 would
-		// be the gpio for bluetooth and maybe this is the reason why
-		// bluetooth is not working properly yet
-		interrupts-extended = <&tlmm 38 IRQ_TYPE_LEVEL_LOW>;
+		interrupts-extended = <&tlmm 48 IRQ_TYPE_LEVEL_LOW>;
 
-// TODO - not used yet as proper gpio not yet known
-//		pinctrl-0 = <&hid_keyboard_default>;
-//		pinctrl-names = "default";
+		pinctrl-0 = <&hid_keyboard_default>;
+		pinctrl-names = "default";
 
 		wakeup-source;
 	};
@@ -711,12 +707,12 @@
 //	};
 
 // TODO - what to do with this? the proper gpio is not yet known
-//	hid_keyboard_default: hid-keyboard-default-state {
-//		pins = "gpioxy";
-//		function = "gpio";
-//		drive-strength = <2>;
-//		bias-disable;
-//	};
+	hid_keyboard_default: hid-keyboard-default-state {
+		pins = "gpio48";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
 
 	hid_touchpad_default: hid-touchpad-default-state {
 		pins = "gpio31";
