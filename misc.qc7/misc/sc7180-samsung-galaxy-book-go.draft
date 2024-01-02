@@ -20,9 +20,8 @@
 	chassis-type = "laptop";
 
 	aliases {
-// TODO - do we need this - i guess maybe no?
+// TODO - bluetooth seems to at least probe and start well
 		bluetooth0 = &bluetooth;
-// TODO - do we need this - i guess maybe no?
 		hsuart0 = &uart3;
 		wifi0 = &wifi;
 	};
@@ -194,7 +193,14 @@
 		hid-descr-addr = <0x20>;
 
 		// this one is wrong, the proper one has not been found yet
+		// not sure if the bluetooth values a proper, but then 38 would
+		// be the gpio for bluetooth and maybe this is the reason why
+		// bluetooth is not working properly yet
 		interrupts-extended = <&tlmm 38 IRQ_TYPE_LEVEL_LOW>;
+
+// TODO - not used yet as proper gpio not yet known
+//		pinctrl-0 = <&hid_keyboard_default>;
+//		pinctrl-names = "default";
 
 		wakeup-source;
 	};
@@ -217,6 +223,9 @@
 		hid-descr-addr = <0x0e>;
 
 		interrupts-extended = <&tlmm 31 IRQ_TYPE_LEVEL_LOW>;
+
+		pinctrl-0 = <&hid_touchpad_default>;
+		pinctrl-names = "default";
 
 		vdd-supply = <&vdd_touchpad>;
 		vddl-supply = <&vreg_l10a_1p8>;
@@ -324,7 +333,7 @@
 	cd-gpios = <&tlmm 69 GPIO_ACTIVE_LOW>;
 };
 
-// TODO - do we need this?
+// TODO - bluetooth seems to at least probe and start well
 &uart3 {
 	/delete-property/interrupts;
 	interrupts-extended = <&intc GIC_SPI 604 IRQ_TYPE_LEVEL_HIGH>,
@@ -345,9 +354,9 @@
 	};
 };
 
-// TODO - do we need this?
+// TODO - do we need this? - this is set to okay in aspire dts
 &uart8 {
-	status = "okay";
+	status = "disabled";
 };
 
 // TODO - check if usb works with those newer aspire settings and they are slightly different now
@@ -652,23 +661,24 @@
 };
 
 &tlmm {
-// TODO - what to do with this?
-	/*
-	 * The TZ seem to protect those because some boards can have
-	 * fingerprint sensor connected to this range. Not connected
-	 * on this board
-	 */
-	gpio-reserved-ranges = <58 5>;
+// TODO - this from the aspire dts does not seem to apply here as it
+//        seems to block the keyboard somehow - so lets ignore it for now
+//	/*
+//	 * The TZ seem to protect those because some boards can have
+//	 * fingerprint sensor connected to this range. Not connected
+//	 * on this board
+//	 */
+//	gpio-reserved-ranges = <58 5>;
 
 // TODO - what to do with this?
-	amp_sd_mode_default: amp-sd-mode-deault-state {
-		pins = "gpio23";
-		function = "gpio";
-		drive-strength = <16>;
-		bias-disable;
-	};
+//	amp_sd_mode_default: amp-sd-mode-deault-state {
+//		pins = "gpio23";
+//		function = "gpio";
+//		drive-strength = <16>;
+//		bias-disable;
+//	};
 
-// TODO - what to do with this? values unclear ...
+// TODO - not completely sure yet if this is correct, but at least the display is working
 	bridge_en_default: bridge-en-default-state {
 		pins = "gpio51";
 		function = "gpio";
@@ -676,7 +686,7 @@
 		bias-disable;
 	};
 
-// TODO - what to do with this? values unclear ...
+// TODO - not completely sure yet if this is correct, but at least the display is working
 	bridge_suspend_default: bridge-suspend-default-state {
 		pins = "gpio22";
 		function = "gpio";
@@ -684,15 +694,7 @@
 		bias-pull-up;
 	};
 
-// TODO - what to do with this? can maybe go as its audio?
-	codec_irq_default: codec-irq-deault-state {
-		pins = "gpio28";
-		function = "gpio";
-		drive-strength = <2>;
-		bias-disable;
-	};
-
-// TODO - what to do with this? values unclear ...
+// TODO - not completely sure yet if this is correct, but at least the display is working
 	edp_bridge_irq_default: edp-bridge-irq-default-state {
 		pins = "gpio11";
 		function = "gpio";
@@ -700,23 +702,30 @@
 		bias-pull-down;
 	};
 
-// TODO - what to do with this?
-	hid_keyboard_default: hid-keyboard-default-state {
-		pins = "gpio33";
-		function = "gpio";
-		drive-strength = <2>;
-		bias-disable;
-	};
+// TODO - what to do with this? values unclear - lets keep it disabled for now
+// 	codec_irq_default: codec-irq-deault-state {
+//		pins = "gpio28";
+//		function = "gpio";
+//		drive-strength = <2>;
+//		bias-disable;
+//	};
 
-// TODO - what to do with this?
+// TODO - what to do with this? the proper gpio is not yet known
+//	hid_keyboard_default: hid-keyboard-default-state {
+//		pins = "gpioxy";
+//		function = "gpio";
+//		drive-strength = <2>;
+//		bias-disable;
+//	};
+
 	hid_touchpad_default: hid-touchpad-default-state {
-		pins = "gpio94";
+		pins = "gpio31";
 		function = "gpio";
 		drive-strength = <2>;
 		bias-disable;
 	};
 
-// TODO - what to do with this?
+// TODO - bluetooth seems to at least probe and start well
 	qup_uart3_sleep: qup-uart3-sleep-state {
 		cts-pins {
 			/*
@@ -762,7 +771,7 @@
 		};
 	};
 
-// TODO - what to do with this? - unclear if relevant for galaxy
+// TODO - not completely sure yet if this is correct, but at least the display is working
 	reg_edp_1p2_en_default: reg-edp-1p2-en-deault-state {
 		pins = "gpio19";
 		function = "gpio";
@@ -770,7 +779,7 @@
 		bias-disable;
 	};
 
-// TODO - what to do with this? - unclear if relevant for galaxy
+// TODO - not completely sure yet if this is correct, but at least the display is working
 	reg_edp_1p8_en_default: reg-edp-1p8-en-deault-state {
 		pins = "gpio20";
 		function = "gpio";
@@ -779,14 +788,14 @@
 	};
 
 // TODO - what to do with this? - unclear if relevant for galaxy
-	reg_lcm_en_default: reg-lcm-en-deault-state {
-		pins = "gpio26";
-		function = "gpio";
-		drive-strength = <16>;
-		bias-disable;
-	};
+//	reg_lcm_en_default: reg-lcm-en-deault-state {
+//		pins = "gpio26";
+//		function = "gpio";
+//		drive-strength = <16>;
+//		bias-disable;
+//	};
 
-// TODO - unclear what to do with this?
+// TODO - not completely sure yet if this is correct, but at least the touchpad is working
 	reg_tp_en_default: reg-tp-en-deault-state {
 		// 0x20 = 32 in TPXC in dsl
 		pins = "gpio32";
@@ -796,12 +805,12 @@
 	};
 
 // TODO - what to do with this? - unclear if relevant for galaxy - maybe?
-	soc_bkoff_default: soc-bkoff-deault-state {
-		pins = "gpio10";
-		function = "gpio";
-		drive-strength = <16>;
-		bias-disable;
-	};
+//	soc_bkoff_default: soc-bkoff-deault-state {
+//		pins = "gpio10";
+//		function = "gpio";
+//		drive-strength = <16>;
+//		bias-disable;
+//	};
 
 	sdc2_on: sdc2-on {
 		pinconf-clk {
@@ -854,4 +863,23 @@
 			drive-strength = <2>;
 		};
 	};
+};
+
+// ufs storage basic definitions taken over from sm7125 are defined in sc7180.dtsi now in this tree
+&ufs_mem_hc {
+	status = "okay";
+
+	vcc-supply = <&vreg_l19a_2p9>;
+	vcc-max-microamp = <600000>;
+	vccq2-supply = <&vreg_l12a_1p8>;
+	vccq2-max-microamp = <600000>;
+};
+
+&ufs_mem_phy {
+	status = "okay";
+
+	vdda-phy-supply = <&vreg_l4a_0p8>;
+	vdda-phy-max-microamp = <62900>;
+	vdda-pll-supply = <&vreg_l3c_1p2>;
+	vdda-pll-max-microamp = <18300>;
 };
