@@ -3,26 +3,27 @@
 # - /compile/source/linux-stable-qc7 - the kernel sources checked out from gitrepo
 # - /compile/result/stable-qc - the resulting kernel, modules etc. tar.gz files
 # - /compile/doc/kernel-config-options - https://github.com/hexdump0815/kernel-config-options
-# name: stb-qc7 - sc7180 qualcom windows on arm laptops based on the linux-stable v6.6 tree for now
+# name: stb-qc7 - sc7180 qualcom windows on arm laptops based on the linux-stable tree for now
 
 # INFO: this is not working completely and still very much work in progress
-#       parts are based on commit: 90f2e5637bcf7a93dc3a1618a7a9a2763f40c8ca
-#       of the aspire1 branch of https://github.com/TravMurav/linux
-#       required: apt-get -y install libelf-dev libtraceevent-dev
+#       parts are based on the aspire1 branch of https://github.com/TravMurav/linux
+
+# it looks like for newer kernel versions like v6.5 the following packages have to be
+# installed in order to get the tool compiled well: libelf-dev python3-dev libtraceevent-dev
 
 cd /compile/source/linux-stable-qc7
 
 # patches:
-# add changes from the travmurav v6.6 aspire 1 tree mentioned above
-patch -p1 < /compile/doc/stable-qc/misc.qc7/patches/v6.6/travmurav-changes-v6.6.patch.org
+# add changes from the travmurav v6.7 aspire 1 tree mentioned above
+patch -p1 < /compile/doc/stable-qc/misc.qc7/patches/v6.7/travmurav-changes-v6.7.patch.org
 # add samsung galaxy book go dts to the dts makefile
-patch -p1 < /compile/doc/stable-qc/misc.qc7/patches/v6.6/add-new-dts-files-to-makefile.patch
+patch -p1 < /compile/doc/stable-qc/misc.qc7/patches/v6.7/add-new-dts-files-to-makefile.patch
 # add panel info for it
-patch -p1 < /compile/doc/stable-qc/misc.qc7/patches/v6.6/add-galaxy-book-go-panel-info.patch
+patch -p1 < /compile/doc/stable-qc/misc.qc7/patches/v6.7/add-galaxy-book-go-panel-info.patch
 # add ufs storage support
-patch -p1 < /compile/doc/stable-qc/misc.qc7/patches/v6.6/add-ufs-support.patch
+patch -p1 < /compile/doc/stable-qc/misc.qc7/patches/v6.7/add-ufs-support.patch
 # fix kernel version number: + instead of -dirty at the end
-patch -p1 < /compile/doc/stable-qc/misc.qc7/patches/v6.6/fix-kernel-version-number.patch
+patch -p1 < /compile/doc/stable-qc/misc.qc7/patches/v6.7/fix-kernel-version-number.patch
 
 # copy the draft samsung galaxy book go dts into the tree
 cp /compile/doc/stable-qc/misc.qc7/misc/sc7180-samsung-galaxy-book-go.draft arch/arm64/boot/dts/qcom/sc7180-samsung-galaxy-book-go.dts
