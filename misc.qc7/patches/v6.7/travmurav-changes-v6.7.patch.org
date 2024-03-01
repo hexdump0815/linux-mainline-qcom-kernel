@@ -1,4 +1,4 @@
-created via: https://github.com/TravMurav/linux/compare/0dd3ee31125508cd67f7e7172247f05b7fd1753a...e9ef149c8cb55b4cf2ace5ffdd3b8fff0934f9e7.diff
+created via: https://github.com/TravMurav/linux/compare/0dd3ee31125508cd67f7e7172247f05b7fd1753a...543174b98c596bc44edaac0549c3d4809e2e1770.diff
 
 diff --git a/Documentation/devicetree/bindings/pinctrl/qcom,sc7280-lpass-lpi-pinctrl.yaml b/Documentation/devicetree/bindings/pinctrl/qcom,sc7280-lpass-lpi-pinctrl.yaml
 index 00c5a00e35fce2..20facc851d8f37 100644
@@ -31,10 +31,10 @@ index 00c5a00e35fce2..20facc851d8f37 100644
    "#gpio-cells":
 diff --git a/Documentation/devicetree/bindings/power/supply/acer,aspire1-ec.yaml b/Documentation/devicetree/bindings/power/supply/acer,aspire1-ec.yaml
 new file mode 100644
-index 00000000000000..3fc6dea7fa5cb1
+index 00000000000000..984cf19cf80637
 --- /dev/null
 +++ b/Documentation/devicetree/bindings/power/supply/acer,aspire1-ec.yaml
-@@ -0,0 +1,73 @@
+@@ -0,0 +1,69 @@
 +# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
 +%YAML 1.2
 +---
@@ -61,21 +61,17 @@ index 00000000000000..3fc6dea7fa5cb1
 +  interrupts:
 +    maxItems: 1
 +
-+  acer,media-keys-on-top:
-+    description: Configure the keyboard layout to use media features of
-+      the fn row when the fn key is not pressed. The firmware may choose
-+      to add this property when user selects the fn mode in the firmware
-+      setup utility.
++  acer,fn-selects-media-keys:
++    description: Configure the keyboard layout to invert the Fn key.
++      By default the function row of the keyboard inputs media keys
++      (i.e Vol-Up) when Fn is not pressed. With this option set, pressing
++      the key without Fn would input function keys (i.e. F11). The
++      firmware may choose to add this property when user selects the fn
++      mode in the firmware setup utility.
 +    type: boolean
 +
 +  connector:
 +    $ref: /schemas/connector/usb-connector.yaml#
-+
-+    properties:
-+      reg:
-+        maxItems: 1
-+
-+    unevaluatedProperties: false
 +
 +required:
 +  - compatible
@@ -109,7 +105,7 @@ index 00000000000000..3fc6dea7fa5cb1
 +        };
 +    };
 diff --git a/arch/arm64/boot/dts/qcom/sc7180-acer-aspire1.dts b/arch/arm64/boot/dts/qcom/sc7180-acer-aspire1.dts
-index dbb48934d49950..f37d33539b661a 100644
+index dbb48934d49950..8af1220e78740c 100644
 --- a/arch/arm64/boot/dts/qcom/sc7180-acer-aspire1.dts
 +++ b/arch/arm64/boot/dts/qcom/sc7180-acer-aspire1.dts
 @@ -3,6 +3,7 @@
@@ -296,7 +292,7 @@ index dbb48934d49950..f37d33539b661a 100644
  	reg_tp_3p3: touchpad-regulator {
  		compatible = "regulator-fixed";
  		regulator-name = "tp_3p3";
-@@ -141,13 +297,55 @@
+@@ -141,13 +297,52 @@
  		pinctrl-0 = <&reg_tp_en_default>;
  		pinctrl-names = "default";
  	};
@@ -337,9 +333,6 @@ index dbb48934d49950..f37d33539b661a 100644
 +		pinctrl-0 = <&ec_int_default>;
 +		pinctrl-names = "default";
 +
-+		/* FIXME: This should be set by the firmware. */
-+		acer,media-keys-on-top;
-+
 +		connector {
 +			compatible = "usb-c-connector";
 +
@@ -353,7 +346,7 @@ index dbb48934d49950..f37d33539b661a 100644
  };
  
  &i2c4 {
-@@ -209,9 +407,22 @@
+@@ -209,9 +404,22 @@
  		AVDD-supply = <&vreg_l15a_1p8>;
  		MICVDD-supply = <&reg_codec_3p3>;
  		VBAT-supply = <&reg_codec_3p3>;
@@ -378,7 +371,7 @@ index dbb48934d49950..f37d33539b661a 100644
  		realtek,jd-src = <1>;
  	};
  };
-@@ -298,6 +509,19 @@
+@@ -298,6 +506,19 @@
  	status = "okay";
  };
  
@@ -398,7 +391,7 @@ index dbb48934d49950..f37d33539b661a 100644
  &mdss_dsi0 {
  	vdda-supply = <&vreg_l3c_1p2>;
  	status = "okay";
-@@ -351,6 +575,49 @@
+@@ -351,6 +572,49 @@
  	status = "disabled";
  };
  
@@ -448,7 +441,7 @@ index dbb48934d49950..f37d33539b661a 100644
  &qupv3_id_0 {
  	status = "okay";
  };
-@@ -359,6 +626,12 @@
+@@ -359,6 +623,12 @@
  	status = "okay";
  };
  
@@ -461,7 +454,7 @@ index dbb48934d49950..f37d33539b661a 100644
  &remoteproc_mpss {
  	firmware-name = "qcom/sc7180/acer/aspire1/qcmpss7180_nm.mbn";
  	status = "okay";
-@@ -411,12 +684,14 @@
+@@ -411,12 +681,14 @@
  		compatible = "usbbda,5411";
  		reg = <1>;
  		peer-hub = <&usb_hub_3_x>;
@@ -476,7 +469,7 @@ index dbb48934d49950..f37d33539b661a 100644
  	};
  };
  
-@@ -687,6 +962,13 @@
+@@ -687,6 +959,13 @@
  		bias-disable;
  	};
  
@@ -490,7 +483,7 @@ index dbb48934d49950..f37d33539b661a 100644
  	edp_bridge_irq_default: edp-bridge-irq-default-state {
  		pins = "gpio11";
  		function = "gpio";
-@@ -753,6 +1035,13 @@
+@@ -753,6 +1032,13 @@
  		};
  	};
  
@@ -504,7 +497,7 @@ index dbb48934d49950..f37d33539b661a 100644
  	reg_edp_1p2_en_default: reg-edp-1p2-en-deault-state {
  		pins = "gpio19";
  		function = "gpio";
-@@ -767,6 +1056,13 @@
+@@ -767,6 +1053,13 @@
  		bias-disable;
  	};
  
@@ -518,7 +511,7 @@ index dbb48934d49950..f37d33539b661a 100644
  	reg_lcm_en_default: reg-lcm-en-deault-state {
  		pins = "gpio26";
  		function = "gpio";
-@@ -788,6 +1084,13 @@
+@@ -788,6 +1081,13 @@
  		bias-disable;
  	};
  
@@ -1715,10 +1708,10 @@ index 00000000000000..05c813da6b28d9
 +CONFIG_MEMTEST=y
 diff --git a/arch/arm64/configs/sc7180_defconfig b/arch/arm64/configs/sc7180_defconfig
 new file mode 100644
-index 00000000000000..fb23ac988ed1ba
+index 00000000000000..1156aa3afddfc1
 --- /dev/null
 +++ b/arch/arm64/configs/sc7180_defconfig
-@@ -0,0 +1,955 @@
+@@ -0,0 +1,956 @@
 +# CONFIG_LOCALVERSION_AUTO is not set
 +CONFIG_SYSVIPC=y
 +CONFIG_POSIX_MQUEUE=y
@@ -1754,14 +1747,14 @@ index 00000000000000..fb23ac988ed1ba
 +CONFIG_BLK_DEV_INITRD=y
 +CONFIG_KALLSYMS_ALL=y
 +CONFIG_PROFILING=y
++CONFIG_KEXEC=y
++CONFIG_KEXEC_FILE=y
++CONFIG_CRASH_DUMP=y
 +CONFIG_ARCH_QCOM=y
 +CONFIG_ARM64_VA_BITS_48=y
 +CONFIG_SCHED_MC=y
 +CONFIG_SCHED_SMT=y
 +CONFIG_NUMA=y
-+CONFIG_KEXEC=y
-+CONFIG_KEXEC_FILE=y
-+CONFIG_CRASH_DUMP=y
 +CONFIG_XEN=y
 +CONFIG_COMPAT=y
 +CONFIG_RANDOMIZE_BASE=y
@@ -1791,7 +1784,6 @@ index 00000000000000..fb23ac988ed1ba
 +# CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
 +CONFIG_ZSWAP=y
 +CONFIG_Z3FOLD=y
-+CONFIG_ZSMALLOC=y
 +# CONFIG_COMPAT_BRK is not set
 +CONFIG_MEMORY_HOTPLUG=y
 +CONFIG_MEMORY_HOTREMOVE=y
@@ -2323,10 +2315,12 @@ index 00000000000000..fb23ac988ed1ba
 +CONFIG_SND_AUDIO_GRAPH_CARD2=m
 +CONFIG_SND_VIRTIO=m
 +CONFIG_HID_BATTERY_STRENGTH=y
++CONFIG_HIDRAW=y
 +CONFIG_UHID=m
 +CONFIG_HID_GOOGLE_HAMMER=y
 +CONFIG_HID_MULTITOUCH=m
 +CONFIG_HID_RMI=m
++CONFIG_USB_HIDDEV=y
 +CONFIG_I2C_HID_OF=y
 +CONFIG_USB=y
 +CONFIG_USB_OTG=y
@@ -2508,14 +2502,11 @@ index 00000000000000..fb23ac988ed1ba
 +CONFIG_FSL_RCPM=y
 +CONFIG_QCOM_AOSS_QMP=y
 +CONFIG_QCOM_COMMAND_DB=y
-+CONFIG_QCOM_CPR=y
 +CONFIG_QCOM_GENI_SE=y
 +CONFIG_QCOM_LLCC=y
 +CONFIG_QCOM_OCMEM=y
 +CONFIG_QCOM_RMTFS_MEM=y
 +CONFIG_QCOM_RPMH=y
-+CONFIG_QCOM_RPMHPD=y
-+CONFIG_QCOM_RPMPD=y
 +CONFIG_QCOM_SMEM=y
 +CONFIG_QCOM_SMD_RPM=y
 +CONFIG_QCOM_SMP2P=y
@@ -2526,6 +2517,9 @@ index 00000000000000..fb23ac988ed1ba
 +CONFIG_QCOM_WCNSS_CTRL=m
 +CONFIG_QCOM_APR=m
 +CONFIG_QCOM_ICC_BWMON=m
++CONFIG_QCOM_CPR=y
++CONFIG_QCOM_RPMHPD=y
++CONFIG_QCOM_RPMPD=y
 +CONFIG_DEVFREQ_GOV_PERFORMANCE=m
 +CONFIG_DEVFREQ_GOV_USERSPACE=m
 +CONFIG_PM_DEVFREQ_EVENT=y
@@ -2804,10 +2798,10 @@ index 58b56727803498..6049c87820c040 100644
 +obj-$(CONFIG_EC_ACER_ASPIRE1)	+= acer-aspire1-ec.o
 diff --git a/drivers/power/supply/acer-aspire1-ec.c b/drivers/power/supply/acer-aspire1-ec.c
 new file mode 100644
-index 00000000000000..845a11abf951d6
+index 00000000000000..f4a141ec44b84a
 --- /dev/null
 +++ b/drivers/power/supply/acer-aspire1-ec.c
-@@ -0,0 +1,432 @@
+@@ -0,0 +1,453 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/* Copyright (c) 2023, Nikita Travkin <nikita@trvn.ru> */
 +
@@ -2824,8 +2818,12 @@ index 00000000000000..845a11abf951d6
 +#define ASPIRE_EC_EVENT			0x05
 +
 +#define ASPIRE_EC_EVENT_WATCHDOG	0x20
++#define ASPIRE_EC_EVENT_KBD_BKL_ON	0x57
++#define ASPIRE_EC_EVENT_KBD_BKL_OFF	0x58
 +#define ASPIRE_EC_EVENT_LID_CLOSE	0x9b
 +#define ASPIRE_EC_EVENT_LID_OPEN	0x9c
++#define ASPIRE_EC_EVENT_BKL_UNBLANKED	0x9d
++#define ASPIRE_EC_EVENT_BKL_BLANKED	0x9e
 +#define ASPIRE_EC_EVENT_FG_INF_CHG	0x85
 +#define ASPIRE_EC_EVENT_FG_STA_CHG	0xc6
 +#define ASPIRE_EC_EVENT_HPD_DIS		0xa3
@@ -2953,8 +2951,8 @@ index 00000000000000..845a11abf951d6
 +		break;
 +
 +	case POWER_SUPPLY_PROP_CAPACITY:
-+		val->intval = le16_to_cpu(ddat.capacity_now) * 100
-+			      / le16_to_cpu(sdat.capacity_full);
++		val->intval = le16_to_cpu(ddat.capacity_now) * 100;
++		val->intval /= le16_to_cpu(sdat.capacity_full);
 +		break;
 +
 +	case POWER_SUPPLY_PROP_CURRENT_NOW:
@@ -2986,6 +2984,7 @@ index 00000000000000..845a11abf951d6
 +	default:
 +		return -EINVAL;
 +	}
++
 +	return 0;
 +}
 +
@@ -3091,6 +3090,22 @@ index 00000000000000..845a11abf951d6
 +			drm_bridge_hpd_notify(&ec->bridge, connector_status_connected);
 +		break;
 +
++	case ASPIRE_EC_EVENT_BKL_BLANKED:
++	case ASPIRE_EC_EVENT_BKL_UNBLANKED:
++		/* Display backlight blanked on FN+F6. No action needed. */
++		break;
++
++	case ASPIRE_EC_EVENT_KBD_BKL_ON:
++	case ASPIRE_EC_EVENT_KBD_BKL_OFF:
++		/*
++		 * There is a keyboard backlight connector
++		 * on Aspire 1 that is controlled by FN+F8.
++		 * There is no kb backlight on the device
++		 * though. Seems like this is used on other
++		 * devices like Acer Spin 7. No action needed.
++		 */
++		break;
++
 +	default:
 +		dev_warn(&ec->client->dev, "Unknown event id=0x%x\n", id);
 +	}
@@ -3165,7 +3180,7 @@ index 00000000000000..845a11abf951d6
 +
 +	/* Enable the keyboard fn keys */
 +	tmp = ASPIRE_EC_RAM_KBD_FN_EN | ASPIRE_EC_RAM_KBD_ALWAYS_SET;
-+	if (device_property_read_bool(dev, "acer,media-keys-on-top"))
++	if (!device_property_read_bool(dev, "acer,fn-selects-media-keys"))
 +		tmp |= ASPIRE_EC_RAM_KBD_MEDIA_ON_TOP;
 +	aspire_ec_ram_write(client, ASPIRE_EC_RAM_KBD_MODE, tmp);
 +
