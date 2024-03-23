@@ -1,4 +1,4 @@
-created via: https://github.com/TravMurav/linux/compare/e8f897f4afef0031fe618a8e94127a0934896aba...1e183364405967fa30e030da960f640c7b54bbba.diff
+created via: https://github.com/TravMurav/linux/compare/e8f897f4afef0031fe618a8e94127a0934896aba...a217b4eee53392babd3335e03c774269a2d50312.diff
 
 diff --git a/Documentation/devicetree/bindings/platform/acer,aspire1-ec.yaml b/Documentation/devicetree/bindings/platform/acer,aspire1-ec.yaml
 new file mode 100644
@@ -2347,22 +2347,26 @@ index 00000000000000..4fcc9855579be0
 +obj-$(CONFIG_EC_ACER_ASPIRE1)	+= acer-aspire1-ec.o
 diff --git a/drivers/platform/arm64/acer-aspire1-ec.c b/drivers/platform/arm64/acer-aspire1-ec.c
 new file mode 100644
-index 00000000000000..3941e24c5c7ca2
+index 00000000000000..dbb1cce139654a
 --- /dev/null
 +++ b/drivers/platform/arm64/acer-aspire1-ec.c
-@@ -0,0 +1,555 @@
+@@ -0,0 +1,562 @@
 +// SPDX-License-Identifier: GPL-2.0-only
-+/* Copyright (c) 2023, Nikita Travkin <nikita@trvn.ru> */
++/* Copyright (c) 2024, Nikita Travkin <nikita@trvn.ru> */
 +
++#include <asm-generic/unaligned.h>
++#include <drm/drm_bridge.h>
++#include <linux/bits.h>
++#include <linux/delay.h>
++#include <linux/i2c.h>
++#include <linux/input.h>
 +#include <linux/module.h>
 +#include <linux/platform_device.h>
 +#include <linux/power_supply.h>
-+#include <linux/i2c.h>
-+#include <linux/input.h>
-+#include <linux/delay.h>
-+
 +#include <linux/usb/typec_mux.h>
-+#include <drm/drm_bridge.h>
++#include <linux/workqueue_types.h>
++
++#define MILLI_TO_MICRO			1000
 +
 +#define ASPIRE_EC_EVENT			0x05
 +
@@ -2390,6 +2394,8 @@ index 00000000000000..3941e24c5c7ca2
 +#define ASPIRE_EC_RAM_WRITE		0x21
 +
 +#define ASPIRE_EC_RAM_WATCHDOG		0x19
++#define ASPIRE_EC_WATCHDOG_BIT		BIT(6)
++
 +#define ASPIRE_EC_RAM_KBD_MODE		0x43
 +
 +#define ASPIRE_EC_RAM_KBD_FN_EN		BIT(0)
@@ -2469,7 +2475,8 @@ index 00000000000000..3941e24c5c7ca2
 +		 * Notify (\_SB.I2C3.ADP1, 0x80) // Status Change
 +		 */
 +		aspire_ec_ram_read(ec->client, ASPIRE_EC_RAM_WATCHDOG, &tmp, sizeof(tmp));
-+		aspire_ec_ram_write(ec->client, ASPIRE_EC_RAM_WATCHDOG, tmp & 0xbf);
++		tmp &= ~ASPIRE_EC_WATCHDOG_BIT;
++		aspire_ec_ram_write(ec->client, ASPIRE_EC_RAM_WATCHDOG, tmp);
 +		break;
 +
 +	case ASPIRE_EC_EVENT_LID_CLOSE:
@@ -2486,6 +2493,7 @@ index 00000000000000..3941e24c5c7ca2
 +
 +	case ASPIRE_EC_EVENT_FG_INF_CHG:
 +		/* Notify (\_SB.I2C3.BAT1, 0x81) // Information Change */
++		fallthrough;
 +	case ASPIRE_EC_EVENT_FG_STA_CHG:
 +		/* Notify (\_SB.I2C3.BAT1, 0x80) // Status Change */
 +		power_supply_changed(ec->bat_psy);
@@ -2579,6 +2587,7 @@ index 00000000000000..3941e24c5c7ca2
 +	struct aspire_ec *ec = power_supply_get_drvdata(psy);
 +	struct aspire_ec_bat_psy_static_data sdat;
 +	struct aspire_ec_bat_psy_dynamic_data ddat;
++	int str_index = 0;
 +
 +	i2c_smbus_read_i2c_block_data(ec->client, ASPIRE_EC_FG_STATIC, sizeof(sdat), (u8 *)&sdat);
 +	i2c_smbus_read_i2c_block_data(ec->client, ASPIRE_EC_FG_DYNAMIC, sizeof(ddat), (u8 *)&ddat);
@@ -2595,28 +2604,28 @@ index 00000000000000..3941e24c5c7ca2
 +		break;
 +
 +	case POWER_SUPPLY_PROP_VOLTAGE_NOW:
-+		val->intval = le16_to_cpu(ddat.voltage_now) * 1000;
++		val->intval = get_unaligned_le16(&ddat.voltage_now) * MILLI_TO_MICRO;
 +		break;
 +
 +	case POWER_SUPPLY_PROP_VOLTAGE_MAX_DESIGN:
-+		val->intval = le16_to_cpu(sdat.voltage_design) * 1000;
++		val->intval = le16_to_cpu(sdat.voltage_design) * MILLI_TO_MICRO;
 +		break;
 +
 +	case POWER_SUPPLY_PROP_CHARGE_NOW:
-+		val->intval = le16_to_cpu(ddat.capacity_now) * 1000;
++		val->intval = get_unaligned_le16(&ddat.capacity_now) * MILLI_TO_MICRO;
 +		break;
 +
 +	case POWER_SUPPLY_PROP_CHARGE_FULL:
-+		val->intval = le16_to_cpu(sdat.capacity_full) * 1000;
++		val->intval = le16_to_cpu(sdat.capacity_full) * MILLI_TO_MICRO;
 +		break;
 +
 +	case POWER_SUPPLY_PROP_CAPACITY:
-+		val->intval = le16_to_cpu(ddat.capacity_now) * 100;
++		val->intval = get_unaligned_le16(&ddat.capacity_now) * 100;
 +		val->intval /= le16_to_cpu(sdat.capacity_full);
 +		break;
 +
 +	case POWER_SUPPLY_PROP_CURRENT_NOW:
-+		val->intval = (s16)le16_to_cpu(ddat.current_now) * 1000;
++		val->intval = (s16)get_unaligned_le16(&ddat.current_now) * MILLI_TO_MICRO;
 +		break;
 +
 +	case POWER_SUPPLY_PROP_PRESENT:
@@ -2628,15 +2637,19 @@ index 00000000000000..3941e24c5c7ca2
 +		break;
 +
 +	case POWER_SUPPLY_PROP_MODEL_NAME:
-+		if (sdat.model_id - 1 < ARRAY_SIZE(aspire_ec_bat_psy_battery_model))
-+			val->strval = aspire_ec_bat_psy_battery_model[sdat.model_id - 1];
++		str_index = sdat.model_id - 1;
++
++		if (str_index >= 0 && str_index < ARRAY_SIZE(aspire_ec_bat_psy_battery_model))
++			val->strval = aspire_ec_bat_psy_battery_model[str_index];
 +		else
 +			val->strval = "Unknown";
 +		break;
 +
 +	case POWER_SUPPLY_PROP_MANUFACTURER:
-+		if (sdat.vendor_id - 3 < ARRAY_SIZE(aspire_ec_bat_psy_battery_vendor))
-+			val->strval = aspire_ec_bat_psy_battery_vendor[sdat.vendor_id - 3];
++		str_index = sdat.vendor_id - 3; /* ACPI uses 3 as an offset here. */
++
++		if (str_index >= 0 && str_index < ARRAY_SIZE(aspire_ec_bat_psy_battery_vendor))
++			val->strval = aspire_ec_bat_psy_battery_vendor[str_index];
 +		else
 +			val->strval = "Unknown";
 +		break;
@@ -2746,7 +2759,7 @@ index 00000000000000..3941e24c5c7ca2
 +
 +	aspire_ec_ram_read(ec->client, ASPIRE_EC_RAM_KBD_MODE, &tmp, sizeof(tmp));
 +
-+	return sysfs_emit(buf, "%d\n", !(tmp & ASPIRE_EC_RAM_KBD_MEDIA_ON_TOP));
++	return sysfs_emit(buf, "%u\n", !(tmp & ASPIRE_EC_RAM_KBD_MEDIA_ON_TOP));
 +}
 +
 +static ssize_t fn_lock_store(struct device *dev, struct device_attribute *attr,
@@ -2776,14 +2789,11 @@ index 00000000000000..3941e24c5c7ca2
 +
 +static DEVICE_ATTR_RW(fn_lock);
 +
-+static struct attribute *aspire_ec_attributes[] = {
++static struct attribute *aspire_ec_attrs[] = {
 +	&dev_attr_fn_lock.attr,
 +	NULL
 +};
-+
-+static const struct attribute_group aspire_ec_attribute_group = {
-+	.attrs = aspire_ec_attributes
-+};
++ATTRIBUTE_GROUPS(aspire_ec);
 +
 +static int aspire_ec_probe(struct i2c_client *client)
 +{
@@ -2811,7 +2821,7 @@ index 00000000000000..3941e24c5c7ca2
 +	ec->adp_psy = devm_power_supply_register(dev, &aspire_ec_adp_psy_desc, &psy_cfg);
 +	if (IS_ERR(ec->adp_psy))
 +		return dev_err_probe(dev, PTR_ERR(ec->adp_psy),
-+				     "Failed to register ac power supply\n");
++				     "Failed to register AC power supply\n");
 +
 +	/* Lid switch */
 +	ec->idev = devm_input_allocate_device(dev);
@@ -2834,10 +2844,6 @@ index 00000000000000..3941e24c5c7ca2
 +	aspire_ec_ram_read(client, ASPIRE_EC_RAM_KBD_MODE_2, &tmp, sizeof(tmp));
 +	tmp |= ASPIRE_EC_RAM_KBD_MEDIA_NOTIFY;
 +	aspire_ec_ram_write(client, ASPIRE_EC_RAM_KBD_MODE_2, tmp);
-+
-+	ret = devm_device_add_group(dev, &aspire_ec_attribute_group);
-+	if (ret)
-+		return dev_err_probe(dev, ret, "Failed to create attribute group\n");
 +
 +	/* External Type-C display attach reports */
 +	fwnode = device_get_named_child_node(dev, "connector");
@@ -2897,6 +2903,7 @@ index 00000000000000..3941e24c5c7ca2
 +		.name = "aspire-ec",
 +		.of_match_table = aspire_ec_of_match,
 +		.pm = pm_sleep_ptr(&aspire_ec_pm_ops),
++		.dev_groups = aspire_ec_groups,
 +	},
 +	.probe = aspire_ec_probe,
 +	.id_table = aspire_ec_id,
@@ -2906,6 +2913,45 @@ index 00000000000000..3941e24c5c7ca2
 +MODULE_DESCRIPTION("Acer Aspire 1 embedded controller");
 +MODULE_AUTHOR("Nikita Travkin <nikita@trvn.ru>");
 +MODULE_LICENSE("GPL");
+diff --git a/drivers/thermal/gov_power_allocator.c b/drivers/thermal/gov_power_allocator.c
+index 81e061f183ad12..c375a4fce870f2 100644
+--- a/drivers/thermal/gov_power_allocator.c
++++ b/drivers/thermal/gov_power_allocator.c
+@@ -679,11 +679,6 @@ static int power_allocator_bind(struct thermal_zone_device *tz)
+ 		return -ENOMEM;
+ 
+ 	get_governor_trips(tz, params);
+-	if (!params->trip_max) {
+-		dev_warn(&tz->device, "power_allocator: missing trip_max\n");
+-		kfree(params);
+-		return -EINVAL;
+-	}
+ 
+ 	ret = check_power_actors(tz, params);
+ 	if (ret < 0) {
+@@ -693,7 +688,7 @@ static int power_allocator_bind(struct thermal_zone_device *tz)
+ 	}
+ 
+ 	ret = allocate_actors_buffer(params, ret);
+-	if (ret) {
++	if (ret && ret != -EINVAL) {
+ 		dev_warn(&tz->device, "power_allocator: allocation failed\n");
+ 		kfree(params);
+ 		return ret;
+@@ -712,9 +707,10 @@ static int power_allocator_bind(struct thermal_zone_device *tz)
+ 	if (!tz->tzp->sustainable_power)
+ 		dev_warn(&tz->device, "power_allocator: sustainable_power will be estimated\n");
+ 
+-	estimate_pid_constants(tz, tz->tzp->sustainable_power,
+-			       params->trip_switch_on,
+-			       params->trip_max->temperature);
++	if (params->trip_max)
++		estimate_pid_constants(tz, tz->tzp->sustainable_power,
++				       params->trip_switch_on,
++				       params->trip_max->temperature);
+ 
+ 	reset_pid_controller(params);
+ 
 diff --git a/kernel/configs/pmos.config b/kernel/configs/pmos.config
 new file mode 100644
 index 00000000000000..83f7e9dee3708e
