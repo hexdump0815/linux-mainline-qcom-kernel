@@ -1,4 +1,4 @@
-created via: https://github.com/TravMurav/linux/compare/e8f897f4afef0031fe618a8e94127a0934896aba...a217b4eee53392babd3335e03c774269a2d50312.diff
+created via: https://github.com/TravMurav/linux/compare/e8f897f4afef0031fe618a8e94127a0934896aba...e5a63330e3e8f78766a628a28ca9e5fda740db07.diff
 
 diff --git a/Documentation/devicetree/bindings/platform/acer,aspire1-ec.yaml b/Documentation/devicetree/bindings/platform/acer,aspire1-ec.yaml
 new file mode 100644
@@ -67,16 +67,30 @@ index 00000000000000..7cb0134134ffa6
 +        };
 +    };
 diff --git a/MAINTAINERS b/MAINTAINERS
-index 1aabf1c15bb303..9d354af1a8876e 100644
+index 1aabf1c15bb303..46e2ee2659a822 100644
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -3027,6 +3027,15 @@ F:	drivers/mmc/host/sdhci-of-arasan.c
+@@ -258,6 +258,12 @@ L:	linux-acenic@sunsite.dk
+ S:	Maintained
+ F:	drivers/net/ethernet/alteon/acenic*
+ 
++ACER ASPIRE 1 EMBEDDED CONTROLLER DRIVER
++M:	Nikita Travkin <nikita@trvn.ru>
++S:	Maintained
++F:	Documentation/devicetree/bindings/platform/acer,aspire1-ec.yaml
++F:	drivers/platform/arm64/acer-aspire1-ec.c
++
+ ACER ASPIRE ONE TEMPERATURE AND FAN DRIVER
+ M:	Peter Kaestle <peter@piie.net>
+ L:	platform-driver-x86@vger.kernel.org
+@@ -3027,6 +3033,16 @@ F:	drivers/mmc/host/sdhci-of-arasan.c
  N:	zynq
  N:	xilinx
  
 +ARM64 PLATFORM DRIVERS
 +M:	Hans de Goede <hdegoede@redhat.com>
 +M:	Ilpo Järvinen <ilpo.jarvinen@linux.intel.com>
++R:	Bryan O'Donoghue <bryan.odonoghue@linaro.org>
 +L:	platform-driver-x86@vger.kernel.org
 +S:	Maintained
 +Q:	https://patchwork.kernel.org/project/platform-driver-x86/list/
@@ -151,6 +165,125 @@ index 5afcb8212f4900..3f0d3e33894a07 100644
  	edp_bridge_irq_default: edp-bridge-irq-default-state {
  		pins = "gpio11";
  		function = "gpio";
+diff --git a/arch/arm64/boot/dts/qcom/sc7180.dtsi b/arch/arm64/boot/dts/qcom/sc7180.dtsi
+index 4dcaa15caef263..6adc0427b433c0 100644
+--- a/arch/arm64/boot/dts/qcom/sc7180.dtsi
++++ b/arch/arm64/boot/dts/qcom/sc7180.dtsi
+@@ -10,6 +10,7 @@
+ #include <dt-bindings/clock/qcom,gpucc-sc7180.h>
+ #include <dt-bindings/clock/qcom,lpasscorecc-sc7180.h>
+ #include <dt-bindings/clock/qcom,rpmh.h>
++#include <dt-bindings/clock/qcom,sm8250-lpass-aoncc.h>
+ #include <dt-bindings/clock/qcom,videocc-sc7180.h>
+ #include <dt-bindings/firmware/qcom,scm.h>
+ #include <dt-bindings/interconnect/qcom,icc.h>
+@@ -3889,6 +3890,106 @@
+ 			};
+ 		};
+ 
++		lpass_vamacro: codec@62770000 {
++			compatible = "qcom,sm7180-lpass-va-macro", "qcom,sm8250-lpass-va-macro";
++			reg = <0 0x62770000 0 0x1000>;
++			clocks = <&lpass_aoncc LPASS_CDC_VA_MCLK>,
++				 <&q6afecc LPASS_HW_MACRO_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
++				 <&q6afecc LPASS_HW_DCODEC_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>;
++
++			clock-names = "mclk",
++				      "macro",
++				      "dcodec";
++
++			#clock-cells = <0>;
++			clock-frequency = <9600000>;
++			clock-output-names = "fsgen";
++			#sound-dai-cells = <1>;
++
++			status = "disabled";
++		};
++
++		lpass_aoncc: clock-controller@62780000 {
++			compatible = "qcom,sm7180-lpass-aoncc", "qcom,sm8250-lpass-aoncc";
++			reg = <0 0x62780000 0 0x40000>;
++			#clock-cells = <1>;
++			clocks = <&q6afecc LPASS_HW_MACRO_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
++				 <&q6afecc LPASS_HW_DCODEC_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
++				 <&q6afecc LPASS_CLK_ID_TX_CORE_NPL_MCLK LPASS_CLK_ATTRIBUTE_COUPLE_NO>;
++			clock-names = "core",
++				      "audio",
++				      "bus";
++
++			status = "disabled";
++		};
++
++		lpass_tlmm: pinctrl@627c0000 {
++			compatible = "qcom,sc7180-lpass-lpi-pinctrl";
++			reg = <0 0x627c0000 0x0 0x20000>,
++			      <0 0x62950000 0x0 0x10000>;
++
++			gpio-controller;
++			#gpio-cells = <2>;
++			gpio-ranges = <&lpass_tlmm 0 0 15>;
++
++			clocks = <&q6afecc LPASS_HW_MACRO_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
++				 <&q6afecc LPASS_HW_DCODEC_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>;
++			clock-names = "core",
++				      "audio";
++
++			status = "disabled";
++
++			lpass_dmic01_clk: dmic01-clk-state {
++				pins = "gpio6";
++				function = "dmic1_clk";
++			};
++
++			lpass_dmic01_data: dmic01-data-state {
++				pins = "gpio7";
++				function = "dmic1_data";
++			};
++
++			lpass_dmic23_clk: dmic23-clk-state {
++				pins = "gpio8";
++				function = "dmic2_clk";
++			};
++
++			lpass_dmic23_data: dmic23-data-state {
++				pins = "gpio9";
++				function = "dmic2_data";
++			};
++
++			lpass_dmic45_clk: dmic45-clk-state {
++				pins = "gpio12";
++				function = "dmic3_clk";
++			};
++
++			lpass_dmic45_data: dmic45-data-state {
++				pins = "gpio13";
++				function = "dmic3_data";
++			};
++
++			lpass_rx_swr_clk: rx-swr-clk-state {
++				pins = "gpio3";
++				function = "swr_rx_clk";
++			};
++
++			lpass_rx_swr_data: rx-swr-data-state {
++				pins = "gpio4", "gpio5";
++				function = "swr_rx_data";
++			};
++
++			lpass_tx_swr_clk: tx-swr-clk-state {
++				pins = "gpio0";
++				function = "swr_tx_clk";
++			};
++
++			lpass_tx_swr_data: tx-swr-data-state {
++				pins = "gpio1", "gpio2", "gpio14";
++				function = "swr_tx_data";
++			};
++		};
++
+ 		lpasscc: clock-controller@62d00000 {
+ 			compatible = "qcom,sc7180-lpasscorecc";
+ 			reg = <0 0x62d00000 0 0x50000>,
 diff --git a/arch/arm64/configs/cros_defconfig b/arch/arm64/configs/cros_defconfig
 new file mode 100644
 index 00000000000000..05c813da6b28d9
@@ -2197,6 +2330,62 @@ index b40b32fa7f1c38..19cfc342fc7bbb 100644
  	if (IS_ERR(skb)) {
  		err = PTR_ERR(skb);
  		bt_dev_err(hdev, "QCA Change address cmd failed (%d)", err);
+diff --git a/drivers/clk/qcom/clk-rcg2.c b/drivers/clk/qcom/clk-rcg2.c
+index 5183c74b074f8d..a150b4317d6f0b 100644
+--- a/drivers/clk/qcom/clk-rcg2.c
++++ b/drivers/clk/qcom/clk-rcg2.c
+@@ -1138,7 +1138,26 @@ clk_rcg2_shared_recalc_rate(struct clk_hw *hw, unsigned long parent_rate)
+ 	return clk_rcg2_recalc_rate(hw, parent_rate);
+ }
+ 
++static int clk_rcg2_shared_init(struct clk_hw *hw)
++{
++	struct clk_rcg2 *rcg = to_clk_rcg2(hw);
++
++	/* Initialize cached cfg so the parent is reported properly */
++	regmap_read(rcg->clkr.regmap, rcg->cmd_rcgr + CFG_REG, &rcg->parked_cfg);
++
++	/*
++	 * Clear any force enable of the RCG from boot. We rely on child clks
++	 * (branches) to turn the RCG on/off in the hardware and only set the
++	 * enable bit in the RCG when we want to make sure the clk stays on for
++	 * parent switches or parking.
++	 */
++	clk_rcg2_clear_force_enable(hw);
++
++	return 0;
++}
++
+ const struct clk_ops clk_rcg2_shared_ops = {
++	.init = clk_rcg2_shared_init,
+ 	.enable = clk_rcg2_shared_enable,
+ 	.disable = clk_rcg2_shared_disable,
+ 	.get_parent = clk_rcg2_shared_get_parent,
+diff --git a/drivers/clk/qcom/dispcc-sc7180.c b/drivers/clk/qcom/dispcc-sc7180.c
+index 9536bfc72a43cf..a3356a7758b3ba 100644
+--- a/drivers/clk/qcom/dispcc-sc7180.c
++++ b/drivers/clk/qcom/dispcc-sc7180.c
+@@ -705,6 +705,20 @@ static int disp_cc_sc7180_probe(struct platform_device *pdev)
+ 	if (IS_ERR(regmap))
+ 		return PTR_ERR(regmap);
+ 
++	/*
++	 * Force off 'disp_cc_mdss_rot_clk' so that the driver for the
++	 * "qcom,sc7180-mdss" compatible node can disable
++	 * 'disp_cc_mdss_mdp_clk', which in turn disables 'disp_cc_pll0',
++	 * without making this clk stuck on. When the mdss driver runtime
++	 * suspends, the mdss_gdsc will turn off. If 'disp_cc_mdss_rot_clk'
++	 * isn't off or parked on XO at this time it will wedge the GDSC and
++	 * then 'disp_cc_mdss_mdp_clk' will fail to turn on because the GDSC is
++	 * wedged.
++	 */
++	regmap_update_bits(regmap,
++			   disp_cc_mdss_rot_clk.clkr.enable_reg,
++			   disp_cc_mdss_rot_clk.clkr.enable_mask, 0);
++
+ 	/* 1380MHz configuration */
+ 	disp_cc_pll_config.l = 0x47;
+ 	disp_cc_pll_config.alpha = 0xe000;
 diff --git a/drivers/gpu/drm/msm/adreno/a6xx_gpu.c b/drivers/gpu/drm/msm/adreno/a6xx_gpu.c
 index c9c55e2ea58492..dc80e5940f51ed 100644
 --- a/drivers/gpu/drm/msm/adreno/a6xx_gpu.c
@@ -2271,6 +2460,83 @@ index ff975ad5114565..6aa522ea246fe6 100644
  				format_list, num_formats,
  				supported_format_modifiers, type, NULL);
  	if (IS_ERR(pdpu))
+diff --git a/drivers/pinctrl/qcom/pinctrl-lpass-lpi.c b/drivers/pinctrl/qcom/pinctrl-lpass-lpi.c
+index 0d98008e33eea1..654200cc046f16 100644
+--- a/drivers/pinctrl/qcom/pinctrl-lpass-lpi.c
++++ b/drivers/pinctrl/qcom/pinctrl-lpass-lpi.c
+@@ -528,5 +528,23 @@ void lpi_pinctrl_remove(struct platform_device *pdev)
+ }
+ EXPORT_SYMBOL_GPL(lpi_pinctrl_remove);
+ 
++int lpi_pinctrl_suspend(struct device *dev)
++{
++	struct lpi_pinctrl *pctrl = dev_get_drvdata(dev);
++
++	clk_bulk_disable_unprepare(MAX_LPI_NUM_CLKS, pctrl->clks);
++
++	return 0;
++}
++EXPORT_SYMBOL_GPL(lpi_pinctrl_suspend);
++
++int lpi_pinctrl_resume(struct device *dev)
++{
++	struct lpi_pinctrl *pctrl = dev_get_drvdata(dev);
++
++	return clk_bulk_prepare_enable(MAX_LPI_NUM_CLKS, pctrl->clks);
++}
++EXPORT_SYMBOL_GPL(lpi_pinctrl_resume);
++
+ MODULE_DESCRIPTION("QTI LPI GPIO pin control driver");
+ MODULE_LICENSE("GPL");
+diff --git a/drivers/pinctrl/qcom/pinctrl-lpass-lpi.h b/drivers/pinctrl/qcom/pinctrl-lpass-lpi.h
+index a9b2f65c1ebe0f..b87d2fa9e9a6e2 100644
+--- a/drivers/pinctrl/qcom/pinctrl-lpass-lpi.h
++++ b/drivers/pinctrl/qcom/pinctrl-lpass-lpi.h
+@@ -89,5 +89,7 @@ struct lpi_pinctrl_variant_data {
+ 
+ int lpi_pinctrl_probe(struct platform_device *pdev);
+ void lpi_pinctrl_remove(struct platform_device *pdev);
++int lpi_pinctrl_suspend(struct device *dev);
++int lpi_pinctrl_resume(struct device *dev);
+ 
+ #endif /*__PINCTRL_LPASS_LPI_H__*/
+diff --git a/drivers/pinctrl/qcom/pinctrl-sc7280-lpass-lpi.c b/drivers/pinctrl/qcom/pinctrl-sc7280-lpass-lpi.c
+index 6bb39812e1d8b3..ee24bcc5434e6d 100644
+--- a/drivers/pinctrl/qcom/pinctrl-sc7280-lpass-lpi.c
++++ b/drivers/pinctrl/qcom/pinctrl-sc7280-lpass-lpi.c
+@@ -7,6 +7,7 @@
+ #include <linux/gpio/driver.h>
+ #include <linux/module.h>
+ #include <linux/platform_device.h>
++#include <linux/pm.h>
+ 
+ #include "pinctrl-lpass-lpi.h"
+ 
+@@ -128,6 +129,10 @@ static const struct lpi_pinctrl_variant_data sc7280_lpi_data = {
+ };
+ 
+ static const struct of_device_id lpi_pinctrl_of_match[] = {
++	{
++	       .compatible = "qcom,sc7180-lpass-lpi-pinctrl",
++	       .data = &sc7280_lpi_data,
++	},
+ 	{
+ 	       .compatible = "qcom,sc7280-lpass-lpi-pinctrl",
+ 	       .data = &sc7280_lpi_data,
+@@ -136,10 +141,13 @@ static const struct of_device_id lpi_pinctrl_of_match[] = {
+ };
+ MODULE_DEVICE_TABLE(of, lpi_pinctrl_of_match);
+ 
++static DEFINE_SIMPLE_DEV_PM_OPS(lpi_pinctrl_pm_ops, lpi_pinctrl_suspend, lpi_pinctrl_resume);
++
+ static struct platform_driver lpi_pinctrl_driver = {
+ 	.driver = {
+ 		   .name = "qcom-sc7280-lpass-lpi-pinctrl",
+ 		   .of_match_table = lpi_pinctrl_of_match,
++		   .pm = pm_sleep_ptr(&lpi_pinctrl_pm_ops),
+ 	},
+ 	.probe = lpi_pinctrl_probe,
+ 	.remove_new = lpi_pinctrl_remove,
 diff --git a/drivers/platform/Kconfig b/drivers/platform/Kconfig
 index 868b20361769c3..81a298517df2db 100644
 --- a/drivers/platform/Kconfig
@@ -2347,10 +2613,10 @@ index 00000000000000..4fcc9855579be0
 +obj-$(CONFIG_EC_ACER_ASPIRE1)	+= acer-aspire1-ec.o
 diff --git a/drivers/platform/arm64/acer-aspire1-ec.c b/drivers/platform/arm64/acer-aspire1-ec.c
 new file mode 100644
-index 00000000000000..dbb1cce139654a
+index 00000000000000..d926e45b78fe09
 --- /dev/null
 +++ b/drivers/platform/arm64/acer-aspire1-ec.c
-@@ -0,0 +1,562 @@
+@@ -0,0 +1,738 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/* Copyright (c) 2024, Nikita Travkin <nikita@trvn.ru> */
 +
@@ -2365,6 +2631,9 @@ index 00000000000000..dbb1cce139654a
 +#include <linux/power_supply.h>
 +#include <linux/usb/typec_mux.h>
 +#include <linux/workqueue_types.h>
++
++//FIXME
++#include "../../usb/typec/ucsi/ucsi.h"
 +
 +#define MILLI_TO_MICRO			1000
 +
@@ -2381,6 +2650,7 @@ index 00000000000000..dbb1cce139654a
 +#define ASPIRE_EC_EVENT_FG_STA_CHG	0xc6
 +#define ASPIRE_EC_EVENT_HPD_DIS		0xa3
 +#define ASPIRE_EC_EVENT_HPD_CON		0xa4
++#define ASPIRE_EC_EVENT_UCSI		0xc5
 +
 +#define ASPIRE_EC_FG_DYNAMIC		0x07
 +#define ASPIRE_EC_FG_STATIC		0x08
@@ -2389,6 +2659,9 @@ index 00000000000000..dbb1cce139654a
 +#define ASPIRE_EC_FG_FLAG_FULL		BIT(1)
 +#define ASPIRE_EC_FG_FLAG_DISCHARGING	BIT(2)
 +#define ASPIRE_EC_FG_FLAG_CHARGING	BIT(3)
++
++#define ASPIRE_EC_UCSI_READ		0x90
++#define ASPIRE_EC_UCSI_WRITE		0x91
 +
 +#define ASPIRE_EC_RAM_READ		0x20
 +#define ASPIRE_EC_RAM_WRITE		0x21
@@ -2416,6 +2689,18 @@ index 00000000000000..dbb1cce139654a
 +#define ASPIRE_EC_RAM_ADP		0x40
 +#define ASPIRE_EC_AC_STATUS		BIT(0)
 +
++struct aspire_ec_ucsi_data {
++	u16 version;
++	u16 res;
++	u8 cci[4];
++	u8 control[8];
++	u8 in[16];
++	u8 out[16];
++} __packed;
++
++static int aspire_ec_ucsi_update(struct ucsi *ucsi);
++static int aspire_ec_ucsi_read(struct ucsi *ucsi, unsigned int offset, void *val, size_t val_len);
++
 +struct aspire_ec {
 +	struct i2c_client *client;
 +	struct power_supply *bat_psy;
@@ -2425,6 +2710,14 @@ index 00000000000000..dbb1cce139654a
 +	bool bridge_configured;
 +	struct drm_bridge bridge;
 +	struct work_struct work;
++
++#define ASPIRE_EC_UCSI_COMMAND_PENDING	0
++#define ASPIRE_EC_UCSI_ACK_PENDING	1
++	unsigned long flags;
++	struct completion complete;
++	struct ucsi *ucsi;
++	struct aspire_ec_ucsi_data ucsi_data;
++	u64 ucsi_cmd;
 +};
 +
 +static int aspire_ec_ram_read(struct i2c_client *client, u8 off, u8 *data, u8 data_len)
@@ -2445,6 +2738,7 @@ index 00000000000000..dbb1cce139654a
 +static irqreturn_t aspire_ec_irq_handler(int irq, void *data)
 +{
 +	struct aspire_ec *ec = data;
++	u32 cci;
 +	int id;
 +	u8 tmp;
 +
@@ -2523,6 +2817,22 @@ index 00000000000000..dbb1cce139654a
 +		 * Seems like this is used on other devices like Acer Spin 7.
 +		 * No action needed.
 +		 */
++		break;
++
++	case ASPIRE_EC_EVENT_UCSI:
++		/* Notify (\_SB.UBTC, 0x80) // Status Change */
++		//dev_warn(&ec->client->dev, "UCSI! id=0x%x\n", id); // FIXME <------------------------------ delete
++		aspire_ec_ucsi_update(ec->ucsi);
++		aspire_ec_ucsi_read(ec->ucsi, UCSI_CCI, &cci, sizeof(cci));
++
++		if (UCSI_CCI_CONNECTOR(cci))
++			ucsi_connector_change(ec->ucsi, UCSI_CCI_CONNECTOR(cci));
++
++		if (cci & UCSI_CCI_ACK_COMPLETE && test_bit(ASPIRE_EC_UCSI_ACK_PENDING, &ec->flags))
++			complete(&ec->complete);
++
++		if (cci & UCSI_CCI_COMMAND_COMPLETE && test_bit(ASPIRE_EC_UCSI_COMMAND_PENDING, &ec->flags))
++			complete(&ec->complete);
 +		break;
 +
 +	default:
@@ -2749,6 +3059,113 @@ index 00000000000000..dbb1cce139654a
 +};
 +
 +/*
++ * USB-C UCSI interface.
++ */
++
++struct aspire_ec_ucsi_in_data {
++	u8 msg[16];
++	u8 cci[4];
++} __packed;
++
++struct aspire_ec_ucsi_out_data {
++	u8 msg[16];
++	u8 control[8];
++} __packed;
++
++static int aspire_ec_ucsi_update(struct ucsi *ucsi)
++{
++	struct aspire_ec *ec = ucsi_get_drvdata(ucsi);
++	struct aspire_ec_ucsi_in_data data;
++
++	i2c_smbus_read_i2c_block_data(ec->client, ASPIRE_EC_UCSI_READ, sizeof(data), (u8*)&data);
++
++	//dev_warn(&ec->client->dev, "UCSI update\n");
++	//dev_warn(&ec->client->dev, "0x%llx %llx | 0x%x\n", ((u64*)data.msg)[0], ((u64*)data.msg)[1], *(u32*)data.cci);
++
++	memcpy(ec->ucsi_data.in, data.msg, sizeof(data.msg));
++	memcpy(ec->ucsi_data.cci, data.cci, sizeof(data.cci));
++
++	return 0;
++}
++
++static int aspire_ec_ucsi_read(struct ucsi *ucsi, unsigned int offset, void *val, size_t val_len)
++{
++	struct aspire_ec *ec = ucsi_get_drvdata(ucsi);
++	int ret;
++
++	//dev_warn(&ec->client->dev, "UCSI read! d[%d] %d b\n", offset, val_len);
++
++	if (val_len > sizeof(ec->ucsi_data) - offset)
++		return -EINVAL;
++
++	/* This is polled in core but everything else fires an event */
++	if (offset == UCSI_VERSION || UCSI_COMMAND(ec->ucsi_cmd) == UCSI_PPM_RESET) {
++		ret = aspire_ec_ucsi_update(ucsi);
++		if (ret)
++			return ret;
++	}
++
++	memcpy(val, (u8*)&ec->ucsi_data + offset, val_len);
++
++	return 0;
++}
++
++static int aspire_ec_ucsi_async_write(struct ucsi *ucsi, unsigned int offset, const void *val, size_t val_len)
++{
++	struct aspire_ec *ec = ucsi_get_drvdata(ucsi);
++	struct aspire_ec_ucsi_out_data data;
++
++
++	if (val_len > sizeof(ec->ucsi_data) - offset)
++		return -EINVAL;
++
++	memcpy((u8*)&ec->ucsi_data + offset, val, val_len);
++	ec->ucsi_cmd = *(u64 *)val;
++
++	memcpy(data.msg, ec->ucsi_data.out, sizeof(data.msg));
++	memcpy(data.control, ec->ucsi_data.control, sizeof(data.control));
++
++	//dev_warn(&ec->client->dev, "UCSI write! d[%d] %d b\n", offset, val_len);
++	//dev_warn(&ec->client->dev, "0x%llx %llx | 0x%llx\n", ((u64*)data.msg)[0], ((u64*)data.msg)[1], *(u64*)data.control);
++	i2c_smbus_write_i2c_block_data(ec->client, ASPIRE_EC_UCSI_WRITE, sizeof(data), (u8*)&data);
++
++	return 0;
++}
++
++static int aspire_ec_ucsi_sync_write(struct ucsi *ucsi, unsigned int offset, const void *val, size_t val_len)
++{
++	struct aspire_ec *ec = ucsi_get_drvdata(ucsi);
++	bool ack = UCSI_COMMAND(*(u64 *)val) == UCSI_ACK_CC_CI;
++	int ret;
++
++	if (ack)
++		set_bit(ASPIRE_EC_UCSI_ACK_PENDING, &ec->flags);
++	else
++		set_bit(ASPIRE_EC_UCSI_COMMAND_PENDING, &ec->flags);
++
++	ret = aspire_ec_ucsi_async_write(ucsi, offset, val, val_len);
++	if (ret)
++		goto out_clear_bit;
++
++	if (!wait_for_completion_timeout(&ec->complete, 5 * HZ))
++		ret = -ETIMEDOUT;
++
++out_clear_bit:
++	if (ack)
++		clear_bit(ASPIRE_EC_UCSI_ACK_PENDING, &ec->flags);
++	else
++		clear_bit(ASPIRE_EC_UCSI_COMMAND_PENDING, &ec->flags);
++
++	return ret;
++}
++
++static const struct ucsi_operations aspire_ec_ucsi_ops = {
++	.read = aspire_ec_ucsi_read,
++	.sync_write = aspire_ec_ucsi_sync_write,
++	.async_write = aspire_ec_ucsi_async_write,
++};
++
++/*
 + * Sysfs attributes.
 + */
 +
@@ -2863,6 +3280,22 @@ index 00000000000000..dbb1cce139654a
 +		ec->bridge_configured = true;
 +	}
 +
++	/* Type-C UCSI interface. */
++	ec->ucsi = ucsi_create(dev, &aspire_ec_ucsi_ops);
++	if (IS_ERR(ec->ucsi))
++		return dev_err_probe(dev, PTR_ERR(ec->ucsi), "Failed to create UCSI.\n");
++
++	ucsi_set_drvdata(ec->ucsi, ec);
++
++	init_completion(&ec->complete);
++	ec->ucsi_data.version = 0x0120; //UCSI_VERSION_1_2; // FIXME idk what's actually is used there, can't see the ver value.
++
++	ret = ucsi_register(ec->ucsi);
++	if (ret) {
++		ucsi_destroy(ec->ucsi);
++		return dev_err_probe(dev, ret, "Failed to register UCSI.\n");
++	}
++
 +	ret = devm_request_threaded_irq(dev, client->irq, NULL,
 +					aspire_ec_irq_handler, IRQF_ONESHOT,
 +					dev_name(dev), ec);
@@ -2870,6 +3303,14 @@ index 00000000000000..dbb1cce139654a
 +		return dev_err_probe(dev, ret, "Failed to request irq\n");
 +
 +	return 0;
++}
++
++static void aspire_ec_remove(struct i2c_client *client)
++{
++	struct aspire_ec *ec = i2c_get_clientdata(client);
++
++	ucsi_unregister(ec->ucsi);
++	ucsi_destroy(ec->ucsi);
 +}
 +
 +static int aspire_ec_resume(struct device *dev)
@@ -2906,6 +3347,7 @@ index 00000000000000..dbb1cce139654a
 +		.dev_groups = aspire_ec_groups,
 +	},
 +	.probe = aspire_ec_probe,
++	.remove = aspire_ec_remove,
 +	.id_table = aspire_ec_id,
 +};
 +module_i2c_driver(aspire_ec_driver);
@@ -2913,10 +3355,32 @@ index 00000000000000..dbb1cce139654a
 +MODULE_DESCRIPTION("Acer Aspire 1 embedded controller");
 +MODULE_AUTHOR("Nikita Travkin <nikita@trvn.ru>");
 +MODULE_LICENSE("GPL");
+diff --git a/drivers/soc/qcom/cmd-db.c b/drivers/soc/qcom/cmd-db.c
+index a5fd68411bed58..dd5ababdb476cb 100644
+--- a/drivers/soc/qcom/cmd-db.c
++++ b/drivers/soc/qcom/cmd-db.c
+@@ -324,7 +324,7 @@ static int cmd_db_dev_probe(struct platform_device *pdev)
+ 		return -EINVAL;
+ 	}
+ 
+-	cmd_db_header = memremap(rmem->base, rmem->size, MEMREMAP_WB);
++	cmd_db_header = memremap(rmem->base, rmem->size, MEMREMAP_WT);
+ 	if (!cmd_db_header) {
+ 		ret = -ENOMEM;
+ 		cmd_db_header = NULL;
 diff --git a/drivers/thermal/gov_power_allocator.c b/drivers/thermal/gov_power_allocator.c
-index 81e061f183ad12..c375a4fce870f2 100644
+index 81e061f183ad12..c58cfbcca6b3b0 100644
 --- a/drivers/thermal/gov_power_allocator.c
 +++ b/drivers/thermal/gov_power_allocator.c
+@@ -606,7 +606,7 @@ static int allocate_actors_buffer(struct power_allocator_params *params,
+ 
+ 	/* There might be no cooling devices yet. */
+ 	if (!num_actors) {
+-		ret = -EINVAL;
++		ret = 0;
+ 		goto clean_state;
+ 	}
+ 
 @@ -679,11 +679,6 @@ static int power_allocator_bind(struct thermal_zone_device *tz)
  		return -ENOMEM;
  
@@ -2929,17 +3393,12 @@ index 81e061f183ad12..c375a4fce870f2 100644
  
  	ret = check_power_actors(tz, params);
  	if (ret < 0) {
-@@ -693,7 +688,7 @@ static int power_allocator_bind(struct thermal_zone_device *tz)
+@@ -709,12 +704,13 @@ static int power_allocator_bind(struct thermal_zone_device *tz)
+ 		params->allocated_tzp = true;
  	}
  
- 	ret = allocate_actors_buffer(params, ret);
--	if (ret) {
-+	if (ret && ret != -EINVAL) {
- 		dev_warn(&tz->device, "power_allocator: allocation failed\n");
- 		kfree(params);
- 		return ret;
-@@ -712,9 +707,10 @@ static int power_allocator_bind(struct thermal_zone_device *tz)
- 	if (!tz->tzp->sustainable_power)
+-	if (!tz->tzp->sustainable_power)
++	if (!tz->tzp->sustainable_power && params->trip_max)
  		dev_warn(&tz->device, "power_allocator: sustainable_power will be estimated\n");
  
 -	estimate_pid_constants(tz, tz->tzp->sustainable_power,
@@ -3170,3 +3629,172 @@ index 00000000000000..83f7e9dee3708e
 +
 +# Extra
 +CONFIG_BINFMT_MISC=m
+diff --git a/sound/soc/codecs/lpass-va-macro.c b/sound/soc/codecs/lpass-va-macro.c
+index b71ef03c4aef02..00c08e0e163375 100644
+--- a/sound/soc/codecs/lpass-va-macro.c
++++ b/sound/soc/codecs/lpass-va-macro.c
+@@ -1594,6 +1594,8 @@ static int __maybe_unused va_macro_runtime_suspend(struct device *dev)
+ 	regcache_mark_dirty(va->regmap);
+ 
+ 	clk_disable_unprepare(va->mclk);
++	clk_disable_unprepare(va->dcodec);
++	clk_disable_unprepare(va->macro);
+ 
+ 	return 0;
+ }
+@@ -1603,6 +1605,18 @@ static int __maybe_unused va_macro_runtime_resume(struct device *dev)
+ 	struct va_macro *va = dev_get_drvdata(dev);
+ 	int ret;
+ 
++	ret = clk_prepare_enable(va->macro);
++	if (ret) {
++		dev_err(va->dev, "unable to prepare macro\n");
++		return ret;
++	}
++
++	ret = clk_prepare_enable(va->dcodec);
++	if (ret) {
++		dev_err(va->dev, "unable to prepare dcodec\n");
++		return ret;
++	}
++
+ 	ret = clk_prepare_enable(va->mclk);
+ 	if (ret) {
+ 		dev_err(va->dev, "unable to prepare mclk\n");
+diff --git a/sound/soc/qcom/qdsp6/q6afe.c b/sound/soc/qcom/qdsp6/q6afe.c
+index ef7557be5d6647..3d0c547dc26903 100644
+--- a/sound/soc/qcom/qdsp6/q6afe.c
++++ b/sound/soc/qcom/qdsp6/q6afe.c
+@@ -370,6 +370,7 @@ struct q6afe {
+ 	struct q6core_svc_api_info ainfo;
+ 	struct mutex lock;
+ 	struct aprv2_ibasic_rsp_result_t result;
++	uint32_t rsp_client_handle;
+ 	wait_queue_head_t wait;
+ 	struct list_head port_list;
+ 	spinlock_t port_list_lock;
+@@ -909,6 +910,7 @@ static int q6afe_callback(struct apr_device *adev, struct apr_resp_pkt *data)
+ 	case AFE_CMD_RSP_REMOTE_LPASS_CORE_HW_VOTE_REQUEST:
+ 		afe->result.opcode = hdr->opcode;
+ 		afe->result.status = res->status;
++		afe->rsp_client_handle = *(uint32_t*)data->payload;
+ 		wake_up(&afe->wait);
+ 		break;
+ 	default:
+@@ -934,14 +936,13 @@ int q6afe_get_port_id(int index)
+ }
+ EXPORT_SYMBOL_GPL(q6afe_get_port_id);
+ 
+-static int afe_apr_send_pkt(struct q6afe *afe, struct apr_pkt *pkt,
++static int afe_apr_send_pkt_nolock(struct q6afe *afe, struct apr_pkt *pkt,
+ 			    struct q6afe_port *port, uint32_t rsp_opcode)
+ {
+ 	wait_queue_head_t *wait;
+ 	struct aprv2_ibasic_rsp_result_t *result;
+ 	int ret;
+ 
+-	mutex_lock(&afe->lock);
+ 	if (port) {
+ 		wait = &port->wait;
+ 		result = &port->result;
+@@ -956,8 +957,7 @@ static int afe_apr_send_pkt(struct q6afe *afe, struct apr_pkt *pkt,
+ 	ret = apr_send_pkt(afe->apr, pkt);
+ 	if (ret < 0) {
+ 		dev_err(afe->dev, "packet not transmitted (%d)\n", ret);
+-		ret = -EINVAL;
+-		goto err;
++		return -EINVAL;
+ 	}
+ 
+ 	ret = wait_event_timeout(*wait, (result->opcode == rsp_opcode),
+@@ -972,7 +972,16 @@ static int afe_apr_send_pkt(struct q6afe *afe, struct apr_pkt *pkt,
+ 		ret = 0;
+ 	}
+ 
+-err:
++	return ret;
++}
++
++static int afe_apr_send_pkt(struct q6afe *afe, struct apr_pkt *pkt,
++			    struct q6afe_port *port, uint32_t rsp_opcode)
++{
++	int ret;
++
++	mutex_lock(&afe->lock);
++	ret = afe_apr_send_pkt_nolock(afe, pkt, port, rsp_opcode);
+ 	mutex_unlock(&afe->lock);
+ 
+ 	return ret;
+@@ -1665,6 +1674,8 @@ int q6afe_unvote_lpass_core_hw(struct device *dev, uint32_t hw_block_id,
+ 	if (!p)
+ 		return -ENOMEM;
+ 
++	dev_warn(dev, "unvote(%d)\n", hw_block_id);
++
+ 	pkt = p;
+ 	vote_cfg = p + APR_HDR_SIZE;
+ 
+@@ -1674,7 +1685,7 @@ int q6afe_unvote_lpass_core_hw(struct device *dev, uint32_t hw_block_id,
+ 	pkt->hdr.pkt_size = pkt_size;
+ 	pkt->hdr.src_port = 0;
+ 	pkt->hdr.dest_port = 0;
+-	pkt->hdr.token = hw_block_id;
++	pkt->hdr.token = 0;
+ 	pkt->hdr.opcode = AFE_CMD_REMOTE_LPASS_CORE_HW_DEVOTE_REQUEST;
+ 	vote_cfg->hw_block_id = hw_block_id;
+ 	vote_cfg->client_handle = client_handle;
+@@ -1703,6 +1714,8 @@ int q6afe_vote_lpass_core_hw(struct device *dev, uint32_t hw_block_id,
+ 	if (!p)
+ 		return -ENOMEM;
+ 
++	dev_warn(dev, "vote(%d, %s)\n", hw_block_id, client_name);
++
+ 	pkt = p;
+ 	vote_cfg = p + APR_HDR_SIZE;
+ 
+@@ -1718,12 +1731,16 @@ int q6afe_vote_lpass_core_hw(struct device *dev, uint32_t hw_block_id,
+ 	strscpy(vote_cfg->client_name, client_name,
+ 			sizeof(vote_cfg->client_name));
+ 
+-	ret = afe_apr_send_pkt(afe, pkt, NULL,
++	mutex_lock(&afe->lock);
++	ret = afe_apr_send_pkt_nolock(afe, pkt, NULL,
+ 			       AFE_CMD_RSP_REMOTE_LPASS_CORE_HW_VOTE_REQUEST);
+ 	if (ret)
+ 		dev_err(afe->dev, "AFE failed to vote (%d)\n", hw_block_id);
+ 
++	if (client_handle)
++		*client_handle = afe->rsp_client_handle;
+ 
++	mutex_unlock(&afe->lock);
+ 	kfree(pkt);
+ 	return ret;
+ }
+diff --git a/sound/soc/qcom/sc7180.c b/sound/soc/qcom/sc7180.c
+index 029780d6fe6d08..0738bc7ffc025f 100644
+--- a/sound/soc/qcom/sc7180.c
++++ b/sound/soc/qcom/sc7180.c
+@@ -144,6 +144,7 @@ static int sc7180_qdsp_init(struct snd_soc_pcm_runtime *rtd)
+ 		return sc7180_headset_init(rtd);
+ 	case PRIMARY_MI2S_TX:
+ 	case TERTIARY_MI2S_RX:
++	case VA_CODEC_DMA_TX_0:
+ 		return 0;
+ 	case DISPLAY_PORT_RX:
+ 		return sc7180_hdmi_init(rtd);
+@@ -275,6 +276,7 @@ static int sc7180_qdsp_snd_startup(struct snd_pcm_substream *substream)
+ 		snd_soc_dai_set_fmt(cpu_dai, SND_SOC_DAIFMT_BP_FP);
+ 		break;
+ 	case DISPLAY_PORT_RX:
++	case VA_CODEC_DMA_TX_0:
+ 		break;
+ 	default:
+ 		dev_err(rtd->dev, "%s: invalid dai id 0x%x\n", __func__,
+@@ -360,6 +362,7 @@ static void sc7180_qdsp_snd_shutdown(struct snd_pcm_substream *substream)
+ 				       SNDRV_PCM_STREAM_PLAYBACK);
+ 		break;
+ 	case DISPLAY_PORT_RX:
++	case VA_CODEC_DMA_TX_0:
+ 		break;
+ 	default:
+ 		dev_err(rtd->dev, "%s: invalid dai id 0x%x\n", __func__,
