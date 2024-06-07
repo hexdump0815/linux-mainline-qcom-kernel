@@ -1,4 +1,4 @@
-created via: https://github.com/TravMurav/linux/compare/e67572cd2204894179d89bd7b984072f19313b03...5eb667509d31b89a9b7153b54b1798a4703f518a.diff
+created via: https://github.com/TravMurav/linux/compare/e67572cd2204894179d89bd7b984072f19313b03...11a739a66eef19407c19275e87fb58625dc64910.diff
 
 diff --git a/Documentation/devicetree/bindings/platform/acer,aspire1-ec.yaml b/Documentation/devicetree/bindings/platform/acer,aspire1-ec.yaml
 new file mode 100644
@@ -2377,6 +2377,18 @@ index 38d7859981c7d0..b6a1fd9a9b50f6 100644
  	/* 1380MHz configuration */
  	disp_cc_pll_config.l = 0x47;
  	disp_cc_pll_config.alpha = 0xe000;
+diff --git a/drivers/firmware/qcom/qcom_scm.c b/drivers/firmware/qcom/qcom_scm.c
+index 90283f160a2286..65d6928b1c01aa 100644
+--- a/drivers/firmware/qcom/qcom_scm.c
++++ b/drivers/firmware/qcom/qcom_scm.c
+@@ -1626,6 +1626,7 @@ EXPORT_SYMBOL_GPL(qcom_scm_qseecom_app_send);
+  */
+ static const struct of_device_id qcom_scm_qseecom_allowlist[] = {
+ 	{ .compatible = "lenovo,thinkpad-x13s", },
++	{ .compatible = "acer,aspire1", },
+ 	{ }
+ };
+ 
 diff --git a/drivers/gpu/drm/msm/disp/dpu1/dpu_kms.c b/drivers/gpu/drm/msm/disp/dpu1/dpu_kms.c
 index a1f5d7c4ab916f..8fdb6a43af5d46 100644
 --- a/drivers/gpu/drm/msm/disp/dpu1/dpu_kms.c
