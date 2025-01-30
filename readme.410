@@ -3,6 +3,7 @@
 # - /compile/source/linux-stable-410 - the kernel sources checked out from gitrepo
 # - /compile/result/stable-qc - the resulting kernel, modules etc. tar.gz files
 # - /compile/doc/kernel-config-options - https://github.com/hexdump0815/kernel-config-options
+# - /compile/doc/kernel-extra-patches - https://github.com/hexdump0815/kernel-extra-patches
 # - /compile/doc/pmos-initramfs - https://github.com/hexdump0815/pmos-initramfs
 # name: stb-410 - the qcom msm8916 is also called snapdragon 410
 
@@ -24,7 +25,7 @@ patch -p1 < /compile/doc/stable-qc/misc.410/patches/use-usb-host-mode-v6.12.patc
 # add opp points for up to the full 1.2ghz cpu freq - does not seem to work, see comments in patch
 #patch -p1 < /compile/doc/stable-qc/misc.410/patches/v3-arch-arm64-dts-msm8916-Add-missing-cpu-opps.diff.adjusted
 # fix kernel version number: + instead of -dirty at the end
-patch -p1 < /compile/doc/stable-qc/misc.410/patches/fix-kernel-version-number-v6.12.5.patch
+patch -p1 < /compile/doc/kernel-extra-patches/fix-kernel-version/v6.12.5.patch
 
 export ARCH=arm64
 # for now the kernel config is based on the one from pmos instead of defconfig
@@ -49,7 +50,7 @@ make modules_install
 mkdir -p /lib/modules/${kver}/tools
 cp -v tools/perf/perf /lib/modules/${kver}/tools
 cp -v tools/power/cpupower/cpupower /lib/modules/${kver}/tools
-cp -v tools/power/cpupower/libcpupower.so.0.0.1 /lib/modules/${kver}/tools/libcpupower.so.0
+cp -v tools/power/cpupower/libcpupower.so.? /lib/modules/${kver}/tools
 # make headers_install INSTALL_HDR_PATH=/usr
 cp -v .config /boot/config-${kver}
 cp -v arch/arm64/boot/Image /boot/Image-${kver}
