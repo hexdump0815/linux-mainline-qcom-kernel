@@ -1,5 +1,5 @@
---- arch/arm64/boot/dts/qcom/sm7125-samsung-a52q.dts.org	2023-09-26 22:20:35.144168349 +0200
-+++ arch/arm64/boot/dts/qcom/sm7125-samsung-a52q.dts	2023-09-26 22:18:36.691450133 +0200
+--- a/arch/arm64/boot/dts/qcom/sm7125-samsung-a52q.dts.org	2023-09-26 22:20:35.144168349 +0200
++++ b/arch/arm64/boot/dts/qcom/sm7125-samsung-a52q.dts	2023-09-26 22:18:36.691450133 +0200
 @@ -843,7 +843,7 @@
  };
  
