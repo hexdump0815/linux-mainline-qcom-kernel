@@ -311,6 +311,12 @@
 	status = "okay";
 };
 
+&remoteproc_adsp {
+	memory-region = <&adsp_mem>;
+	firmware-name = "qcom/sc7180//samsung/galaxy-book-go/qcadsp7180.mbn";
+	status = "okay";
+};
+
 &remoteproc_mpss {
 	firmware-name = "qcom/sc7180/samsung/galaxy-book-go/qcmpss7180_nm.mbn";
 	status = "okay";
