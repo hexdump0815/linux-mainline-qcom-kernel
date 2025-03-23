@@ -20,6 +20,8 @@
 cd /compile/source/linux-stable-410
 
 # patches:
+# add pmos specific msm8916 patches
+patch -p1 < /compile/doc/stable-qc/misc.410/patches/pmos-msm8916-v6.12.1.patch
 # switch usb port to usb host mode
 patch -p1 < /compile/doc/stable-qc/misc.410/patches/use-usb-host-mode-v6.12.patch
 # add opp points for up to the full 1.2ghz cpu freq - does not seem to work, see comments in patch
