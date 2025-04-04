@@ -7,8 +7,8 @@
 # name: stb-a72 - sm7125 samsung galaxy a72 and a52 devices
 
 # INFO: this is not working completely yet and still very much work in progress
-#       parts are based on commit: 678922ff5aa9848d2e6a52e49019d1ca39742c50
-#       of the a72q-6.0 branch of https://github.com/map220v/sm7125-mainline
+#       parts are based on commit: cf8cf25f8dfe6e8897e2bb37c2c0288565c39c1e
+#       of the a72q-6.10 branch of https://github.com/map220v/sm7125-mainline
 #
 #	besides that it is also heavily based on postmarketos information, especially on
 #	https://gitlab.com/postmarketOS/boot-deploy/-/blob/master/boot-deploy-functions.sh
@@ -19,18 +19,20 @@
 cd /compile/source/linux-stable-a72
 
 # patches:
-# add changes from the map22v a72q-5.19 tree mentioned above 
-patch -p1 < /compile/doc/stable-qc/misc.a72/patches/v6.0/map220v-sm7125-changes-v6.0.patch.org
+# add changes from the map22v a72q-6.10 tree mentioned above - for v6.10.0
+#patch -p1 < /compile/doc/stable-qc/misc.a72/patches/v6.10/map220v-sm7125-changes-v6.10.patch.org
+# alternative adjusted patch for v6.10.14
+#patch -p1 < /compile/doc/stable-qc/misc.a72/patches/v6.10/map220v-sm7125-changes-v6.10.patch
 # switch usb port to usb host mode
-patch -p1 < /compile/doc/stable-qc/misc.a72/patches/v6.0/use-usb-host-mode.patch
+patch -p1 < /compile/doc/stable-qc/misc.a72/patches/v6.10/use-usb-host-mode.patch
 # fix kernel version number: + instead of -dirty at the end
-patch -p1 < /compile/doc/kernel-extra-patches/fix-kernel-version/v6.0.patch
+patch -p1 < /compile/doc/kernel-extra-patches/fix-kernel-version/v6.10.14.patch
 
 export ARCH=arm64
 # for now the kernel config is based on the one from the map220v tree instead of defconfig
 # and for now also lets not remove any unused options - this can be done later ...
 #scripts/kconfig/merge_config.sh -m arch/arm64/configs/defconfig /compile/doc/kernel-config-options/docker-options.cfg /compile/doc/kernel-config-options/options-to-remove-generic.cfg /compile/doc/stable-qc/misc.a72/options/options-to-remove-special.cfg /compile/doc/kernel-config-options/additional-options-generic.cfg /compile/doc/kernel-config-options/additional-options-aarch64.cfg /compile/doc/stable-qc/misc.a72/options/additional-options-special.cfg
-scripts/kconfig/merge_config.sh -m /compile/doc/stable-qc/misc.a72/misc/config-postmarketos-qcom-sm7125.aarch64 /compile/doc/kernel-config-options/docker-options.cfg /compile/doc/kernel-config-options/additional-options-generic.cfg /compile/doc/kernel-config-options/additional-options-aarch64.cfg /compile/doc/stable-qc/misc.a72/options/additional-options-special.cfg
+scripts/kconfig/merge_config.sh -m arch/arm64/configs/defconfig arch/arm64/configs/sm7125.config /compile/doc/kernel-config-options/docker-options.cfg /compile/doc/kernel-config-options/additional-options-generic.cfg /compile/doc/kernel-config-options/additional-options-aarch64.cfg /compile/doc/stable-qc/misc.a72/options/additional-options-special.cfg
 ( cd /compile/doc/kernel-config-options ; git rev-parse --verify HEAD ) > /compile/doc/stable-qc/misc.a72/options/kernel-config-options.version
 make olddefconfig
 make -j 8 Image dtbs modules
