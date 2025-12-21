@@ -16,10 +16,12 @@ cd /compile/source/linux-stable-qc7
 
 # patches:
 # add changes from the travmurav v6.12 aspire 1 tree mentioned above
-patch -p1 < /compile/doc/stable-qc/misc.qc7/patches/v6.12/travmurav-changes-v6.12.patch
+patch -p1 < /compile/doc/stable-qc/misc.qc7/patches/v6.18/travmurav-changes-v6.12.patch
 # copy the draft samsung galaxy book go dts into the tree and add it to the dts makefile
 cp /compile/doc/stable-qc/misc.qc7/misc/sc7180-samsung-galaxy-book-go.draft arch/arm64/boot/dts/qcom/sc7180-samsung-galaxy-book-go.dts
-patch -p1 < /compile/doc/stable-qc/misc.qc7/patches/v6.12/add-new-dts-files-to-makefile.patch
+patch -p1 < /compile/doc/stable-qc/misc.qc7/patches/v6.18/add-new-dts-files-to-makefile.patch
+# add gamma lut support for color profiles, night light etc.
+patch -p1 < /compile/doc/stable-qc/misc.qc7/patches/v6.18/add-gamma-lut-support.patch
 # fix kernel version number: + instead of -dirty at the end
 patch -p1 < /compile/doc/kernel-extra-patches/fix-kernel-version/v6.12.5.patch
 

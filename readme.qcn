@@ -12,6 +12,8 @@
 cd /compile/source/linux-stable-qcn
 
 # patches:
+# add gamma lut support for color profiles, night light etc.
+patch -p1 < /compile/doc/stable-qc/misc.qcn/patches/add-gamma-lut-support.patch
 # fix kernel version number: + instead of -dirty at the end
 patch -p1 < /compile/doc/kernel-extra-patches/fix-kernel-version/v6.12.5.patch
 
