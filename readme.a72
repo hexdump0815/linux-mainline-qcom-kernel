@@ -64,8 +64,8 @@ cat /boot/Image-${kver} | gzip > /tmp/Image.gz
 cat /tmp/Image.gz /boot/dtb-${kver}/sm7125-samsung-a52q.dtb > /tmp/kernel-dtb-a52
 cat /tmp/Image.gz /boot/dtb-${kver}/sm7125-samsung-a72q.dtb > /tmp/kernel-dtb-a72
 # the address values are taken from the pmos deviceinfo files
-mkbootimg --kernel /tmp/kernel-dtb-a52 --ramdisk /tmp/initrd.img.gz --base 0x00000000 --second_offset 0x00000000 --cmdline "console=tty1 root=/dev/mmcblk2p2 rootwait ro fsck.fix=yes fsck.repair=yes net.ifnames=0 ipv6.disable=1 noresume apparmor=0" --kernel_offset 0x00008000 --ramdisk_offset 0x02000000 --tags_offset 0x01e00000 --pagesize 4096 -o boot-a52.img-${kver}
-mkbootimg --kernel /tmp/kernel-dtb-a72 --ramdisk /tmp/initrd.img.gz --base 0x00000000 --second_offset 0x00000000 --cmdline "console=tty1 root=/dev/mmcblk2p2 rootwait ro fsck.fix=yes fsck.repair=yes net.ifnames=0 ipv6.disable=1 noresume apparmor=0" --kernel_offset 0x00008000 --ramdisk_offset 0x02000000 --tags_offset 0x01e00000 --pagesize 4096 -o boot-a72.img-${kver}
+mkbootimg --kernel /tmp/kernel-dtb-a52 --ramdisk /tmp/initrd.img.gz --base 0x00000000 --second_offset 0x00000000 --cmdline "console=tty1 root=/dev/mmcblk2p2 rootwait ro fsck.fix=yes fsck.repair=yes net.ifnames=0 noresume apparmor=0" --kernel_offset 0x00008000 --ramdisk_offset 0x02000000 --tags_offset 0x01e00000 --pagesize 4096 -o boot-a52.img-${kver}
+mkbootimg --kernel /tmp/kernel-dtb-a72 --ramdisk /tmp/initrd.img.gz --base 0x00000000 --second_offset 0x00000000 --cmdline "console=tty1 root=/dev/mmcblk2p2 rootwait ro fsck.fix=yes fsck.repair=yes net.ifnames=0 noresume apparmor=0" --kernel_offset 0x00008000 --ramdisk_offset 0x02000000 --tags_offset 0x01e00000 --pagesize 4096 -o boot-a72.img-${kver}
 rm -f /tmp/initrd.img.gz /tmp/Image.gz /tmp/kernel-dtb-a52 /tmp/kernel-dtb-a72
 # end android boot special
 tar cvzf /compile/source/linux-stable-a72/${kver}.tar.gz /boot/*-${kver} /lib/modules/${kver}
