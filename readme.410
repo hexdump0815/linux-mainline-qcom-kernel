@@ -8,8 +8,8 @@
 # name: stb-410 - the qcom msm8916 is also called snapdragon 410
 
 # INFO: this is not working completely yet and still very much work in progress
-#       parts are based on commit: 038b2c46ae7ea7a027ef31628fa6b6751c0663b5
-#       of the msm8916/6.6 branch of https://github.com/msm8916-mainline/linux
+#       parts are based on commit: d8595537cf7af1c451792df1f735bbfafd7adb5b
+#       of the wip/msm8916/6.18-rc6 branch of https://github.com/msm8916-mainline/linux
 #
 #	besides that it is also heavily based on postmarketos information, especially on
 #	https://gitlab.com/postmarketOS/boot-deploy/-/blob/master/boot-deploy-functions.sh
@@ -21,11 +21,9 @@ cd /compile/source/linux-stable-410
 
 # patches:
 # add pmos specific msm8916 patches
-patch -p1 < /compile/doc/stable-qc/misc.410/patches/pmos-msm8916-v6.12.1.patch
+patch -p1 < /compile/doc/stable-qc/misc.410/patches/v6.18/pmos-msm8916-v6.18.patch
 # switch usb port to usb host mode
-patch -p1 < /compile/doc/stable-qc/misc.410/patches/use-usb-host-mode-v6.12.patch
-# add opp points for up to the full 1.2ghz cpu freq - does not seem to work, see comments in patch
-#patch -p1 < /compile/doc/stable-qc/misc.410/patches/v3-arch-arm64-dts-msm8916-Add-missing-cpu-opps.diff.adjusted
+patch -p1 < /compile/doc/stable-qc/misc.410/patches/v6.18/use-usb-host-mode-v6.12.patch
 # fix kernel version number: + instead of -dirty at the end
 patch -p1 < /compile/doc/kernel-extra-patches/fix-kernel-version/v6.12.5.patch
 
